@@ -1,0 +1,11 @@
+target
+.classpath
+.factorypath
+.project
+*.DS_Store
+*.pdb
+out
+*.log
+.settings
+application-snz1.properties
+application-demo.properties

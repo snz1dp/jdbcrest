@@ -1,0 +1,2 @@
+org.springframework.boot.SpringApplicationRunListener=\
+ com.snz1.jdbc.rest.Initializer

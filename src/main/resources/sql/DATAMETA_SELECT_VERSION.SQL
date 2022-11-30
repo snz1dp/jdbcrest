@@ -1,0 +1,1 @@
+select ver from datameta where app = ?
