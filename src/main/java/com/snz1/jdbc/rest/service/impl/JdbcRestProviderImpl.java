@@ -27,6 +27,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse.ResultMeta;
@@ -266,12 +267,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       @Nullable
       public ResultMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
         Object primary_key = fetchTablePrimaryKey(conn, table_query.getTable_name());
-        PreparedStatement ps = sql_dialect_provider.prepareZeroSelect(conn, table_query);
+        PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
         try {
           ResultSet rs = ps.executeQuery();
           try {
             rs = ps.getResultSet();
-            return ResultMeta.of(rs.getMetaData(), table_query.getResult_meta(), primary_key);
+            return ResultMeta.of(rs.getMetaData(), table_query.getResult(), primary_key);
           } finally {
             rs.close();
           }
@@ -311,33 +312,39 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     final JdbcQueryResponse<Page<Object>> pageret = new JdbcQueryResponse<Page<Object>>();
     pageret.setData(new Page<Object>());
 
-    // SVF
-    Long query_count = jdbcTemplate.queryForObject("select count(*) from " + table_name, Long.class);
+    // 获取统计
+    JdbcQuery count_query = sql_dialect_provider.prepareQueryCount(table_query);
+    Long query_count = 0l;
+    if (count_query.hasParameter()) {
+      query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class, count_query.getParameters().toArray(new Object[0]));
+    } else {
+      query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class);
+    }
     pageret.getData().total = query_count != null ? query_count : 0;
-    pageret.getData().offset = table_query.getResult_meta().getOffset();
+    pageret.getData().offset = table_query.getResult().getOffset();
 
-    // 
+    // 获取源信息
     if (pageret.getData().total == 0 ||
       pageret.getData().offset >= pageret.getData().total ||
-      table_query.getResult_meta().getLimit() <= 0) {
+      table_query.getResult().getLimit() <= 0) {
       // 要求返回元信息
-      if (table_query.getResult_meta().isContain_meta()) {
+      if (table_query.getResult().isContain_meta()) {
         pageret.setMeta(fetchResultSetMeta(table_query, sql_dialect_provider));
       }
     }
 
-    // 获取护具
+    // 获取数据
     JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
       @Override
       @Nullable
       public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
         Object primary_key = fetchTablePrimaryKey(conn, table_query.getTable_name());
-        PreparedStatement ps = sql_dialect_provider.prepareTableSelect(conn, table_query);
+        PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
         try {
           ResultSet rs = null;
           try {
             rs = ps.executeQuery();
-            return fetchResultSet(rs, table_query.getResult_meta(), primary_key);
+            return fetchResultSet(rs, table_query.getResult(), primary_key);
           } finally {
             if (rs != null) {
               rs.close();
@@ -361,6 +368,18 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   protected SQLDialectProvider getSQLDialectProvider() throws SQLException {
     JdbcMetaData metadata = getMetaData();
     return this.sqlDialectProviders.get(metadata.getProduct_name().toLowerCase());
+  }
+
+  @Override
+  public int queryAllCountResult(TableQueryRequest table_query) {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public JdbcQueryResponse<Page<Object>> queryGroupCountResult(TableQueryRequest table_query) {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 }

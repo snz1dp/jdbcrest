@@ -73,13 +73,15 @@ public class JdbcQueryResponse<T> extends Return<T> {
         if (metadata.getTable_name() == null) {
           metadata.setTable_name(rs_meta.getTableName(i));
         }
+
         String column_name = rs_meta.getColumnName(i);
-        if (request != null && !request.isAll_columns() &&
+        if (request != null &&
           request.getColumns().size() > 0 &&
           !request.getColumns().containsKey(column_name)
         ) {
           continue;
         }
+
         if (request != null && request.getColumns().containsKey(column_name) && request.getColumns().get(column_name).hasAlias()) {
           column_name = request.getColumns().get(column_name).getAlias();
         }

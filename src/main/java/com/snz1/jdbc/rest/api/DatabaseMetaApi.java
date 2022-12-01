@@ -65,7 +65,7 @@ public class DatabaseMetaApi {
     HttpServletRequest request
   ) throws SQLException {
     JdbcQueryRequest.ResultMeta result_meta = new JdbcQueryRequest.ResultMeta();
-    RequestUtils.fetchRequestQueryMetaData(request, result_meta);
+    RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
     return restProvider.getTables(result_meta, catalog, schemaPattern, tableNamePattern, types);
   }
 

@@ -33,6 +33,16 @@ public interface JdbcRestProvider {
     TableQueryRequest table_query
   ) throws SQLException;
 
+  // 查询统计信息
+  public int queryAllCountResult(
+    TableQueryRequest table_query
+  );
+
+  // 查询统计信息
+  public JdbcQueryResponse<Page<Object>> queryGroupCountResult(
+    TableQueryRequest table_query
+  );
+
   // 元信息
   public JdbcQueryResponse.ResultMeta queryResultMeta(
     TableQueryRequest table_query

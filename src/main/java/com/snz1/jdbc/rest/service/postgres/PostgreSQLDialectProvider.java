@@ -4,14 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.apache.ibatis.jdbc.SQL;
 import org.springframework.stereotype.Component;
 
+import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
+import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 
 @Component
-public class PostgreSQLDialectProvider implements SQLDialectProvider {
+public class PostgreSQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "postgresql";
 
@@ -21,39 +21,37 @@ public class PostgreSQLDialectProvider implements SQLDialectProvider {
   }
 
   @Override
-  public PreparedStatement prepareZeroSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
-    SQL sql = new SQL();
-    sql.FROM(table_query.getTable_name());
-    if (table_query.getResult_meta().isAll_columns()) {
-      sql.SELECT("*");
-    } else {
-      table_query.getResult_meta().getColumns().forEach((k, v) -> {
-        sql.SELECT(k);
-      });
-    }
+  public PreparedStatement prepareNoRowSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
+    JdbcQuery base_query = this.createQueryRequestBaseSQL(table_query);
     StringBuffer sqlbuf = new StringBuffer();
-    sqlbuf.append(sql.toString()).append(" LIMIT 0");
-    return conn.prepareStatement(sqlbuf.toString());
+    sqlbuf.append(base_query.getSql()).append(" LIMIT 0");
+    PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
+    if (base_query.hasParameter()) {
+      for (int i = 0; i < base_query.getParameters().size(); i++) {
+        Object param = base_query.getParameters().get(i + 1);
+        ps.setObject(i, param);
+      };
+    }
+    return ps;
   }
 
   @Override
-  public PreparedStatement prepareTableSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
-    SQL sql = new SQL();
-    sql.FROM(table_query.getTable_name());
-    if (table_query.getResult_meta().isAll_columns() || table_query.getResult_meta().getColumns().size() == 0) {
-      sql.SELECT("*");
-    } else {
-      table_query.getResult_meta().getColumns().forEach((k, v) -> {
-        sql.SELECT(k);
-      });
-    }
+  public PreparedStatement preparePageSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
+    JdbcQuery base_query = this.createQueryRequestBaseSQL(table_query);
     StringBuffer sqlbuf = new StringBuffer();
-    sqlbuf.append(sql.toString())
+    sqlbuf.append(base_query.getSql())
           .append(" OFFSET ")
-          .append(table_query.getResult_meta().getOffset())
+          .append(table_query.getResult().getOffset())
           .append(" LIMIT ")
-          .append(table_query.getResult_meta().getLimit());
-    return conn.prepareStatement(sqlbuf.toString());
+          .append(table_query.getResult().getLimit());
+    PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
+    if (base_query.hasParameter()) {
+      for (int i = 0; i < base_query.getParameters().size(); i++) {
+        Object param = base_query.getParameters().get(i);
+        ps.setObject(i + 1, param);
+      };
+    }
+    return ps;
   }
 
 }

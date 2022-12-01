@@ -35,7 +35,7 @@ public class DatabaseQueryApi {
     RequestMethod.POST,
   })
   @ResponseBody
-  public JdbcQueryResponse<?> queryTable(
+  public Return<?> queryTable(
     @ApiParam("表名")
     @PathVariable("table")
     String table_name,
@@ -43,8 +43,16 @@ public class DatabaseQueryApi {
   ) throws SQLException {
     TableQueryRequest table_query = new TableQueryRequest(); 
     table_query.setTable_name(table_name);
-    RequestUtils.fetchRequestQueryMetaData(request, table_query.getResult_meta());
-    return restProvider.queryPageResult(table_query);
+    RequestUtils.fetchJdbcQueryRequest(request, table_query);
+    if (table_query.getSelect().hasCount()) {
+      if (table_query.getGroup_by().size() > 0) {
+        return restProvider.queryGroupCountResult(table_query);
+      } else {
+        return Return.wrap(restProvider.queryAllCountResult(table_query));
+      }
+    } else {
+      return restProvider.queryPageResult(table_query);
+    }
   }
 
   @ApiOperation("元信息")
@@ -61,7 +69,7 @@ public class DatabaseQueryApi {
   ) throws SQLException {
     TableQueryRequest table_query = new TableQueryRequest(); 
     table_query.setTable_name(table_name);
-    RequestUtils.fetchRequestQueryMetaData(request, table_query.getResult_meta());
+    RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
     return Return.wrap(restProvider.queryResultMeta(table_query));
   }
 
