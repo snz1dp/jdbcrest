@@ -294,7 +294,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       @Override
       @Nullable
       public TableMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
-        Object primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
+        Object primary_key = table_query.hasTable_meta() ? table_query.getTable_meta().getPrimary_key() :
+          doFetchTablePrimaryKey(conn, table_query.getTable_name());
         PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
         try {
           ResultSet rs = ps.executeQuery();
@@ -374,7 +375,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           @Override
           @Nullable
           public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-            Object primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
+            Object primary_key = table_query.hasTable_meta() ? table_query.getTable_meta().getPrimary_key() :
+               doFetchTablePrimaryKey(conn, table_query.getTable_name());
             PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
             try {
               ResultSet rs = null;

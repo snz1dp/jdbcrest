@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
@@ -115,6 +116,21 @@ public class DatabaseQueryApi {
     }
   }
 
+  @ApiOperation("主键更新")
+  @RequestMapping(path = "/tables/{table:.*}/{key:.*}")
+  public Return<?> updateTableRow(
+    @ApiParam("表名")
+    @PathVariable("table")
+    String table_name,
+    @ApiParam("主键")
+    @PathVariable("key")
+    String key,
+    HttpServletRequest request
+  ) throws IOException {
+    Object inputdata = RequestUtils.fetchRequestData(request);
+    return null;
+  }
+
   @SuppressWarnings("unchecked")
   @ApiOperation("主键查询")
   @GetMapping(path = "/tables/{table:.*}/{key:.*}")
@@ -128,39 +144,63 @@ public class DatabaseQueryApi {
     HttpServletRequest request
   ) throws SQLException {
     TableQueryRequest table_query = new TableQueryRequest();
+    table_query.setTable_name(table_name);
+
+    TableQueryRequest metaquery = new TableQueryRequest();
+    metaquery.setTable_name(table_name);
+    table_query.setTable_meta(restProvider.queryResultMeta(metaquery));
+
     int keyname_start = key.indexOf('$', 1);
     if (keyname_start > 0) {
       String key_composes[] = StringUtils.split(key, '|');
       for (String keyv : key_composes) {
+        boolean tobreak = false;
         String keyval = keyv.substring(0, keyname_start);
         String keycolumn = keyv.substring(keyname_start + 1);
+        if (StringUtils.isBlank(keycolumn)) {
+          keycolumn = (String)table_query.getTable_meta().getPrimary_key();
+          keyval = key;
+          tobreak = true;
+        }
         TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumn);
+        TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+        if (col != null) {
+          where_col.setType(col.getJdbc_type());
+        }
         where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, keyval);
         table_query.getWhere().add(where_col);
+        if (tobreak) break;
       }
     } else {
-      Object keycolumn = restProvider.getTablePrimaryKey(table_name);
+      Object keycolumn = table_query.getTable_meta().getPrimary_key();
       if (keycolumn == null) {
-        throw new NotFoundException("数据不存在");
+        throw new NotFoundException("主键不存在");
       }
       if (keycolumn instanceof List) {
         List<Object> keycolumns = (List<Object>)keycolumn;
         String key_values[] = StringUtils.split(key, '|');
         if (keycolumns.size() == key_values.length) {
-          throw new IllegalArgumentException("主键数据不正确");
+          throw new IllegalArgumentException("主键不正确");
         }
         for (int i = 0; i < key_values.length; i++) {
           TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumns.get(i));
+          TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+          if (col != null) {
+            where_col.setType(col.getJdbc_type());
+          }
           where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key_values[i]);
           table_query.getWhere().add(where_col);
         } 
       } else {
         TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumn);
+        TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+        if (col != null) {
+          where_col.setType(col.getJdbc_type());
+        }
         where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key);
         table_query.getWhere().add(where_col);
       }
     }
-    table_query.setTable_name(table_name);
     RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
     table_query.getResult().setSignleton(true);
     JdbcQueryResponse<?> ret = restProvider.querySignletonResult(table_query);
