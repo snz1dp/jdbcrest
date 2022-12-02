@@ -5,9 +5,6 @@ public abstract class Constants {
   // SELECT参数
   public static final String SELECT_ARG = "_select";
 
-  // 条件参数
-  public static final String WEHRE_ARG = "_where";
-
   // 排序参数
   public static final String ORDERBY_ARG = "_order";
 
