@@ -26,6 +26,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
@@ -61,8 +62,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
 
+  // 执行获取结果集
   @SuppressWarnings("null")
-  protected JdbcQueryResponse<List<Object>> fetchResultSet(ResultSet rs, JdbcQueryRequest.ResultMeta return_meta, Object primary_key) throws SQLException {
+  protected JdbcQueryResponse<List<Object>> doFetchResultSet(ResultSet rs, JdbcQueryRequest.ResultMeta return_meta, Object primary_key) throws SQLException {
     boolean onepack = true; 
     boolean meta = false;
     boolean objlist = false;
@@ -141,6 +143,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     return ret;
   }
 
+  // 获取Schemas
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
 
@@ -150,7 +153,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getSchemas();
         try {
-          return fetchResultSet(rs, null, null);
+          return doFetchResultSet(rs, null, null);
         } finally {
           rs.close();
         }
@@ -159,6 +162,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
 
+  // 获取目录
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
       @Override
@@ -167,7 +171,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getCatalogs();
         try {
-          return fetchResultSet(rs, null, null);
+          return doFetchResultSet(rs, null, null);
         } finally {
           rs.close();
         }
@@ -175,6 +179,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
 
+  // 获取数据库元信息
   @Override
   public JdbcMetaData getMetaData() throws SQLException {
     if (this.jdbcMetaData != null) return this.jdbcMetaData;
@@ -195,6 +200,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
 
+  // 获取表类表
   @Override
   public JdbcQueryResponse<List<Object>> getTables(
     JdbcQueryRequest.ResultMeta return_meta,
@@ -209,7 +215,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta = conn.getMetaData();
         ResultSet rs = table_meta.getTables(catalog, schema_pattern, table_name_pattern, types != null && types.length > 0 ? types : null);
         try {
-          return fetchResultSet(rs, return_meta, null);
+          return doFetchResultSet(rs, return_meta, null);
         } finally {
           rs.close();
         }
@@ -218,42 +224,60 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
   
-
-  private boolean testTableExisted(String table_name, String ...types) {
-    JdbcQueryResponse<List<Object>> table_ret = jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-
-      @Override
-      @Nullable
-      public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-        DatabaseMetaData table_meta = conn.getMetaData();
-        ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
-        try {
-          return fetchResultSet(rs, null, null);
-        } finally {
-          rs.close();
+  // 测试表是否存在
+  public boolean testTableExisted(String table_name, String ...types) {
+    long start_time = System.currentTimeMillis();
+    try {
+      JdbcQueryResponse<List<Object>> table_ret = jdbcTemplate.execute(
+        new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
+          @Override
+          @Nullable
+          public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
+            DatabaseMetaData table_meta = conn.getMetaData();
+            ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
+            try {
+              return doFetchResultSet(rs, null, null);
+            } finally {
+              rs.close();
+            }
+          }
         }
-      }
-
-    });
-    return table_ret != null && table_ret.data.size() > 0;
+      );
+      return table_ret != null && table_ret.data.size() > 0;
+    } finally {
+      log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
+    }
   }
 
+  // 获取主键
+  @Override
+  public Object getTablePrimaryKey(String table_name) throws SQLException {
+    return jdbcTemplate.execute(new ConnectionCallback<Object>() {
+      @Override
+      @Nullable
+      public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
+        return doFetchTablePrimaryKey(conn, table_name);
+      }
+    });
+
+  }
+
+  // 执行获取主键
   @SuppressWarnings("unchecked")
-  protected Object fetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
+  protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
     Object primary_key = null;
     ResultSet ks = conn.getMetaData().getPrimaryKeys(null, null, table_name);
     try {
-      JdbcQueryResponse<List<Object>> list = fetchResultSet(ks, null, null);
-      if (log.isDebugEnabled()) {
-        log.info("primary keys: " + JsonUtils.toJson(list.getData()));
-      }
+      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         List<Object> primary_key_lst = new LinkedList<>();
         for (Object keycol : list.getData()) {
           Map<String, Object> colobj = (Map<String, Object>)keycol;
           primary_key_lst.add(colobj.get("column_name"));
         }
-        primary_key = primary_key_lst.size() == 1 ? primary_key_lst.get(0) : primary_key_lst;
+        if (primary_key_lst.size() > 0) {
+          primary_key = primary_key_lst.size() == 1 ? primary_key_lst.get(0) : primary_key_lst;
+        }
       }
     } finally {
       ks.close();
@@ -261,12 +285,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     return primary_key;
   }
 
-  protected ResultMeta fetchResultSetMeta(final TableQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
+  // 执行获取结果集元信息
+  protected ResultMeta doFetchResultSetMeta(final TableQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
     return jdbcTemplate.execute(new ConnectionCallback<ResultMeta>() {
       @Override
       @Nullable
       public ResultMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
-        Object primary_key = fetchTablePrimaryKey(conn, table_query.getTable_name());
+        Object primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
         PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
         try {
           ResultSet rs = ps.executeQuery();
@@ -294,74 +319,107 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     if (!testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
-    return fetchResultSetMeta(table_query, sql_dialect_provider);
+    return doFetchResultSetMeta(table_query, sql_dialect_provider);
+  }
+
+  // 分页查询统计信息
+  protected boolean fetchQueryPageTotal(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
+    long start_time = System.currentTimeMillis();
+    try {
+      // 获取统计
+      JdbcQuery count_query = sql_dialect_provider.prepareQueryCount(table_query);
+      Long query_count = 0l;
+      if (count_query.hasParameter()) {
+        query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class, count_query.getParameters().toArray(new Object[0]));
+      } else {
+        query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class);
+      }
+      pageret.getData().total = query_count != null ? query_count : 0;
+      pageret.getData().offset = table_query.getResult().getOffset();
+
+      boolean has_data = true;
+      // 获取源信息
+      if (pageret.getData().total == 0 ||
+        pageret.getData().offset >= pageret.getData().total ||
+        table_query.getResult().getLimit() <= 0
+      ) {
+        has_data = false;
+        // 要求返回元信息
+        if (table_query.getResult().isContain_meta()) {
+          pageret.setMeta(doFetchResultSetMeta(table_query, sql_dialect_provider));
+        }
+      }
+      return has_data;
+    } finally {
+      log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  // 查询列表结果
+  protected JdbcQueryResponse<?> doQueryListResult(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
+    long start_time = System.currentTimeMillis();
+    try {
+      // 获取列表数据
+      JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(
+        new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
+          @Override
+          @Nullable
+          public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
+            Object primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
+            PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
+            try {
+              ResultSet rs = null;
+              try {
+                rs = ps.executeQuery();
+                return doFetchResultSet(rs, table_query.getResult(), primary_key);
+              } finally {
+                if (rs != null) {
+                  rs.close();
+                }
+              }
+            } finally {
+              ps.close();
+            }
+          }
+        }
+      );
+      return datalist;
+    } finally {
+      log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+    }
   }
 
   @Override
-  public JdbcQueryResponse<Page<Object>> queryPageResult(
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public JdbcQueryResponse<?> queryPageResult(
     TableQueryRequest table_query
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
 
+    long start_time = System.currentTimeMillis();
     String table_name = table_query.getTable_name();
     if (!testTableExisted(table_name)) {
-      throw new NotFoundException(String.format("%s不存在", table_name));
+      throw new NotFoundException(String.format("数据表%s不存在", table_name));
     }
 
     final JdbcQueryResponse<Page<Object>> pageret = new JdbcQueryResponse<Page<Object>>();
     pageret.setData(new Page<Object>());
 
-    // 获取统计
-    JdbcQuery count_query = sql_dialect_provider.prepareQueryCount(table_query);
-    Long query_count = 0l;
-    if (count_query.hasParameter()) {
-      query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class, count_query.getParameters().toArray(new Object[0]));
-    } else {
-      query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class);
-    }
-    pageret.getData().total = query_count != null ? query_count : 0;
-    pageret.getData().offset = table_query.getResult().getOffset();
-
-    // 获取源信息
-    if (pageret.getData().total == 0 ||
-      pageret.getData().offset >= pageret.getData().total ||
-      table_query.getResult().getLimit() <= 0) {
-      // 要求返回元信息
-      if (table_query.getResult().isContain_meta()) {
-        pageret.setMeta(fetchResultSetMeta(table_query, sql_dialect_provider));
-      }
+    // 获取分页统计
+    if (!this.fetchQueryPageTotal(table_query, sql_dialect_provider, pageret)) {
+      return pageret;
     }
 
-    // 获取数据
-    JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-      @Override
-      @Nullable
-      public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-        Object primary_key = fetchTablePrimaryKey(conn, table_query.getTable_name());
-        PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
-        try {
-          ResultSet rs = null;
-          try {
-            rs = ps.executeQuery();
-            return fetchResultSet(rs, table_query.getResult(), primary_key);
-          } finally {
-            if (rs != null) {
-              rs.close();
-            }
-          }
-        } finally {
-          ps.close();
-        }
-      }
-    });
+    // 获取分页数据
+    JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
 
     // 返回数据
-    if (datalist != null) {
+    if (datalist != null && datalist.getData() instanceof List) {
       pageret.setMeta(datalist.getMeta());
-      pageret.getData().data = datalist.getData();
+      pageret.getData().data = (List)datalist.getData();
     }
-
+    log.debug("执行表{}分页查询总耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
     return pageret;
   }
 
@@ -371,15 +429,50 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   @Override
-  public int queryAllCountResult(TableQueryRequest table_query) {
-    // TODO Auto-generated method stub
-    return 0;
+  @SuppressWarnings("unchecked")
+  public long queryAllCountResult(TableQueryRequest table_query) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    table_query.getResult().setRow_struct(JdbcQueryRequest.ResultMeta.ResultObjectStruct.list);
+    table_query.getResult().setLimit(1l);
+    JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
+    return (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
   }
 
   @Override
-  public JdbcQueryResponse<Page<Object>> queryGroupCountResult(TableQueryRequest table_query) {
-    // TODO Auto-generated method stub
-    return null;
+  public JdbcQueryResponse<?> queryGroupCountResult(TableQueryRequest table_query) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
+    JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
+    return datalist;
+  }
+
+  @Override
+  public JdbcQueryResponse<?> queryGroupResult(TableQueryRequest table_query) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
+    JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
+    return datalist;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public JdbcQueryResponse<?> querySignletonResult(TableQueryRequest table_query) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    table_query.getResult().setLimit(1l);
+    JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
+    if (((List<Object>)datalist.getData()).size() == 0) {
+      JdbcQueryResponse<Object> response = new JdbcQueryResponse<>();
+      return response;
+    }
+    Object data = ((List<Object>)datalist.getData()).get(0);
+    JdbcQueryResponse<Object> ret = new JdbcQueryResponse<>();
+    ret.setData(data);
+    ret.setMeta(datalist.getMeta());
+    return ret;
   }
 
 }

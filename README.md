@@ -7,8 +7,8 @@
 ## 1.1、从数据表分页查询开始
 
 - 请求方式：`GET`或`POST`
-- 接口地址：/jdbc/rest/api/tables/<表名>
-- 请求参数：`QueryString`、`PostForm`
+- 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;
+- 请求参数：`QueryString`、`FormData`
 - 请求参数：
 
 | 参数名称              | 参数类型  | 是否必须 | 缺省值 | 参数说明 |
@@ -19,12 +19,12 @@
 | _distinct              | 字符串   |  否     |           | 为true时表示排除重行  |
 | _groupby              | 字符串   |  否     |           | 分组查询，格式为：<br>分组字段->>having:sum(test):$gt:12<br>分组字段  |
 | _order              | 字符串   |  否     |           | 字段排序，格式为：<br>-字段1,字段2  |
-| _count              | 字符串   |  否     |           | 统计记录，格式为：字段名  |
-| _result.signleton   | 布尔   |  否     | map          | 为true时表示单对象返回  |
+| _count              | 字符串   |  否     |           | 统计数量，格式为：字段名  |
+| _result.signleton   | 布尔   |  否     | map          | 为true时表示对象数据返回  |
 | _result.row_struct   | 枚举   |  否     | map          | 可选值：<br>list表示列表<br>map表示对象  |
 | _result.contain_meta | 布尔     |  否     | false        | 为true时在信封中返回数据元信息 |
-| _result.all_column   | 布尔     |  否     | true        | 为true时返回所有字段数据，<br>否则由_result.column参数指定返回    |
 | _result.column       | 字符串数组 |  否     |             | 可多个，用户设置返回字段或字段返回类型 |
+| _result.all_column   | 布尔     |  否     | true        | 为true时返回所有字段数据，<br>否则由_result.column参数指定返回    |
 | _result.column.&lt;field&gt;.type | 枚举  |  否     | raw       | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |        | 设置指定的字段返回为其他名称          |
 | &lt;field&gt;[$&lt;type&gt;] | 字符串  |  否     |        | 字段名格式：字段名$JDBC类型<br>值格式：操作符[.&lt;值&gt;]          |
@@ -54,6 +54,8 @@
 | $between | 在..之间 | value=$between.1,4 |
 
 - 应答格式：
+
+**默认分页返回**
 
 ```json
 {
@@ -96,8 +98,69 @@
 }
 ```
 
+**统计数量返回**
+
+> 请求包含统计数量(_count)参数时。
+
+```json
+{
+  "code": 0, // 响应代码，成功为0，其他为失败
+  "message": "string", // 响应信息，如：操作成功
+  "data": 0 // 返回数量
+}
+```
+
+**分组统计返回**
+
+> 请求包含分组(_groupby)参数时。
+
+```json
+{
+  "code": 0, // 响应代码，成功为0，其他为失败
+  "message": "string", // 响应信息，如：操作成功
+  "data": [ // 分组列表
+    ... // 分组数据
+  ] 
+}
+```
+
+
+**对象数据返回**
+
+> 请求包含对象数据返回(_result.signleton)参数时。
+
+```json
+{
+  "code": 0, // 响应代码，成功为0，其他为失败
+  "message": "string", // 响应信息，如：操作成功
+  "data": { // 对象数据
+    ...
+  }
+}
+```
+
+> 仅返回单一对象数据。
+
 - 查询示例
 
 ```bash
 curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 ```
+
+## 1.2、通过主键查询数据行
+
+- 请求方式：`GET`
+- 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;/&lt;主键&gt;
+- 请求参数：`QueryString`
+- 请求参数：
+
+| 参数名称              | 参数类型  | 是否必须 | 缺省值 | 参数说明 |
+| -------------------- | ------- | ------- | ----------- | ----------------------- |
+| 表名               | 字符串     |  是     |            | 指定的数据表             |
+| 主键               | 字符串     |  是     |            | 数据行主键<br>格式：字段名$表达式.$JDBC类型 |
+| _result.row_struct   | 枚举   |  否     | map          | 可选值：<br>list表示列表<br>map表示对象  |
+| _result.contain_meta | 布尔     |  否     | false        | 为true时在信封中返回数据元信息 |
+| _result.all_column   | 布尔     |  否     | true        | 为true时返回所有字段数据，<br>否则由_result.column参数指定返回    |
+| _result.column       | 字符串数组 |  否     |             | 可多个，用户设置返回字段或字段返回类型 |
+| _result.column.&lt;field&gt;.type | 枚举  |  否     | raw       | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
+| _result.column.&lt;field&gt;.alais | 字符串  |  否     |        | 设置指定的字段返回为其他名称          |

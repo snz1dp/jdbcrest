@@ -76,6 +76,7 @@ public class JdbcQueryResponse<T> extends Return<T> {
 
         String column_name = rs_meta.getColumnName(i);
         if (request != null &&
+          !request.isAll_columns() &&
           request.getColumns().size() > 0 &&
           !request.getColumns().containsKey(column_name)
         ) {

@@ -23,6 +23,9 @@ public class JdbcQueryRequest implements Serializable {
   // 查询请求
   private SelectMeta select = new SelectMeta();
 
+  // 关联
+  private List<Join> join = new LinkedList<>();
+
   // 分组
   private List<GroupBy> group_by = new LinkedList<>();
 
@@ -38,6 +41,11 @@ public class JdbcQueryRequest implements Serializable {
   // 有分组
   public boolean hasGroup_by() {
     return this.group_by != null && this.group_by.size() > 0;
+  }
+
+  // 有关联
+  public boolean hasJoin() {
+    return this.join != null && this.join.size() > 0;
   }
 
   // 有排序
@@ -267,6 +275,25 @@ public class JdbcQueryRequest implements Serializable {
   }
 
   @Data
+  public static class Join implements Serializable {
+
+    private String table_name;
+
+    private String join_column;
+
+    private String outer_column;
+
+    public static Join of(String table_name, String join_column, String right_column) {
+      Join join = new Join();
+      join.setTable_name(table_name);
+      join.setJoin_column(join_column);
+      join.setOuter_column(right_column);
+      return join;
+    }
+
+  }
+
+  @Data
   public static class WhereCloumn implements Serializable {
 
     private String column;
@@ -413,8 +440,7 @@ public class JdbcQueryRequest implements Serializable {
   @Data
   public static class ResultMeta implements Serializable {
 
-    // 返回所有字段
-    @Deprecated
+    // 默认返回查询的字段
     private boolean all_columns = true;
 
     // 单对象返回

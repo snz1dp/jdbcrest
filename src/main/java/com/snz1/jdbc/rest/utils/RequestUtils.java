@@ -186,6 +186,15 @@ public abstract class RequestUtils {
       );
     }
     
+    // 获取返回所有查询字段
+    String all_columns_val = request.getParameter(Constants.RESULT_ALL_COLUMNS_ARG);
+    if (all_columns_val != null) {
+      result_meta.setAll_columns(
+        StringUtils.isBlank(all_columns_val) ||
+        all_columns_val.equals("true")
+      );
+    }
+    
     // 返回行返回结构
     String row_struct = request.getParameter(Constants.RESULT_ROW_STRUCT_ARG);
     if (StringUtils.isNotBlank(row_struct)) {
@@ -263,9 +272,35 @@ public abstract class RequestUtils {
     return where_condition;
   }
 
+  // 从请求参数中提取关联查询
+  public static List<JdbcQueryRequest.Join> fetchQueryRequestJoin(HttpServletRequest request, List<JdbcQueryRequest.Join> join) {
+    String[] join_vals = request.getParameterValues(Constants.JOIN_ARG);
+    if (join_vals == null || join_vals.length == 0) {
+      return join;
+    }
+
+    for (String join_val : join_vals) {
+      String join_fields[] = StringUtils.split(join_val, ',');
+      if (join_fields == null || join_fields.length == 0) continue;
+      for (String join_field : join_fields) {
+        String []join_field_data = StringUtils.split(join_field, ':');
+        if (join_field_data.length != 3) {
+          throw new IllegalArgumentException(String.format("关联参数错误：%s", join_field));
+        }
+        JdbcQueryRequest.Join join_col = JdbcQueryRequest.Join.of(
+          join_field_data[0], join_field_data[1], join_field_data[2]
+        );
+        join.add(join_col);
+      }
+    }
+
+    return join;
+  }
+
   // 从请求中获取查询应答描述
   public static JdbcQueryRequest fetchJdbcQueryRequest(HttpServletRequest request, JdbcQueryRequest query) {
     fetchQueryRequestSelect(request, query.getSelect());
+    fetchQueryRequestJoin(request, query.getJoin());
     fetchQueryRequestGroupBy(request, query.getGroup_by());
     fetchQueryRequestWhereCondition(request, query.getWhere());
     fetchQueryRequestOrderBy(request, query.getOrder_by());

@@ -28,8 +28,8 @@ public class PostgreSQLDialectProvider extends AbstractSQLDialectProvider {
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
       for (int i = 0; i < base_query.getParameters().size(); i++) {
-        Object param = base_query.getParameters().get(i + 1);
-        ps.setObject(i, param);
+        Object param = base_query.getParameters().get(i);
+        ps.setObject(i + 1, param);
       };
     }
     return ps;

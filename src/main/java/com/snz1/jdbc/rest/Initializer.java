@@ -26,40 +26,42 @@ public class Initializer implements SpringApplicationRunListener {
   }
 
   private void createDatabase(ConfigurableEnvironment environment) {
-    String databaseUsername = environment.getProperty("spring.datasource.username", "postgres");
-    String databasePassword = environment.getProperty("spring.datasource.password", "123456");
-    String databaseJdbcURL = environment.getProperty("JDBC_URL", "");
-    
-    // String databaseName = environment.getProperty("PG_DATABASE", "ingress");
+    String databaseUsername = environment.getProperty("spring.datasource.admin.username", "postgres");
+    String databasePassword = environment.getProperty("spring.datasource.admin.password", "123456");
+    String databaseJdbcURL = environment.getProperty("spring.datasource.url", "");
 
-    // Connection conn;
-    // try {
-    //   conn = DriverManager.getConnection(databaseJdbcURL, databaseUsername, databasePassword);
-    // } catch (SQLException e) {
-    //   throw new IllegalStateException("创建数据库连接失败: " + e.getMessage(), e);
-    // }
-    // ResultSet result = null;
-    // try {
-    //   Statement stmt = conn.createStatement();
-    //   result = stmt.executeQuery(String.format("SELECT u.datname FROM pg_catalog.pg_database u where u.datname='%s';", databaseName));
-    //   if (!result.next()) {
-    //     String createSQL = String.format("CREATE DATABASE %s WITH OWNER %s;", databaseName, databaseUsername);
-    //     log.info("执行SQL语句: " + createSQL);
-    //     stmt.execute(createSQL);
-    //   }
-    // } catch(SQLException e) {
-    //   if (!StringUtils.contains(e.getMessage(), "already exists")) {
-    //     throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
-    //   }
-    // } finally {
-    //   try {
-    //     if (result != null) {
-    //       result.close();
-    //     }
-    //     conn.close();
-    //   } catch(Throwable e) {
-    //   }
-    // }
+    String databaseName = environment.getProperty("spring.datasource.database.name", "");
+    if (StringUtils.isBlank(databaseName)) return;
+
+    Connection conn;
+    try {
+      conn = DriverManager.getConnection(databaseJdbcURL, databaseUsername, databasePassword);
+    } catch (SQLException e) {
+      throw new IllegalStateException("创建数据库连接失败: " + e.getMessage(), e);
+    }
+
+    ResultSet result = null;
+    try {
+      Statement stmt = conn.createStatement();
+      result = stmt.executeQuery(String.format("SELECT u.datname FROM pg_catalog.pg_database u where u.datname='%s';", databaseName));
+      if (!result.next()) {
+        String createSQL = String.format("CREATE DATABASE %s WITH OWNER %s;", databaseName, databaseUsername);
+        log.info("执行SQL语句: " + createSQL);
+        stmt.execute(createSQL);
+      }
+    } catch(SQLException e) {
+      if (!StringUtils.contains(e.getMessage(), "already exists")) {
+        throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
+      }
+    } finally {
+      try {
+        if (result != null) {
+          result.close();
+        }
+        conn.close();
+      } catch(Throwable e) {
+      }
+    }
 
   }
 

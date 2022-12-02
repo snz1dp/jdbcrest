@@ -17,8 +17,10 @@ public abstract class Constants {
   // 去除重行参数
   public static final String DISTINCT_ARG =  "_distinct";
 
+  // 关联查询
+  public static final String JOIN_ARG =  "_join";
+
   // 返回列请求参数
-  @Deprecated
   public static final String RESULT_ALL_COLUMNS_ARG = "_result.all_column";
 
   // 返回列请求参数
