@@ -1,15 +1,17 @@
 package com.snz1.jdbc.rest.utils;
 
-import java.math.BigInteger;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.postgresql.jdbc.PgArray;
 
@@ -33,60 +35,11 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   @SuppressWarnings("unchecked")
   public static Object listToArray(List<?> list, JDBCType type) {
     if (type == null) return ((List<Object>)list).toArray(new Object[0]);
-    if (list.get(0) instanceof String) {
-      if (type == JDBCType.DATE || type == JDBCType.TIMESTAMP || type == JDBCType.TIMESTAMP_WITH_TIMEZONE) {
-        List<Date> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(JsonUtils.fromJson((String)o, Date.class));
-        });
-        return datelist.toArray(new Date[0]);
-      } else if (type == JDBCType.TIME) {
-        List<Time> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(JsonUtils.fromJson((String)o, Time.class));
-        });
-        return datelist.toArray(new Time[0]);
-      } else if (type == JDBCType.BIGINT) {
-        List<BigInteger> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(BigInteger.valueOf(Long.parseLong((String)o)));
-        });
-        return datelist.toArray(new BigInteger[0]);
-      } else if (type == JDBCType.INTEGER || type == JDBCType.SMALLINT || type == JDBCType.TINYINT || type == JDBCType.BIT) {
-        List<Integer> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(Integer.parseInt((String)o));
-        });
-        return datelist.toArray(new Integer[0]);
-      } else if (type == JDBCType.FLOAT || type == JDBCType.DOUBLE || type == JDBCType.DECIMAL) {
-        List<Double> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(Double.parseDouble((String)o));
-        });
-        return datelist.toArray(new Double[0]);
-      }
-    } else if (list.get(0) instanceof Integer) {
-      return list.toArray(new Integer[0]);
-    } else if (list.get(0) instanceof Boolean) {
-      return list.toArray(new Boolean[0]);
-    } else if (list.get(0) instanceof Double) {
-      if (type == JDBCType.BIGINT) {
-        List<BigInteger> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(BigInteger.valueOf(((Double)o).longValue()));
-        });
-        return datelist.toArray(new BigInteger[0]);
-      } if (type == JDBCType.INTEGER || type == JDBCType.SMALLINT || type == JDBCType.TINYINT || type == JDBCType.BIT) {
-        List<Integer> datelist = new LinkedList<>();
-        list.forEach(o -> {
-          datelist.add(Integer.valueOf((int)((Double)o).longValue()));
-        });
-        return datelist.toArray(new Integer[0]);
-      } else {
-        return list.toArray(new Double[0]);
-      }
-    }
-    return null;
+    List<Object> retlst = new LinkedList<>();
+    list.forEach(o -> {
+      retlst.add(convert(o, type));
+    });
+    return retlst.toArray(new Object[0]);
   }
 
   public static Object jsonToArray(String val, JDBCType type) {
@@ -110,6 +63,110 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     } else {
       return splitToArray(val, type);
     }
+  }
+
+  public static Object convert(Object input, JDBCType type) {
+    if (input == null || type == null) {
+      return input;
+    }
+    if (type == JDBCType.INTEGER ||
+      type == JDBCType.SMALLINT ||
+      type == JDBCType.TINYINT ||
+      type == JDBCType.BIT ||
+      type == JDBCType.BIGINT) {
+      if (input instanceof Double) {
+        return ((Double)input).longValue();
+      } else if (input instanceof Float) {
+        return ((Float)input).longValue();
+      } else if (input instanceof String) {
+        return Integer.parseInt((String)input);
+      }
+      return input;
+    } else if (type == JDBCType.DECIMAL ||
+      type == JDBCType.NUMERIC ||
+      type == JDBCType.REAL ||
+      type == JDBCType.FLOAT ||
+      type == JDBCType.DOUBLE) {
+      if (input instanceof Number) {
+        return input;
+      } if (input instanceof String) {
+        return Double.parseDouble((String)input);
+      }
+      return input;
+    } else if (type == JDBCType.DATE) {
+      if (input instanceof String) {
+        try {
+          return new java.sql.Date(new SimpleDateFormat("yyyy-MM-dd").parse((String)input).getTime());
+        } catch(ParseException e) {
+          throw new IllegalArgumentException(e.getMessage(), e);
+        }
+      } else if (input instanceof java.sql.Date) {
+        return input;
+      } else if (input instanceof Date) {
+        return new java.sql.Date(((Date)input).getTime());
+      } else if (input instanceof Double) {
+        return new java.sql.Date(((Double)input).longValue());
+      } else if (input instanceof Float) {
+        return new java.sql.Date(((Float)input).longValue());
+      } else if (input instanceof Long) {
+        return new java.sql.Date((Long)input);
+      } else if (input instanceof Integer) {
+        return new java.sql.Date((Integer)input);
+      }
+      return input;
+    } else if (type == JDBCType.TIME || type == JDBCType.TIME_WITH_TIMEZONE) {
+      if (input instanceof String) {
+        try {
+          return new SimpleDateFormat("HH:mm:ss").parse((String)input);
+        } catch(ParseException e1) {
+          try {
+            return new SimpleDateFormat("HH:mm").parse((String)input);
+          } catch(ParseException e2) {
+            throw new IllegalArgumentException(e2.getMessage(), e2);
+          }
+        }
+      } if (input instanceof Date) {
+        return input;
+      } else if (input instanceof Double) {
+        return new Time(((Double)input).longValue());
+      } else if (input instanceof Float) {
+        return new Time(((Float)input).longValue());
+      } else if (input instanceof Long) {
+        return new Time((Long)input);
+      } else if (input instanceof Integer) {
+        return new Time((Integer)input);
+      }
+      return input;
+    } else if (type == JDBCType.TIMESTAMP || type == JDBCType.TIMESTAMP_WITH_TIMEZONE) {
+      if (input instanceof String) {
+        try {
+          return new SimpleDateFormat(JsonUtils.JsonDateFormat).parse((String)input);
+        } catch(ParseException e1) {
+          try {
+            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse((String)input);
+          } catch(ParseException e2) {
+            throw new IllegalArgumentException(e2.getMessage(), e2);
+          }
+        }
+      } else if (input instanceof Date) {
+        return input;
+      } else if (input instanceof Double) {
+        return new Date(((Double)input).longValue());
+      } else if (input instanceof Float) {
+        return new Date(((Float)input).longValue());
+      } else if (input instanceof Long) {
+        return new Date((Long)input);
+      } else if (input instanceof Integer) {
+        return new Date((Integer)input);
+      }
+      return input;
+    } else if (type == JDBCType.BLOB) {
+      if (input instanceof String) {
+        return Base64.decodeBase64((String)input);
+      }
+      return input;
+    }
+    return input;
   }
 
 }

@@ -1,6 +1,7 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
@@ -27,12 +28,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
+import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
-import com.snz1.jdbc.rest.data.JdbcQueryResponse.ResultMeta;
-import com.snz1.jdbc.rest.data.JdbcQueryResponse.ResultMeta.ResultColumn;
+import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
@@ -75,7 +77,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       objlist = JdbcQueryRequest.ResultMeta.ResultObjectStruct.list.equals(return_meta.getRow_struct());
     }
 
-    ResultMeta result_meta = ResultMeta.of(rs.getMetaData(), return_meta, primary_key);
+    TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key);
     List<Object> rows = new LinkedList<>();
 
     while(rs.next()) {
@@ -89,7 +91,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       } else {
         row_map = new LinkedHashMap<>();
       }
-      for (ResultColumn col_item : result_meta.getColumns()) {
+      for (TableColumn col_item : result_meta.getColumns()) {
         String col_name = col_item.getName();
         Object col_obj = JdbcUtils.getResultSetValue(rs, col_item.getIndex() + 1);
         if (col_obj != null) {
@@ -286,18 +288,19 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 执行获取结果集元信息
-  protected ResultMeta doFetchResultSetMeta(final TableQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
-    return jdbcTemplate.execute(new ConnectionCallback<ResultMeta>() {
+  protected TableMeta doFetchResultSetMeta(final TableQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
+    // TODO 实现表元信息缓存
+    return jdbcTemplate.execute(new ConnectionCallback<TableMeta>() {
       @Override
       @Nullable
-      public ResultMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
+      public TableMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
         Object primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
         PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
         try {
           ResultSet rs = ps.executeQuery();
           try {
             rs = ps.getResultSet();
-            return ResultMeta.of(rs.getMetaData(), table_query.getResult(), primary_key);
+            return TableMeta.of(rs.getMetaData(), table_query.getResult(), primary_key);
           } finally {
             rs.close();
           }
@@ -309,7 +312,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 元信息
-  public JdbcQueryResponse.ResultMeta queryResultMeta(
+  public TableMeta queryResultMeta(
     TableQueryRequest table_query
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
@@ -323,7 +326,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 分页查询统计信息
-  protected boolean fetchQueryPageTotal(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
+  protected boolean doFetchQueryPageTotal(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
     long start_time = System.currentTimeMillis();
     try {
       // 获取统计
@@ -346,7 +349,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         has_data = false;
         // 要求返回元信息
         if (table_query.getResult().isContain_meta()) {
-          pageret.setMeta(doFetchResultSetMeta(table_query, sql_dialect_provider));
+          if (table_query.hasTable_meta()) {
+            pageret.setMeta(table_query.getTable_meta());
+          } else {
+            TableMeta table_meta = doFetchResultSetMeta(table_query, sql_dialect_provider);
+            table_query.setTable_meta(table_meta);
+            pageret.setMeta(table_meta);
+          }
         }
       }
       return has_data;
@@ -399,15 +408,18 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
     long start_time = System.currentTimeMillis();
     String table_name = table_query.getTable_name();
-    if (!testTableExisted(table_name)) {
-      throw new NotFoundException(String.format("数据表%s不存在", table_name));
+
+    if (!table_query.hasTable_meta()) { // 无表元信息则查询
+      if (!testTableExisted(table_name)) {
+        throw new NotFoundException(String.format("数据表%s不存在", table_name));
+      }
     }
 
     final JdbcQueryResponse<Page<Object>> pageret = new JdbcQueryResponse<Page<Object>>();
     pageret.setData(new Page<Object>());
 
     // 获取分页统计
-    if (!this.fetchQueryPageTotal(table_query, sql_dialect_provider, pageret)) {
+    if (!this.doFetchQueryPageTotal(table_query, sql_dialect_provider, pageret)) {
       return pageret;
     }
 
@@ -473,6 +485,70 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     ret.setData(data);
     ret.setMeta(datalist.getMeta());
     return ret;
+  }
+
+  protected Object doInsertTableData(
+    JdbcInsertRequest insert_request,
+    SQLDialectProvider sql_dialect_provider
+  ) throws SQLException {
+    return jdbcTemplate.execute(new ConnectionCallback<Object>() {
+      @Override
+      @Nullable
+      public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
+        PreparedStatement ps = sql_dialect_provider.prepareDataInsert(conn, insert_request);
+        try {
+          List<Map<String, Object>> input_datas = insert_request.getInputDataList();
+          for (Map<String, Object> input_data : input_datas) {
+            int i = 1;
+            for (TableColumn v : insert_request.getColumns()) {
+              if (v.getRead_only() != null && v.getRead_only()) continue;
+              if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+              if (v.getWritable() != null && v.getWritable()) {
+                Object val = JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type());
+                ps.setObject(i, val);
+                i = i + 1;
+              }
+            }
+            ps.addBatch();
+          }
+          int inserted[] = ps.executeBatch();
+          if (!insert_request.hasAutoGenerated()) {
+            return inserted;
+          }
+          ResultSet auto_keys = ps.getGeneratedKeys();
+          List<Integer> key_list = new LinkedList<>();
+          while(auto_keys.next()) {
+            key_list.add(auto_keys.getInt(1));
+          }
+          return new Object[] {
+            inserted, key_list.toArray(new Integer[0])
+          };
+        } finally {
+          JdbcUtils.closeStatement(ps);
+        }
+      }
+    });
+  }
+
+  @Override
+  public Object insertTableData(
+    JdbcInsertRequest insert_request
+  ) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Object result = doInsertTableData(insert_request, sql_dialect_provider);
+    if (insert_request.testSignletonData()) {
+      if (insert_request.hasAutoGenerated()) {
+        return new Object[] {
+          Array.get(Array.get(result, 0), 0),
+          Array.get(Array.get(result, 1), 0),
+        };
+      } else {
+        return Array.get(result, 0);
+      }
+    } else {
+      return result;
+    }
   }
 
 }

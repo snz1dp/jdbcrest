@@ -30,7 +30,7 @@ public class Initializer implements SpringApplicationRunListener {
     String databasePassword = environment.getProperty("spring.datasource.admin.password", "123456");
     String databaseJdbcURL = environment.getProperty("spring.datasource.url", "");
 
-    String databaseName = environment.getProperty("spring.datasource.database.name", "");
+    String databaseName = environment.getProperty("spring.datasource.create.database", "");
     if (StringUtils.isBlank(databaseName)) return;
 
     Connection conn;

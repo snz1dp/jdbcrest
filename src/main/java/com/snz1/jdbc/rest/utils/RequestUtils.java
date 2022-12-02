@@ -1,8 +1,11 @@
 package com.snz1.jdbc.rest.utils;
 
+import java.io.IOException;
 import java.sql.JDBCType;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+
+import gateway.api.JsonUtils;
 
 public abstract class RequestUtils {
 
@@ -306,6 +311,28 @@ public abstract class RequestUtils {
     fetchQueryRequestOrderBy(request, query.getOrder_by());
     fetchQueryRequestResultMeta(request, query.getResult());
     return query;
+  }
+
+  // 从请求中获取数据
+  public static Object fetchRequestData(HttpServletRequest request) throws IOException {
+    if (request.getParameterNames().hasMoreElements()) {
+      Map<String, Object> ret = new LinkedHashMap<String, Object>();
+      Enumeration<String> name_enumeration = request.getParameterNames();
+      while(name_enumeration.hasMoreElements()) {
+        String param_name = name_enumeration.nextElement();
+        String param_values[] = request.getParameterValues(param_name);
+        if (param_values == null) {
+          ret.put(param_name, null);
+        } else if (param_values.length == 1) {
+          ret.put(param_name, param_values[0]);
+        } else {
+          ret.put(param_name, Arrays.asList(param_values));
+        }
+      }
+      return ret;
+    } else {
+      return JsonUtils.fromJson(request.getInputStream(), Object.class);
+    }
   }
 
 }

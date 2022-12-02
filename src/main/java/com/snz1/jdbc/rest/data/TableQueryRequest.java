@@ -13,4 +13,17 @@ public class TableQueryRequest extends JdbcQueryRequest {
   // 查询表名
   private String table_name;
 
+  public TableQueryRequest() {}
+
+  public static TableQueryRequest of(String table_name) {
+    TableQueryRequest treq = new TableQueryRequest();
+    treq.setTable_name(table_name);
+    return treq;
+  }
+
+  // 克隆
+  public TableQueryRequest clone() {
+    return (TableQueryRequest)super.clone();
+  }
+
 }

@@ -15,7 +15,7 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 import lombok.Data;
 
 @Data
-public class JdbcQueryRequest implements Serializable {
+public class JdbcQueryRequest implements Serializable, Cloneable {
 
   // 请求ID
   private String request_id;
@@ -37,6 +37,42 @@ public class JdbcQueryRequest implements Serializable {
 
   // 查询结果描述
   private ResultMeta result = new ResultMeta();
+
+  // 表元信息
+  private TableMeta table_meta;
+
+  // 克隆
+  public JdbcQueryRequest clone() {
+    try {
+      return (JdbcQueryRequest)super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new IllegalStateException(e.getMessage(), e);
+    }
+  }
+
+  public void resetWhere() {
+    this.where = new LinkedList<>();
+  }
+
+  public void resetGroup_by() {
+    this.order_by = new LinkedList<>();
+  }
+
+  // 有表元信息
+  public boolean hasTable_meta() {
+    return this.table_meta != null;
+  }
+
+  // 重新编译
+  public void rebuildWhere() {
+    if (!this.hasTable_meta()) return;
+    this.where.forEach(w -> {
+      if (w.getType() != null) return;
+      TableColumn col = getTable_meta().findColumn(w.getColumn());
+      if (col == null) return;
+      w.setType(col.getJdbc_type());
+    });
+  }
 
   // 有分组
   public boolean hasGroup_by() {
@@ -165,7 +201,7 @@ public class JdbcQueryRequest implements Serializable {
 
     public void buildParameters(List<Object> parameters) {
       if (this.operation.parameter_count() == 1) {
-        parameters.add(Array.get(JdbcUtils.toArray(this.value, this.type), 0));
+        parameters.add(JdbcUtils.convert(this.value, this.type));
       } else if (this.operation.parameter_count() == 2) {
         Object data = JdbcUtils.toArray(this.value, this.type);
         parameters.add(Array.get(data, 0));
@@ -389,7 +425,7 @@ public class JdbcQueryRequest implements Serializable {
       if (this.condition != null) {
         ConditionOperation operation = condition.getOperation();
         if (operation.parameter_count() == 1) {
-          parameters.add(this.condition.getValue());
+          parameters.add(JdbcUtils.convert(this.condition.getValue(), this.type));
         } else if (operation.parameter_count() == 2) {
           Object data = JdbcUtils.toArray(condition.getValue(), this.type);
           parameters.add(Array.get(data, 0));
@@ -403,7 +439,7 @@ public class JdbcQueryRequest implements Serializable {
         for (Condition condition : this.conditions) {
           ConditionOperation operation = condition.getOperation();
           if (operation.parameter_count() == 1) {
-            parameters.add(this.condition.getValue());
+            parameters.add(JdbcUtils.convert(this.condition.getValue(), this.type));
           } else if (operation.parameter_count() == 2) {
             Object data = JdbcUtils.toArray(condition.getValue(), this.type);
             parameters.add(Array.get(data, 0));

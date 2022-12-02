@@ -7,6 +7,7 @@ import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +21,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     JdbcQuery base_query = null;
     try {
-      base_query = this.createQueryRequestBaseSQL(table_query);
-      StringBuffer count_buf = new StringBuffer("select count(*) from (");
-      count_buf.append(base_query.getSql())
-              .append(") AS a");
-      base_query.setSql(count_buf.toString());
+      base_query = this.createQueryRequestBaseSQL(table_query, true);
       return base_query;
     } finally {
       if (log.isDebugEnabled()) {
@@ -38,20 +35,24 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 查询对象
-  protected JdbcQuery createQueryRequestBaseSQL(TableQueryRequest table_query) {
+  protected JdbcQuery createQueryRequestBaseSQL(TableQueryRequest table_query, boolean docount) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
     try {
       sql.FROM(table_query.getTable_name());
 
-      if (table_query.getSelect().hasCount()) {
-        if (table_query.hasGroup_by()) {
+      if (table_query.getSelect().hasCount() || docount) {
+        if (!docount && table_query.hasGroup_by()) {
           table_query.getGroup_by().forEach(g -> {
             sql.SELECT(g.getColumn());
           });
         }
-        sql.SELECT(String.format("count(%s)", table_query.getSelect().getCount()));
+        if (table_query.getSelect().hasCount()) {
+          sql.SELECT(String.format("count(%s)", table_query.getSelect().getCount()));
+        } else {
+          sql.SELECT("count(*)");
+        }
       } else if (!table_query.getSelect().hasColumns()) {
         if (table_query.getSelect().isDistinct()) {
           sql.SELECT_DISTINCT("*");
@@ -99,7 +100,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         });
       }
 
-      if (table_query.hasGroup_by()) {
+      if (!docount && table_query.hasGroup_by()) {
         table_query.getGroup_by().forEach(g -> {
           sql.GROUP_BY(g.getColumn());
           if (g.hasHaving()) {
@@ -122,7 +123,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         };
       }
 
-      if (table_query.hasOrder_by()) {
+      if (!docount && table_query.hasOrder_by()) {
         boolean order_append = false;
         for (JdbcQueryRequest.OrderBy o : table_query.getOrder_by()) {
           if (order_append) {
@@ -144,6 +145,31 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     }
 
     return new JdbcQuery(sql.toString(), parameters);
+  }
+
+  // 插入数据
+  protected String createInsertRequestBaseSQL(JdbcInsertRequest insert_request) {
+    long start_time = System.currentTimeMillis();
+    SQL sql = new SQL();
+    try {
+      sql.INSERT_INTO(insert_request.getTable_name());
+      insert_request.getColumns().forEach(v -> {
+        if (v.getRead_only() != null && v.getRead_only()) return;
+        if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+        if (v.getWritable() != null && v.getWritable()) {
+          sql.VALUES(v.getName(), "?");
+        }
+      });
+      return sql.toString();
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug(
+          "构建数据插入SQL耗时{}毫秒, SQL:\n{}",
+          (System.currentTimeMillis() - start_time),
+          sql.toString()
+        );
+      }
+    }
   }
 
 }

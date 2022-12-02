@@ -3,9 +3,11 @@ package com.snz1.jdbc.rest.service;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
 public interface JdbcRestProvider {
@@ -48,7 +50,7 @@ public interface JdbcRestProvider {
   ) throws SQLException;
 
   // 元信息
-  public JdbcQueryResponse.ResultMeta queryResultMeta(
+  public TableMeta queryResultMeta(
     TableQueryRequest table_query
   ) throws SQLException;
 
@@ -60,6 +62,11 @@ public interface JdbcRestProvider {
   // 查询单个应答
   public JdbcQueryResponse<?> querySignletonResult(
     TableQueryRequest table_query
+  ) throws SQLException;
+
+  // 插入表数据
+  public Object insertTableData(
+    JdbcInsertRequest insert_request
   ) throws SQLException;
 
 }
