@@ -11,7 +11,9 @@ import org.apache.ibatis.jdbc.SQL;
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -115,7 +117,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
       if (table_query.hasWhere()) {
         boolean where_append = false;
-        for (JdbcQueryRequest.WhereCloumn w : table_query.getWhere()) {
+        for (WhereCloumn w : table_query.getWhere()) {
           if (where_append) {
             sql.AND();
           } else {
@@ -181,28 +183,51 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     try {
       sql.UPDATE(update_request.getTable_name());
-      update_request.getColumns().forEach(v -> {
-        if (v.getRead_only() != null && v.getRead_only()) return;
-        if (v.getAuto_increment() != null && v.getAuto_increment()) return;
-        if (update_request.testRow_key(v.getName())) return;
-        if (v.getWritable() != null && v.getWritable()) {
-          sql.SET(String.format("%s = ?", v.getName()));
-        }
-      });
-      Object rowkey = update_request.getRow_key();
-      if (update_request.testComposite_key()) {
-        List<?> row_keys = (List<?>)rowkey;
+      if (update_request.hasWhere() || update_request.isPatch_update()) { // 条件更新或补丁更新
+        update_request.getInput_map().forEach((k, p) -> {
+          TableColumn v = update_request.findColumn(k);
+          if (v.getRead_only() != null && v.getRead_only()) return;
+          if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+          if (v.getWritable() != null && v.getWritable()) {
+            sql.SET(String.format("%s = ?", v.getName()));
+          }
+        });
+      } else { // 主键更新
+        update_request.getColumns().forEach(v -> {
+          if (v.getRead_only() != null && v.getRead_only()) return;
+          if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+          if (update_request.testRow_key(v.getName())) return;
+          if (v.getWritable() != null && v.getWritable()) {
+            sql.SET(String.format("%s = ?", v.getName()));
+          }
+        });
+      }
+      if (update_request.hasWhere()) { // 有查询条件的更新
         boolean append = false;
-        for (int i = 0; i < row_keys.size(); i++) {
+        for (int i = 0; i < update_request.getWhere().size(); i++) {
           if (append) {
             sql.AND();
           } else {
             append = true;
           }
-          sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL());
         }
-      } else {
-        sql.WHERE(String.format("%s = ?", rowkey));
+      } else { // 主键更新
+        Object rowkey = update_request.getRow_key();
+        if (update_request.testComposite_key()) {
+          List<?> row_keys = (List<?>)rowkey;
+          boolean append = false;
+          for (int i = 0; i < row_keys.size(); i++) {
+            if (append) {
+              sql.AND();
+            } else {
+              append = true;
+            }
+            sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+          }
+        } else {
+          sql.WHERE(String.format("%s = ?", rowkey));
+        }
       }
       return sql.toString();
     } finally {
@@ -216,12 +241,66 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     }
   }
 
+  // 删除数据
+  protected String createDeleteRequestBaseSQL(ManipulationRequest update_request) {
+    long start_time = System.currentTimeMillis();
+    SQL sql = new SQL();
+    try {
+      sql.DELETE_FROM(update_request.getTable_name());
+      if (update_request.hasWhere()) { // 有查询条件的更新
+        boolean append = false;
+        for (int i = 0; i < update_request.getWhere().size(); i++) {
+          if (append) {
+            sql.AND();
+          } else {
+            append = true;
+          }
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL());
+        }
+      } else { // 主键删除
+        Object rowkey = update_request.getRow_key();
+        if (update_request.testComposite_key()) {
+          List<?> row_keys = (List<?>)rowkey;
+          boolean append = false;
+          for (int i = 0; i < row_keys.size(); i++) {
+            if (append) {
+              sql.AND();
+            } else {
+              append = true;
+            }
+            sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+          }
+        } else {
+          sql.WHERE(String.format("%s = ?", rowkey));
+        }
+      }
+      return sql.toString();
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug(
+          "构建数据删除SQL耗时{}毫秒, SQL:\n{}",
+          (System.currentTimeMillis() - start_time),
+          sql.toString()
+        );
+      }
+    }
+  }
+
   // 准备更新数据
   public PreparedStatement prepareDataUpdate(
     Connection conn,
     ManipulationRequest update_request
   ) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createUpdateRequestBaseSQL(update_request));
+    return conn.prepareStatement(sqlbuf.toString());
+  }
+
+  // 准备删除数据
+  public PreparedStatement prepareDataDelete(
+    Connection conn,
+    ManipulationRequest delete_request
+  ) throws SQLException {
+    StringBuffer sqlbuf = new StringBuffer(this.createDeleteRequestBaseSQL(delete_request));
     return conn.prepareStatement(sqlbuf.toString());
   }
 

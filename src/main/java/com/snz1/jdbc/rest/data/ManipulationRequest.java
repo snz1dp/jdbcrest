@@ -59,6 +59,15 @@ public class ManipulationRequest implements Serializable {
   @JsonIgnore
   private List<TableIndex> _unique_index;
 
+  // 是否
+  @Setter
+  @Getter
+  private boolean patch_update;
+
+  // 条件过滤
+  @Getter
+  private List<WhereCloumn> where = new LinkedList<>();
+
   // 复制表元信息
   public void copyTableMeta(TableMeta table_meta) {
     this.setTable_name(table_meta.getTable_name());
@@ -218,6 +227,27 @@ public class ManipulationRequest implements Serializable {
       }
     }
     return null;
+  }
+
+
+  // 有查询条件
+  public boolean hasWhere() {
+    return this.where != null && this.where.size() > 0;
+  }
+
+  public boolean hasColumns() {
+    return this.columns != null;
+  }
+
+  // 重新编译查询条件
+  public void rebuildWhere() {
+    if (!this.hasColumns()) return;
+    this.where.forEach(w -> {
+      if (w.getType() != null) return;
+      TableColumn col = this.findColumn(w.getColumn());
+      if (col == null) return;
+      w.setType(col.getJdbc_type());
+    });
   }
 
 }

@@ -41,4 +41,10 @@ public interface SQLDialectProvider {
     ManipulationRequest update_request
   ) throws SQLException;
 
+  // 准备删除数据
+  PreparedStatement prepareDataDelete(
+    Connection conn,
+    ManipulationRequest delete_request
+  ) throws SQLException;
+
 }

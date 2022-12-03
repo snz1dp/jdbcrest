@@ -48,12 +48,21 @@ public abstract class Constants {
   public static final int DEFAULT_MAX_LIMIT = 1000;
 
   // 主键请求头
-  public static final String HEADER_PRIMARY_KEY_ARG = "primary_key";
+  public static final String HEADER_PRIMARY_KEY_ARG = "jdbcrest-primary-key";
 
   // 主键分割请求头
-  public static final String HEADER_KEY_SPLITTER_ARG = "key_splitter";
+  public static final String HEADER_KEY_SPLITTER_ARG = "jdbcrest-key-splitter";
 
   // 缺省主键分割符
   public static final String DEFAULT_KEY_SPLITTER = "|";
+
+  // 请求头修改模式
+  public static final String HEADER_UPDATE_MODE_ARG = "jdbcrest-update-mode";
+
+  // 补丁模式
+  public static final String UPDATE_PATCH_MODE = "patch";
+
+  // 条件前缀
+  public static final String HEADER_WHERE_PREFIX = "jdbcrest-";
 
 }

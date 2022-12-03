@@ -7,12 +7,16 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
@@ -67,6 +71,23 @@ public class DatabaseMetaApi {
     JdbcQueryRequest.ResultMeta result_meta = new JdbcQueryRequest.ResultMeta();
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
     return restProvider.getTables(result_meta, catalog, schemaPattern, tableNamePattern, types);
+  }
+
+  @ApiOperation("表元信息")
+  @RequestMapping(path = "/tables/{table:.*}/meta", method = {
+    RequestMethod.GET,
+    RequestMethod.POST,
+  })
+  public Return<TableMeta> queryMeta(
+    @ApiParam("表名")
+    @PathVariable("table")
+    String table_name,
+    HttpServletRequest request
+  ) throws SQLException {
+    TableQueryRequest table_query = new TableQueryRequest(); 
+    table_query.setTable_name(table_name);
+    RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
+    return Return.wrap(restProvider.queryResultMeta(table_query));
   }
 
 }

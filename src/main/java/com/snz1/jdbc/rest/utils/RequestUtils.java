@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
+import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import gateway.api.JsonUtils;
 
@@ -246,7 +247,7 @@ public abstract class RequestUtils {
   }
 
   // 从请求中提取条件描述
-  public static List<JdbcQueryRequest.WhereCloumn> fetchQueryRequestWhereCondition(HttpServletRequest request, List<JdbcQueryRequest.WhereCloumn> where_condition) {
+  public static List<WhereCloumn> fetchQueryRequestWhereCondition(HttpServletRequest request, List<WhereCloumn> where_condition) {
     Enumeration<String> param_names = request.getParameterNames();
     while(param_names.hasMoreElements()) {
       String param_name = param_names.nextElement();
@@ -262,7 +263,7 @@ public abstract class RequestUtils {
         column_type = JDBCType.valueOf(StringUtils.upperCase(type_name));
         param_name = param_name.substring(0, type_start);
       }
-      JdbcQueryRequest.WhereCloumn where_column = JdbcQueryRequest.WhereCloumn.of(param_name);
+      WhereCloumn where_column = WhereCloumn.of(param_name);
       where_column.setType(column_type);
 
       for (String param_value : param_values) {
@@ -368,6 +369,64 @@ public abstract class RequestUtils {
       custom.setKey_splitter(Constants.DEFAULT_KEY_SPLITTER);
     }
     return custom;
+  }
+
+  // 判断更新是否补丁方式
+  public static boolean testRequestUpdateIsPatchMode(HttpServletRequest request) {
+    String update_mode = request.getHeader(Constants.HEADER_UPDATE_MODE_ARG);
+    return StringUtils.equalsIgnoreCase(update_mode, Constants.UPDATE_PATCH_MODE);
+  }
+
+  // 从请求头中提取条件描述
+  public static List<WhereCloumn> fetchRequestHeaderWhereCondition(HttpServletRequest request, List<WhereCloumn> where_condition) {
+    Enumeration<String> head_names = request.getHeaderNames();
+    while(head_names.hasMoreElements()) {
+      String param_name = StringUtils.lowerCase(head_names.nextElement());
+      if (!StringUtils.startsWith(param_name, Constants.HEADER_WHERE_PREFIX)) continue;
+      if (StringUtils.equals(param_name, Constants.HEADER_PRIMARY_KEY_ARG)) continue;
+      if (StringUtils.equals(param_name, Constants.HEADER_KEY_SPLITTER_ARG)) continue;
+      if (StringUtils.equals(param_name, Constants.HEADER_UPDATE_MODE_ARG)) continue;
+      String header_name = param_name.substring(Constants.HEADER_WHERE_PREFIX.length());
+      Enumeration<String> header_values = request.getHeaders(param_name);
+      param_name = header_name;
+      if (header_values == null || !header_values.hasMoreElements()) continue;
+      List<String> param_list = new LinkedList<>();
+      while(header_values.hasMoreElements()) {
+        param_list.add(header_values.nextElement());
+      }
+      String[] param_values = param_list.toArray(new String[0]);
+      if (param_values == null || param_values.length == 0) continue;
+      int type_start = param_name.indexOf('$',1);
+      JDBCType column_type = null;
+      if (type_start > 0) {
+        String type_name = param_name.substring(type_start + 1);
+        column_type = JDBCType.valueOf(StringUtils.upperCase(type_name));
+        param_name = param_name.substring(0, type_start);
+      }
+      WhereCloumn where_column = WhereCloumn.of(param_name);
+      where_column.setType(column_type);
+
+      for (String param_value : param_values) {
+        if (StringUtils.startsWith(param_value, "$")) {
+          int operation_end = param_value.indexOf('.', 1);
+          if (operation_end < 0) {
+            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value);
+            if (op.parameter_count() > 0) {
+              throw new IllegalArgumentException(String.format("查询条件参数语法不正确: %s=%s", param_name, param_value));
+            }
+            where_column.addCondition(op, null);
+          } else {
+            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value.substring(0, operation_end));
+            String opval = param_value.substring(operation_end + 1);
+            where_column.addCondition(op, opval);
+          }
+        } else {
+          where_column.addCondition(JdbcQueryRequest.ConditionOperation.$eq, param_value);
+        }
+      }
+      where_condition.add(where_column);
+    }
+    return where_condition;
   }
 
 }

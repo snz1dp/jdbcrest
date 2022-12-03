@@ -74,4 +74,9 @@ public interface JdbcRestProvider {
     ManipulationRequest update_request
   ) throws SQLException;
 
+  // 删除表数据
+  public Object deleteTableData(
+    ManipulationRequest delete_request
+  ) throws SQLException;
+
 }

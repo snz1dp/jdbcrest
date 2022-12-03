@@ -38,6 +38,7 @@ import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
@@ -585,17 +586,91 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           List<Map<String, Object>> input_datas = update_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
             int i = 1;
-            for (TableColumn v : update_request.getColumns()) {
-              if (v.getRead_only() != null && v.getRead_only()) continue;
-              if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-              if (update_request.testRow_key(v.getName())) continue;
-              if (v.getWritable() != null && v.getWritable()) {
-                Object val = JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type());
-                log.info("{} = {}", v.getName(), val);
-                ps.setObject(i, val);
+            if (update_request.hasWhere() || update_request.isPatch_update()) {
+              for (Map.Entry<String, Object> input_entry : input_data.entrySet()) {
+                TableColumn v = update_request.findColumn(input_entry.getKey());
+                if (v.getRead_only() != null && v.getRead_only()) continue;
+                if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+                if (v.getWritable() != null && v.getWritable()) {
+                  ps.setObject(i, JdbcUtils.convert(input_entry.getValue(), v.getJdbc_type()));
+                  i = i + 1;
+                }
+              }
+            } else {
+              for (TableColumn v : update_request.getColumns()) {
+                if (v.getRead_only() != null && v.getRead_only()) continue;
+                if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+                if (update_request.testRow_key(v.getName())) continue;
+                if (v.getWritable() != null && v.getWritable()) {
+                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  i = i + 1;
+                }
+              }
+            }
+            if (update_request.hasWhere()) {
+              List<Object> where_conditions = new LinkedList<>();
+              for (WhereCloumn w : update_request.getWhere()) {
+                w.buildParameters(where_conditions);
+              }
+              for (Object where_object : where_conditions) {
+                ps.setObject(i, where_object);
+                i = i + 1;
+              }
+            } else {
+              Object keyvalue = update_request.getInput_key();
+              Object rowkey = update_request.getRow_key();
+              if (update_request.testComposite_key()) {
+                List<?> row_keys = (List<?>)rowkey;
+                List<?> key_values = (List<?>)keyvalue;
+                for (int j = 0; j < row_keys.size(); j++) {
+                  String keyname = (String)row_keys.get(j);
+                  Object keyval = key_values.get(j);
+                  TableColumn keycol = update_request.findColumn(keyname);
+                  ps.setObject(i, JdbcUtils.convert(
+                    keyval, keycol != null ? keycol.getJdbc_type() : null
+                  ));
+                  i = i + 1;
+                }
+              } else {
+                TableColumn keycol = update_request.findColumn((String)rowkey);
+                ps.setObject(i, JdbcUtils.convert(
+                  keyvalue, keycol != null ? keycol.getJdbc_type() : null
+                ));
                 i = i + 1;
               }
             }
+            ps.addBatch();
+          }
+          return ps.executeBatch();
+        } finally {
+          JdbcUtils.closeStatement(ps);
+        }
+      }
+    });
+  }
+
+  // 执行更新
+  protected Integer doDeleteTableData(
+    ManipulationRequest update_request,
+    SQLDialectProvider sql_dialect_provider
+  ) throws SQLException {
+    return jdbcTemplate.execute(new ConnectionCallback<Integer>() {
+      @Override
+      @Nullable
+      public Integer doInConnection(Connection conn) throws SQLException, DataAccessException {
+        PreparedStatement ps = sql_dialect_provider.prepareDataDelete(conn, update_request);
+        try {
+          int i = 1;
+          if (update_request.hasWhere()) {
+            List<Object> where_conditions = new LinkedList<>();
+            for (WhereCloumn w : update_request.getWhere()) {
+              w.buildParameters(where_conditions);
+            }
+            for (Object where_object : where_conditions) {
+              ps.setObject(i, where_object);
+              i = i + 1;
+            }
+          } else {
             Object keyvalue = update_request.getInput_key();
             Object rowkey = update_request.getRow_key();
             if (update_request.testComposite_key()) {
@@ -617,9 +692,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               ));
               i = i + 1;
             }
-            ps.addBatch();
           }
-          return ps.executeBatch();
+          return ps.executeUpdate();
         } finally {
           JdbcUtils.closeStatement(ps);
         }
@@ -661,6 +735,16 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     } else {
       return result;
     }
+  }
+
+  @Override
+  public Object deleteTableData(
+    ManipulationRequest delete_request
+  ) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Integer result = doDeleteTableData(delete_request, sql_dialect_provider);
+    return result;
   }
 
 }
