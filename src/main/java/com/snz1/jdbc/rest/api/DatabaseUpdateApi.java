@@ -36,7 +36,7 @@ public class DatabaseUpdateApi {
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("根据主键更新行数据")
+  @ApiOperation("根据主键更新数据")
   @RequestMapping(path = "/tables/{table:.*}/{key:.*}", method = {
     org.springframework.web.bind.annotation.RequestMethod.POST,
     org.springframework.web.bind.annotation.RequestMethod.PUT
@@ -56,7 +56,7 @@ public class DatabaseUpdateApi {
     return Return.wrap(result);
   }
 
-  @ApiOperation("根据主键补丁更新行")
+  @ApiOperation("根据主键补丁更新")
   @PatchMapping(path = "/tables/{table:.*}/{key:.*}")
   public Return<?> patchTableRow(
     @ApiParam("表名")
