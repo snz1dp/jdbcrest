@@ -8,7 +8,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQuery;
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 
@@ -56,7 +56,7 @@ public class PostgreSQLDialectProvider extends AbstractSQLDialectProvider {
     return ps;
   }
 
-  public PreparedStatement prepareDataInsert(Connection conn, JdbcInsertRequest insert_request) throws SQLException {
+  public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
       sqlbuf.append(" on conflict(");

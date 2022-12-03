@@ -488,6 +488,9 @@ public class JdbcQueryRequest implements Serializable, Cloneable {
     // 是否包含元信息
     private boolean contain_meta = false;
 
+    // 是否包含行统计
+    private boolean row_total = false;
+
     // 对象结构
     private ResultObjectStruct row_struct = ResultObjectStruct.map;
 

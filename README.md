@@ -6,8 +6,11 @@
 
 ## 1.1、从数据表分页查询开始
 
-- 请求方式：`GET`或`POST`
+- 请求方式：`GET`
 - 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;
+
+> 获取使用`POST`方式请求`/jdbc/rest/api/query`。
+
 - 请求参数：`QueryString`、`FormData`
 - 请求参数：
 
@@ -16,14 +19,15 @@
 | offset               | 数值     |  否     | 0           | 返回记录开始索引值             |
 | limit                | 数值     |  否     | 0           | 最大返回数量值<br>不能超过1000   |
 | _select              | 字符串   |  否     |           | 查询字段，格式为：<br>字段1,字段2,字段3,字段4<br>sum:字段1,avg:字段2,max:字段3,min:字段4->>别名1  |
-| _distinct              | 字符串   |  否     |           | 为true时表示排除重行  |
+| _distinct              | 字符串   |  否     | true          | 为true时表示排除重行  |
 | _groupby              | 字符串   |  否     |           | 分组查询，格式为：<br>分组字段->>having:sum(test):$gt:12<br>分组字段  |
 | _order              | 字符串   |  否     |           | 字段排序，格式为：<br>-字段1,字段2  |
-| _count              | 字符串   |  否     |           | 统计数量，格式为：字段名  |
-| _result.signleton   | 布尔   |  否     | map          | 为true时表示对象数据返回  |
+| _count              | 字符串   |  否     | *          | 统计数量，格式为：字段名  |
+| _result.signleton   | 布尔   |  否     | true          | 为true时表示对象数据返回  |
 | _result.row_struct   | 枚举   |  否     | map          | 可选值：<br>list表示列表<br>map表示对象  |
-| _result.contain_meta | 布尔     |  否     | false        | 为true时在信封中返回数据元信息 |
+| _result.contain_meta | 布尔     |  否     | true        | 为true时在信封中返回数据元信息 |
 | _result.column       | 字符串数组 |  否     |             | 可多个，用户设置返回字段或字段返回类型 |
+| _result.total       | 布尔 |  否     | true            | 是否返回统计，limit为0时自动计算 |
 | _result.all_column   | 布尔     |  否     | true        | 为true时返回所有字段数据，<br>否则由_result.column参数指定返回    |
 | _result.column.&lt;field&gt;.type | 枚举  |  否     | raw       | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |        | 设置指定的字段返回为其他名称          |
@@ -62,15 +66,25 @@
   "code": 0, // 响应代码，成功为0，其他为失败
   "message": "string", // 响应信息，如：操作成功
   "data": { // 分页数据对象
-    "total": 6,
-      "offset": 0,
-      "data": [ // 数据行列表
-        ..., // 数据行对象或数组
-        ..., // 请求参数_result.row_struct为map时数据行为对象方式：{...}
-        ..., // 请求参数_result.row_struct为list时数据行为数组方式：[...]
-      ] 
+    "total": 6, // 请求参数_result.total为true时返回
+    "offset": 0,
+    "data": [ // 数据行列表
+      ..., // 数据行对象或数组
+      ..., // 请求参数_result.row_struct为map时数据行为对象方式：{...}
+      ..., // 请求参数_result.row_struct为list时数据行为数组方式：[...]
+    ] 
   },
   "meta": { // 数据元信息，请求参数“_result.contain_meta”为true时存在
+    "primary_key": "sno", // 主键名称
+    "row_key": "sno", // 行键名称，如果无主键则使用第一个唯一索引
+    "unique_indexs": [ // 唯一索引
+      { // 索引对象
+          "name": "student_pk", // 索引名称
+          "unique": true, // 是否唯一
+          "order": "A", // 排序方式
+          "type": 3 // 类型ID
+      }
+    ]
     "columns": [ // 字段信息列表
       { // 字段信息
         "index": 0, // 字段索引，从0开始
@@ -151,7 +165,7 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 
 - 请求方式：`GET`
 - 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;/&lt;主键&gt;
-- 请求参数：`QueryString`
+- 请求参数：`QueryString`、`Header`
 - 请求参数：
 
 | 参数名称              | 参数类型  | 是否必须 | 缺省值 | 参数说明 |
@@ -164,3 +178,5 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 | _result.column       | 字符串数组 |  否     |             | 可多个，用户设置返回字段或字段返回类型 |
 | _result.column.&lt;field&gt;.type | 枚举  |  否     | raw       | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |        | 设置指定的字段返回为其他名称          |
+| primary_key | 字符串  | 否 |        | 请求头参数，自定义主键字段         |
+| key_splitter | 字符串  | 否 |        | 请求头参数，自定义主键分割符，默认为`\|`         |

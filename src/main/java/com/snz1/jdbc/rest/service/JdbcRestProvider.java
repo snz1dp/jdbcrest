@@ -3,10 +3,10 @@ package com.snz1.jdbc.rest.service;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
@@ -66,7 +66,12 @@ public interface JdbcRestProvider {
 
   // 插入表数据
   public Object insertTableData(
-    JdbcInsertRequest insert_request
+    ManipulationRequest insert_request
+  ) throws SQLException;
+
+  // 更新表数据
+  public Object updateTableData(
+    ManipulationRequest update_request
   ) throws SQLException;
 
 }

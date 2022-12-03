@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.RequestCustomKey;
 
 import gateway.api.JsonUtils;
 
@@ -182,6 +184,15 @@ public abstract class RequestUtils {
     // 获取返回字段定义
     fetchQueryRequestResultColumns(request, result_meta.getColumns());
 
+    // 获取是否返回统计数据
+    String result_total_val = request.getParameter(Constants.RESULT_TOTAL_ARG);
+    if (result_total_val != null) {
+      result_meta.setRow_total(
+        StringUtils.isBlank(result_total_val) ||
+        result_total_val.equals("true")
+      );
+    }
+
     // 获取返回是否包含元信息
     String contain_meta_val = request.getParameter(Constants.RESULT_CONTAIN_META_ARG);
     if (contain_meta_val != null) {
@@ -314,7 +325,7 @@ public abstract class RequestUtils {
   }
 
   // 从请求中获取数据
-  public static Object fetchRequestData(HttpServletRequest request) throws IOException {
+  public static Object fetchManipulationRequestData(HttpServletRequest request) throws IOException {
     if (request.getParameterNames().hasMoreElements()) {
       Map<String, Object> ret = new LinkedHashMap<String, Object>();
       Enumeration<String> name_enumeration = request.getParameterNames();
@@ -333,6 +344,30 @@ public abstract class RequestUtils {
     } else {
       return JsonUtils.fromJson(request.getInputStream(), Object.class);
     }
+  }
+
+  // 从请求中获取请求头
+  public static RequestCustomKey fetchManipulationRequestCustomKey(HttpServletRequest request, RequestCustomKey custom) {
+    // 获取主键定义
+    Enumeration<String> primary_keys = request.getHeaders(Constants.HEADER_PRIMARY_KEY_ARG);
+    if (primary_keys != null) {
+      List<String> custer_primary_list = new LinkedList<>();
+      while(primary_keys.hasMoreElements()) {
+        String primary_key = primary_keys.nextElement();
+        if (StringUtils.isBlank(primary_key)) continue;
+        custer_primary_list.add(primary_key);
+      }
+      if (custer_primary_list.size() > 0) {
+        custom.setCustom_key(custer_primary_list.size() == 1 ? custer_primary_list.get(0) : custer_primary_list);
+      }
+    }
+
+    // 主键分割
+    custom.setKey_splitter(request.getHeader(Constants.HEADER_PRIMARY_KEY_ARG));
+    if (!custom.hasKey_splitter()) {
+      custom.setKey_splitter(Constants.DEFAULT_KEY_SPLITTER);
+    }
+    return custom;
   }
 
 }

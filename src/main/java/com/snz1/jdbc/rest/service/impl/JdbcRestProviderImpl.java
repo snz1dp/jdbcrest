@@ -28,13 +28,15 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
+import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
@@ -42,7 +44,6 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
 
 import gateway.api.NotFoundException;
-import gateway.api.Page;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -66,7 +67,10 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   // 执行获取结果集
   @SuppressWarnings("null")
-  protected JdbcQueryResponse<List<Object>> doFetchResultSet(ResultSet rs, JdbcQueryRequest.ResultMeta return_meta, Object primary_key) throws SQLException {
+  protected JdbcQueryResponse<List<Object>> doFetchResultSet(
+    ResultSet rs, JdbcQueryRequest.ResultMeta return_meta,
+    Object primary_key, List<TableIndex> unique_index
+  ) throws SQLException {
     boolean onepack = true; 
     boolean meta = false;
     boolean objlist = false;
@@ -77,7 +81,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       objlist = JdbcQueryRequest.ResultMeta.ResultObjectStruct.list.equals(return_meta.getRow_struct());
     }
 
-    TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key);
+    TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key, unique_index);
     List<Object> rows = new LinkedList<>();
 
     while(rs.next()) {
@@ -155,9 +159,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getSchemas();
         try {
-          return doFetchResultSet(rs, null, null);
+          return doFetchResultSet(rs, null, null, null);
         } finally {
-          rs.close();
+          JdbcUtils.closeResultSet(rs);
         }
       }
 
@@ -173,9 +177,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getCatalogs();
         try {
-          return doFetchResultSet(rs, null, null);
+          return doFetchResultSet(rs, null, null, null);
         } finally {
-          rs.close();
+          JdbcUtils.closeResultSet(rs);
         }
       }
     });
@@ -217,9 +221,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta = conn.getMetaData();
         ResultSet rs = table_meta.getTables(catalog, schema_pattern, table_name_pattern, types != null && types.length > 0 ? types : null);
         try {
-          return doFetchResultSet(rs, return_meta, null);
+          return doFetchResultSet(rs, return_meta, null, null);
         } finally {
-          rs.close();
+          JdbcUtils.closeResultSet(rs);
         }
       }
 
@@ -238,9 +242,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
             DatabaseMetaData table_meta = conn.getMetaData();
             ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
             try {
-              return doFetchResultSet(rs, null, null);
+              return doFetchResultSet(rs, null, null, null);
             } finally {
-              rs.close();
+              JdbcUtils.closeResultSet(rs);
             }
           }
         }
@@ -270,7 +274,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     Object primary_key = null;
     ResultSet ks = conn.getMetaData().getPrimaryKeys(null, null, table_name);
     try {
-      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null);
+      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         List<Object> primary_key_lst = new LinkedList<>();
         for (Object keycol : list.getData()) {
@@ -282,9 +286,33 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         }
       }
     } finally {
-      ks.close();
+      JdbcUtils.closeResultSet(ks);
     }
     return primary_key;
+  }
+
+  // 执行获取唯一索引
+  @SuppressWarnings("unchecked")
+  protected List<TableIndex> doFetchTableUniqueIndex(Connection conn, String table_name) throws SQLException {
+    List<TableIndex> index_lst = new LinkedList<>();
+    ResultSet ks = conn.getMetaData().getIndexInfo(null, null, table_name, true, false);
+    try {
+      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null);
+      if (list.getData() != null && list.getData().size() > 0) {
+        for (Object index_item : list.getData()) {
+          Map<String, Object> colobj = (Map<String, Object>)index_item;
+          TableIndex index = new TableIndex();
+          index.setName((String)colobj.get("index_name"));
+          index.setUnique(Objects.equals(colobj.get("non_unique"), Boolean.FALSE));
+          index.setOrder((String)colobj.get("asc_or_desc"));
+          index.setType((Integer)colobj.get("type"));
+          index_lst.add(index);
+        }
+      }
+    } finally {
+      JdbcUtils.closeResultSet(ks);
+    }
+    return index_lst;
   }
 
   // 执行获取结果集元信息
@@ -294,19 +322,22 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       @Override
       @Nullable
       public TableMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
-        Object primary_key = table_query.hasTable_meta() ? table_query.getTable_meta().getPrimary_key() :
-          doFetchTablePrimaryKey(conn, table_query.getTable_name());
+        if (table_query.hasTable_meta()) {
+          return table_query.getTable_meta();
+        }
+        Object primary_key =  doFetchTablePrimaryKey(conn, table_query.getTable_name());
+        List<TableIndex> unique_index = doFetchTableUniqueIndex(conn, table_query.getTable_name());
         PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
         try {
           ResultSet rs = ps.executeQuery();
           try {
             rs = ps.getResultSet();
-            return TableMeta.of(rs.getMetaData(), table_query.getResult(), primary_key);
+            return TableMeta.of(rs.getMetaData(), table_query.getResult(), primary_key, unique_index);
           } finally {
-            rs.close();
+            JdbcUtils.closeResultSet(rs);
           }
         } finally {
-          ps.close();
+          JdbcUtils.closeStatement(ps);
         }
       }
     });
@@ -316,9 +347,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   public TableMeta queryResultMeta(
     TableQueryRequest table_query
   ) throws SQLException {
+    if (table_query.hasTable_meta()) return table_query.getTable_meta();
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-
     String table_name = table_query.getTable_name();
     if (!testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
@@ -338,13 +369,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       } else {
         query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class);
       }
-      pageret.getData().total = query_count != null ? query_count : 0;
-      pageret.getData().offset = table_query.getResult().getOffset();
+      pageret.getData().setTotal(query_count != null ? query_count : 0);
+      pageret.getData().setOffset(table_query.getResult().getOffset());
 
       boolean has_data = true;
       // 获取源信息
-      if (pageret.getData().total == 0 ||
-        pageret.getData().offset >= pageret.getData().total ||
+      if (pageret.getData().getTotal() == 0 ||
+        pageret.getData().getOffset() >= pageret.getData().getTotal() ||
         table_query.getResult().getLimit() <= 0
       ) {
         has_data = false;
@@ -375,21 +406,28 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           @Override
           @Nullable
           public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-            Object primary_key = table_query.hasTable_meta() ? table_query.getTable_meta().getPrimary_key() :
-               doFetchTablePrimaryKey(conn, table_query.getTable_name());
+            Object primary_key = null;
+            List<TableIndex> unique_index = null;
+            if (table_query.hasTable_meta()) {
+              primary_key = table_query.getTable_meta().getPrimary_key();
+              unique_index = table_query.getTable_meta().getUnique_indexs();
+            } else {
+              primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
+              unique_index = doFetchTableUniqueIndex(conn, table_query.getTable_name());
+            }
             PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
             try {
               ResultSet rs = null;
               try {
                 rs = ps.executeQuery();
-                return doFetchResultSet(rs, table_query.getResult(), primary_key);
+                return doFetchResultSet(rs, table_query.getResult(), primary_key, unique_index);
               } finally {
                 if (rs != null) {
-                  rs.close();
+                  JdbcUtils.closeResultSet(rs);
                 }
               }
             } finally {
-              ps.close();
+              JdbcUtils.closeStatement(ps);
             }
           }
         }
@@ -421,7 +459,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     pageret.setData(new Page<Object>());
 
     // 获取分页统计
-    if (!this.doFetchQueryPageTotal(table_query, sql_dialect_provider, pageret)) {
+    if (table_query.getResult().isRow_total() && !this.doFetchQueryPageTotal(table_query, sql_dialect_provider, pageret)) {
       return pageret;
     }
 
@@ -431,7 +469,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     // 返回数据
     if (datalist != null && datalist.getData() instanceof List) {
       pageret.setMeta(datalist.getMeta());
-      pageret.getData().data = (List)datalist.getData();
+      pageret.getData().setOffset(table_query.getResult().getOffset());
+      pageret.getData().setData((List)datalist.getData());
     }
     log.debug("执行表{}分页查询总耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
     return pageret;
@@ -490,7 +529,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   protected Object doInsertTableData(
-    JdbcInsertRequest insert_request,
+    ManipulationRequest insert_request,
     SQLDialectProvider sql_dialect_provider
   ) throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<Object>() {
@@ -499,7 +538,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
         PreparedStatement ps = sql_dialect_provider.prepareDataInsert(conn, insert_request);
         try {
-          List<Map<String, Object>> input_datas = insert_request.getInputDataList();
+          List<Map<String, Object>> input_datas = insert_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
             int i = 1;
             for (TableColumn v : insert_request.getColumns()) {
@@ -532,9 +571,66 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     });
   }
 
+  // 执行更新
+  protected int[] doUpdateTableData(
+    ManipulationRequest update_request,
+    SQLDialectProvider sql_dialect_provider
+  ) throws SQLException {
+    return jdbcTemplate.execute(new ConnectionCallback<int[]>() {
+      @Override
+      @Nullable
+      public int[] doInConnection(Connection conn) throws SQLException, DataAccessException {
+        PreparedStatement ps = sql_dialect_provider.prepareDataUpdate(conn, update_request);
+        try {
+          List<Map<String, Object>> input_datas = update_request.getInput_list();
+          for (Map<String, Object> input_data : input_datas) {
+            int i = 1;
+            for (TableColumn v : update_request.getColumns()) {
+              if (v.getRead_only() != null && v.getRead_only()) continue;
+              if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+              if (update_request.testRow_key(v.getName())) continue;
+              if (v.getWritable() != null && v.getWritable()) {
+                Object val = JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type());
+                log.info("{} = {}", v.getName(), val);
+                ps.setObject(i, val);
+                i = i + 1;
+              }
+            }
+            Object keyvalue = update_request.getInput_key();
+            Object rowkey = update_request.getRow_key();
+            if (update_request.testComposite_key()) {
+              List<?> row_keys = (List<?>)rowkey;
+              List<?> key_values = (List<?>)keyvalue;
+              for (int j = 0; j < row_keys.size(); j++) {
+                String keyname = (String)row_keys.get(j);
+                Object keyval = key_values.get(j);
+                TableColumn keycol = update_request.findColumn(keyname);
+                ps.setObject(i, JdbcUtils.convert(
+                  keyval, keycol != null ? keycol.getJdbc_type() : null
+                ));
+                i = i + 1;
+              }
+            } else {
+              TableColumn keycol = update_request.findColumn((String)rowkey);
+              ps.setObject(i, JdbcUtils.convert(
+                keyvalue, keycol != null ? keycol.getJdbc_type() : null
+              ));
+              i = i + 1;
+            }
+            ps.addBatch();
+          }
+          return ps.executeBatch();
+        } finally {
+          JdbcUtils.closeStatement(ps);
+        }
+      }
+    });
+  }
+
+  // 插入表数据
   @Override
   public Object insertTableData(
-    JdbcInsertRequest insert_request
+    ManipulationRequest insert_request
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
@@ -548,6 +644,20 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       } else {
         return Array.get(result, 0);
       }
+    } else {
+      return result;
+    }
+  }
+
+  // 更新表数据
+  public Object updateTableData(
+    ManipulationRequest update_request
+  ) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    int []result = doUpdateTableData(update_request, sql_dialect_provider);
+    if (update_request.testSignletonData()) {
+      return Array.get(result, 0);
     } else {
       return result;
     }

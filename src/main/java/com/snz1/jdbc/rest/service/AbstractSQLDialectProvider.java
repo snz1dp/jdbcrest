@@ -1,5 +1,8 @@
 package com.snz1.jdbc.rest.service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -7,7 +10,7 @@ import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -148,7 +151,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 插入数据
-  protected String createInsertRequestBaseSQL(JdbcInsertRequest insert_request) {
+  protected String createInsertRequestBaseSQL(ManipulationRequest insert_request) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
@@ -170,6 +173,56 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         );
       }
     }
+  }
+
+  // 更新数据
+  protected String createUpdateRequestBaseSQL(ManipulationRequest update_request) {
+    long start_time = System.currentTimeMillis();
+    SQL sql = new SQL();
+    try {
+      sql.UPDATE(update_request.getTable_name());
+      update_request.getColumns().forEach(v -> {
+        if (v.getRead_only() != null && v.getRead_only()) return;
+        if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+        if (update_request.testRow_key(v.getName())) return;
+        if (v.getWritable() != null && v.getWritable()) {
+          sql.SET(String.format("%s = ?", v.getName()));
+        }
+      });
+      Object rowkey = update_request.getRow_key();
+      if (update_request.testComposite_key()) {
+        List<?> row_keys = (List<?>)rowkey;
+        boolean append = false;
+        for (int i = 0; i < row_keys.size(); i++) {
+          if (append) {
+            sql.AND();
+          } else {
+            append = true;
+          }
+          sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+        }
+      } else {
+        sql.WHERE(String.format("%s = ?", rowkey));
+      }
+      return sql.toString();
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug(
+          "构建数据更新SQL耗时{}毫秒, SQL:\n{}",
+          (System.currentTimeMillis() - start_time),
+          sql.toString()
+        );
+      }
+    }
+  }
+
+  // 准备更新数据
+  public PreparedStatement prepareDataUpdate(
+    Connection conn,
+    ManipulationRequest update_request
+  ) throws SQLException {
+    StringBuffer sqlbuf = new StringBuffer(this.createUpdateRequestBaseSQL(update_request));
+    return conn.prepareStatement(sqlbuf.toString());
   }
 
 }

@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.api;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -17,8 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
@@ -49,28 +51,6 @@ public class DatabaseQueryApi {
     HttpServletRequest request
   ) throws SQLException {
     return doQueryTable(table_name, request);
-  }
-
-  @ApiOperation("数据创建")
-  @PostMapping(path = "/tables/{table:.*}")
-  @ResponseBody
-  public Return<?> createData(
-    @ApiParam("表名")
-    @PathVariable("table")
-    String table_name,
-    HttpServletRequest request
-  ) throws SQLException, IOException {
-    if (!restProvider.testTableExisted(table_name)) {
-      throw new IllegalStateException("数据表不存在");
-    }
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
-    JdbcInsertRequest create_or_update = new JdbcInsertRequest();
-    create_or_update.setTable_name(table_name);
-    create_or_update.setPrimary_key(restProvider.getTablePrimaryKey(table_name));
-    create_or_update.setInput_data(RequestUtils.fetchRequestData(request));
-    create_or_update.setColumns(result_meta.getColumns());
-    Object result = restProvider.insertTableData(create_or_update);
-    return Return.wrap(result);
   }
 
   @ApiOperation("高级查询")
@@ -116,6 +96,28 @@ public class DatabaseQueryApi {
     }
   }
 
+
+  @ApiOperation("数据创建")
+  @PostMapping(path = "/tables/{table:.*}")
+  @ResponseBody
+  public Return<?> createData(
+    @ApiParam("表名")
+    @PathVariable("table")
+    String table_name,
+    HttpServletRequest request
+  ) throws SQLException, IOException {
+    if (!restProvider.testTableExisted(table_name)) {
+      throw new IllegalStateException("数据表不存在");
+    }
+    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    ManipulationRequest insert_request = new ManipulationRequest();
+    insert_request.copyTableMeta(result_meta);
+    insert_request.setInput_data(RequestUtils.fetchManipulationRequestData(request));
+    Object result = restProvider.insertTableData(insert_request);
+    return Return.wrap(result);
+  }
+
+  @SuppressWarnings("unchecked")
   @ApiOperation("主键更新")
   @RequestMapping(path = "/tables/{table:.*}/{key:.*}")
   public Return<?> updateTableRow(
@@ -126,9 +128,38 @@ public class DatabaseQueryApi {
     @PathVariable("key")
     String key,
     HttpServletRequest request
-  ) throws IOException {
-    Object inputdata = RequestUtils.fetchRequestData(request);
-    return null;
+  ) throws IOException, SQLException {
+    // 获取表元信息
+    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    ManipulationRequest update_request = new ManipulationRequest();
+    update_request.setTable_name(table_name);
+    // 提取自定义主键
+    RequestUtils.fetchManipulationRequestCustomKey(request, update_request.getCustom_key());
+    update_request.copyTableMeta(result_meta);
+
+    RequestCustomKey custom_key = update_request.getCustom_key();
+    // 获取主键
+    Object keycolumn = custom_key.hasCustom_key() ? custom_key.getCustom_key() : update_request.getRow_key();
+    if (keycolumn == null) {
+      throw new NotFoundException("主键不存在");
+    }
+
+    if (keycolumn instanceof List) { // 主键为列表表示为复合组件
+      List<Object> keycolumns = (List<Object>)keycolumn;
+      String key_values[] = StringUtils.split(key, custom_key.getKey_splitter());
+      if (keycolumns.size() != key_values.length) {
+        throw new IllegalArgumentException("主键不正确");
+      }
+      update_request.setInput_key(Arrays.asList(key_values));
+    } else {
+      update_request.setInput_key(key);
+    }
+
+    // 提取更新输入
+    update_request.setInput_data(RequestUtils.fetchManipulationRequestData(request));
+
+    Object result = restProvider.updateTableData(update_request);
+    return Return.wrap(result);
   }
 
   @SuppressWarnings("unchecked")
@@ -143,64 +174,45 @@ public class DatabaseQueryApi {
     String key,
     HttpServletRequest request
   ) throws SQLException {
+    // 获取自定义主键
+    RequestCustomKey custom_key = RequestUtils.fetchManipulationRequestCustomKey(request, new RequestCustomKey());
+
+    // 获取表元信息
     TableQueryRequest table_query = new TableQueryRequest();
     table_query.setTable_name(table_name);
+    table_query.setTable_meta(restProvider.queryResultMeta(TableQueryRequest.of(table_name)));
 
-    TableQueryRequest metaquery = new TableQueryRequest();
-    metaquery.setTable_name(table_name);
-    table_query.setTable_meta(restProvider.queryResultMeta(metaquery));
-
-    int keyname_start = key.indexOf('$', 1);
-    if (keyname_start > 0) {
-      String key_composes[] = StringUtils.split(key, '|');
-      for (String keyv : key_composes) {
-        boolean tobreak = false;
-        String keyval = keyv.substring(0, keyname_start);
-        String keycolumn = keyv.substring(keyname_start + 1);
-        if (StringUtils.isBlank(keycolumn)) {
-          keycolumn = (String)table_query.getTable_meta().getPrimary_key();
-          keyval = key;
-          tobreak = true;
-        }
-        TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumn);
-        TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
-        if (col != null) {
-          where_col.setType(col.getJdbc_type());
-        }
-        where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, keyval);
-        table_query.getWhere().add(where_col);
-        if (tobreak) break;
-      }
-    } else {
-      Object keycolumn = table_query.getTable_meta().getPrimary_key();
-      if (keycolumn == null) {
-        throw new NotFoundException("主键不存在");
-      }
-      if (keycolumn instanceof List) {
-        List<Object> keycolumns = (List<Object>)keycolumn;
-        String key_values[] = StringUtils.split(key, '|');
-        if (keycolumns.size() == key_values.length) {
-          throw new IllegalArgumentException("主键不正确");
-        }
-        for (int i = 0; i < key_values.length; i++) {
-          TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumns.get(i));
-          TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
-          if (col != null) {
-            where_col.setType(col.getJdbc_type());
-          }
-          where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key_values[i]);
-          table_query.getWhere().add(where_col);
-        } 
-      } else {
-        TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumn);
-        TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
-        if (col != null) {
-          where_col.setType(col.getJdbc_type());
-        }
-        where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key);
-        table_query.getWhere().add(where_col);
-      }
+    // 获取主键
+    Object keycolumn = custom_key.hasCustom_key() ? custom_key.getCustom_key() : table_query.getTable_meta().getRow_key();
+    if (keycolumn == null) {
+      throw new NotFoundException("主键不存在");
     }
+
+    if (keycolumn instanceof List) { // 主键为列表表示为复合组件
+      List<Object> keycolumns = (List<Object>)keycolumn;
+      String key_values[] = StringUtils.split(key, custom_key.getKey_splitter());
+      if (keycolumns.size() != key_values.length) {
+        throw new IllegalArgumentException("主键不正确");
+      }
+      for (int i = 0; i < key_values.length; i++) {
+        TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumns.get(i));
+        TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+        if (col != null) {
+          where_col.setType(col.getJdbc_type());
+        }
+        where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key_values[i]);
+        table_query.getWhere().add(where_col);
+      } 
+    } else {
+      TableQueryRequest.WhereCloumn where_col = TableQueryRequest.WhereCloumn.of((String)keycolumn);
+      TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+      if (col != null) {
+        where_col.setType(col.getJdbc_type());
+      }
+      where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key);
+      table_query.getWhere().add(where_col);
+    }
+
     RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
     table_query.getResult().setSignleton(true);
     JdbcQueryResponse<?> ret = restProvider.querySignletonResult(table_query);

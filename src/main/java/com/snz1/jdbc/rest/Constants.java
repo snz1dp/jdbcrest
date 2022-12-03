@@ -35,6 +35,9 @@ public abstract class Constants {
   // 单对象返回
   public static final String RESULT_SIGNLETON_ARG = "_result.signleton";
 
+  // 分页是否缺省返回统计
+  public static final String RESULT_TOTAL_ARG = "_result.total";
+
   // 开始索引
   public static final String OFFSET_ARG = "offset";
 
@@ -43,5 +46,14 @@ public abstract class Constants {
 
   // 最大返回数量
   public static final int DEFAULT_MAX_LIMIT = 1000;
+
+  // 主键请求头
+  public static final String HEADER_PRIMARY_KEY_ARG = "primary_key";
+
+  // 主键分割请求头
+  public static final String HEADER_KEY_SPLITTER_ARG = "key_splitter";
+
+  // 缺省主键分割符
+  public static final String DEFAULT_KEY_SPLITTER = "|";
 
 }

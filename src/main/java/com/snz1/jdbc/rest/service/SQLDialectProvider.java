@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import com.snz1.jdbc.rest.data.JdbcInsertRequest;
 import com.snz1.jdbc.rest.data.JdbcQuery;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
 // SQL方言实现
@@ -32,7 +32,13 @@ public interface SQLDialectProvider {
   // 准备插入数据
   PreparedStatement prepareDataInsert(
     Connection conn,
-    JdbcInsertRequest insert_request
+    ManipulationRequest insert_request
+  ) throws SQLException;
+
+  // 准备更新数据
+  PreparedStatement prepareDataUpdate(
+    Connection conn,
+    ManipulationRequest update_request
   ) throws SQLException;
 
 }
