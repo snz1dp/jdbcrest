@@ -3,6 +3,8 @@ package com.snz1.jdbc.rest.service;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.snz1.jdbc.rest.data.JdbcDMLRequest;
+import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
@@ -77,6 +79,11 @@ public interface JdbcRestProvider {
   // 删除表数据
   public Object deleteTableData(
     ManipulationRequest delete_request
+  ) throws SQLException;
+
+  // 执行DML请求
+  public List<JdbcDMLResponse> executeDMLRequest(
+    JdbcDMLRequest[] request
   ) throws SQLException;
 
 }

@@ -1,5 +1,6 @@
 package com.snz1.jdbc.rest.utils;
 
+import java.lang.reflect.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
@@ -57,11 +59,21 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     }
   }
 
-  public static Object toArray(String val, JDBCType type) {
-    if (StringUtils.startsWith(val, "[")) {
-      return jsonToArray(val, type);
+  public static Object toArray(Object val, JDBCType type) {
+    if (val instanceof String) {
+      if (StringUtils.startsWith((String)val, "[")) {
+        return jsonToArray((String)val, type);
+      } else {
+        return splitToArray((String)val, type);
+      }
+    } else if (val instanceof Set) {
+      return ((Set<?>)val).toArray(new Object[0]);
+    } else if (val instanceof List) {
+      return ((List<?>)val).toArray(new Object[0]);
+    } else if (val instanceof Array) {
+      return val;
     } else {
-      return splitToArray(val, type);
+      return new Object[] { val };
     }
   }
 

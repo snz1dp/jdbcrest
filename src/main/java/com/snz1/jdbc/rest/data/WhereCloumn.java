@@ -6,6 +6,7 @@ import java.sql.JDBCType;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest.ConditionOperation;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
@@ -84,7 +85,9 @@ public class WhereCloumn implements Serializable {
         } else if (operation.parameter_count() == 2) {
           sqlbuf.append(String.format("%s %s ? and ?", this.column, operation.operator()));
         } else {
-          condition.setArray(JdbcUtils.toArray(condition.getValue(), this.type));
+          if (condition.getArray() == null) {
+            condition.setArray(JdbcUtils.toArray(condition.getValue(), this.type));
+          }
           StringBuffer parambuf = new StringBuffer();
           boolean paramappend = false;
           for (int i = 0; i < condition.getArray_length(); i++) {
@@ -140,10 +143,12 @@ public class WhereCloumn implements Serializable {
 
     private ConditionOperation operation;
 
-    private String value;
+    private Object value;
 
+    @JsonIgnore
     private Object array;
 
+    @JsonIgnore
     public int getArray_length() {
       if (array == null) return 0;
       return Array.getLength(array);

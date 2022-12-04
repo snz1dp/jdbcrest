@@ -48,15 +48,4 @@ public class DatabaseInsertApi {
     return Return.wrap(result);
   }
 
-  @ApiOperation("多表数据插入")
-  @RequestMapping(path = "/insert", method = {
-    org.springframework.web.bind.annotation.RequestMethod.POST,
-    org.springframework.web.bind.annotation.RequestMethod.PUT
-  })
-  public Return<?> createData(
-    HttpServletRequest request
-  ) throws SQLException, IOException {
-    throw new IllegalStateException("未实现");
-  }
-
 }

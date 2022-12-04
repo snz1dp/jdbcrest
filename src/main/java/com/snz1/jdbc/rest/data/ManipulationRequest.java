@@ -27,6 +27,7 @@ public class ManipulationRequest implements Serializable {
 
   // 主键
   @Setter
+  @JsonIgnore
   private Object primary_key;
 
   // 输入数据
@@ -37,16 +38,19 @@ public class ManipulationRequest implements Serializable {
   // 输入主键
   @Setter
   @Getter
+  @JsonIgnore
   private Object input_key;
 
   // 字段
   @Setter
   @Getter
+  @JsonIgnore
   private List<TableColumn> columns;
 
   // 自定义主键
   @Setter
   @Getter
+  @JsonIgnore
   private RequestCustomKey custom_key = new RequestCustomKey();
 
   @JsonIgnore
@@ -62,9 +66,11 @@ public class ManipulationRequest implements Serializable {
   // 是否
   @Setter
   @Getter
+  @JsonIgnore
   private boolean patch_update;
 
   // 条件过滤
+  @Setter
   @Getter
   private List<WhereCloumn> where = new LinkedList<>();
 
@@ -188,6 +194,7 @@ public class ManipulationRequest implements Serializable {
     }
   }
 
+  @JsonIgnore
   public List<TableIndex> getUnique_indexs() {
     return _unique_index;
   }

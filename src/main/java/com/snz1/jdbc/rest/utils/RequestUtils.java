@@ -14,8 +14,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.gson.reflect.TypeToken;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
@@ -427,6 +429,10 @@ public abstract class RequestUtils {
       where_condition.add(where_column);
     }
     return where_condition;
+  }
+
+  public static List<ManipulationRequest> fetchManipulationRequestList(HttpServletRequest request) throws IOException {
+    return JsonUtils.fromJson(request.getInputStream(), new TypeToken<List<ManipulationRequest>>(){}.getType());
   }
 
 }

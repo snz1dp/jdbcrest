@@ -2,12 +2,12 @@
 type: maven
 
 # 名称
-name: gateway-dashserv
+name: jdbcrest
 
 # 镜像编译参数
 docker:
   # 镜像名称
-  image: gitlab.snz1.cn:9288/appgateway/dashserv
+  image: gitlab.snz1.cn:9288/database/jdbcrest
   # 镜像编译文件(默认：Dockerfile)
   file: Dockerfile
   # 目标平台
@@ -31,22 +31,10 @@ service:
   - TZ=Asia/Shanghai
   - JWT_TOKEN="{{ .Snz1dp.Jwt.Token }}"
   - JWT_PRIVKEY="{{ .Snz1dp.Jwt.PrivateKey }}"
-  - PG_DATABASE="ingress"
-  - PG_HOST="{{ .Postgres.Host }}"
-  - PG_PORT="{{ .Postgres.Port }}"
-  - PG_USER="{{ .Postgres.Admin.Username }}"
-  - PG_PASSWORD="{{ .Postgres.Admin.Password }}"
   - CACHE_TYPE=none
-  - INITIAL_USERNAME="{{ .Snz1dp.Admin.Username }}"
-  - INITIAL_PASSWORD="{{ .Snz1dp.Admin.Password }}"
   - CONFIG_TYPE=cluster
   - CONFIG_URL="{{ .Confserv.Web.Protocol }}://{{ .Confserv.Web.Host }}:{{ .Confserv.Web.Port }}{{ .Confserv.Web.Webroot }}"
   - XEAI_URL="{{ .Xeai.Web.Protocol }}://{{ .Xeai.Web.Host }}:{{ .Xeai.Web.Port }}{{ .Xeai.Web.Webroot }}"
-  - GATEWAY_ADMIN_URL="http://ingress:91"
-  - OPEBSEARCH_CLUSTER_NAME=opensearch
-  - OPEBSEARCH_HOSTS=opensearch:9200
-  - OPEBSEARCH_PREFIX=""
-  - OPEBSEARCH_TIMEOUT=60000
   - JAVA_OPTS="-Xms128m -Xmx2g -XX:-UseGCOverheadLimit"
 
   # 心跳检查
@@ -72,10 +60,6 @@ service:
 # 开发配置
 develop:
   config: |
-    values:
-      opeansearch:
-        cluster:
-          name: opeansearch
     postgres:
       install: true
       host: postgres
@@ -84,46 +68,3 @@ develop:
       admin:
         username: postgres
         password: snz1dp9527
-    redis:
-      install: true
-      password: snz1dp9527
-      host: redis
-      port: 6379
-      version: 6.2.5
-    confserv:
-      install: true
-      version: 2.2.1
-      web:
-        host: confserv
-        port: 80
-    appgateway:
-      install: true
-      admin:
-        host: localhost
-      version: 2.8.1-802
-      web:
-        host: localhost
-      config:
-        bind:
-        - 80:80/tcp
-        - 443:443/tcp
-        - 91:91/tcp
-        - 92:92/tcp
-        envs:
-        - KONG_LOG_LEVEL=debug
-        - KONG_STREAM_LISTEN=0.0.0.0:92 reuseport backlog=65536
-    xeai:
-      install: true
-      version: 2.6.5
-      web:
-        host: xeai
-        port: 80
-    snz1dp:
-      admin:
-        username: root
-        password: 123456
-        email: root@localhost.com
-      namespace: snz1dp-system
-      organization: ChangSha SNZ1
-      timezone: Asia/Shanghai
-      version: 1.0-alpha

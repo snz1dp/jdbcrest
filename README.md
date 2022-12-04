@@ -1,6 +1,8 @@
 # JDBC转REST服务
 
-这是一个JDBC转REST服务的实现。
+这是一个JDBC转REST服务的实现，类似于`pRest/postgrest`等工具。
+
+> 本工具旨在利用JDBC通用数据库的能力完成不同数据库转`RestFul`服务，确保高性能、规范化、安全可靠的原型接口低代码实现。
 
 ## 1、数据查询
 
@@ -8,7 +10,7 @@
 
 - 请求方式：`GET`
 - 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;
-- 请求参数：`QueryString`、`FormData`
+- 请求参数：
 - 请求参数：
 
 | 参数名称              | 参数类型  | 是否必须 | 缺省值 | 传参方式 | 参数说明 |
@@ -28,9 +30,12 @@
 | _result.all_column   | 布尔     |  否     | true     | QueryString   | 为true时返回所有字段数据，<br>否则由_result.column参数指定返回    |
 | _result.column.&lt;field&gt;.type | 枚举  |  否     | raw    | QueryString   | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |      | QueryString  | 设置指定的字段返回为其他名称          |
-| &lt;field&gt;[$&lt;type&gt;] | 字符串  |  否     |       | QueryString | 字段名格式：字段名$JDBC类型<br>值格式：操作符[.&lt;值&gt;]          |
+| &lt;field&gt;[$&lt;type&gt;] | 字符串  |  否     |       | QueryString | 字段名格式：字段名$JDBC类型<br>值格式：条件操作符[.&lt;值&gt;]          |
 
-- 操作符：
+
+**条件操作符说明**
+
+> 条件操作符借鉴自`pRest`
 
 | 操作符               | 说明 | 示例 |
 | -------------------- | ---------------------- | --------------------- |
@@ -157,7 +162,7 @@
 curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 ```
 
-使用`POST`方式请求`/jdbc/rest/api/query`与本接口能力等同。
+> 使用`POST`方式请求`/jdbc/rest/api/query`与本接口能力等同。
 
 ## 1.2、通过主键查询数据
 
@@ -407,5 +412,86 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
   "code": 0,
   "message": "调用成功!",
   "data": 0 // 删除记录数
+}
+```
+
+## 5、批量操作
+
+- 请求方式：`POST`
+- 接口地址：/jdbc/rest/api/dml
+- 请求参数：
+
+| 参数名称              | 参数类型  | 是否必须 | 缺省值 | 传参方式 | 参数说明 |
+| -------------------- | ------- | ------- | ----------- | ----------- | ----------------------- |
+| Request Body | 操作请求数组  |  否     |       | JSON | 多个操作请求         |
+
+**操作请求**
+
+```json
+{
+  "insert": [ // 插入请求列表
+    { // 插入请求对象
+      "table_name": "表名",
+      "input_data": { // 可以是数组或对象
+        ... // 数据对象
+      }
+    }
+  ],
+  "update": [ // 更新请求列表
+    { // 更新请求对象
+      "table_name": "表名",
+      "input_data": { // 可以是数组或对象
+        ... // 更新数据
+      },
+      "where": [
+        {
+          "column": "字段名", // 字段名
+          "condition": { // 条件
+            "operation": "$eq", // 条件操作符，具体参见分页查询条件操作符说明
+            "value": "ddb79978-0a82-47f4-8a6e-b714442cca53" // 条件值，对象或数组
+          }
+        },
+        ... // 多个条件与关系
+      ]
+    }
+  ],
+  "delete": [ // 删除请求列表
+    {
+      "table_name": "表名",
+      "where": [
+        {
+          "column": "字段名", // 字段名
+          "condition": { // 条件
+            "operation": "$eq", // 条件操作符，参见分页查询条件操作符说明
+            "value": "ddb79978-0a82-47f4-8a6e-b714442cca53" // 条件值，对象或数组
+          }
+        },
+        ... // 多个条件与关系
+      ]
+    }
+  ]
+}
+```
+
+- 应答格式：`JSON`
+
+```json
+{
+  "code": 0,
+  "message": "调用成功!",
+  "data": [
+    { // 应答对象
+      "insert": [ // 插入操作记录数
+        0, ...
+      ],
+      "update": [ // 更新操作记录数
+        0, ...
+      ],
+      "delete": [ // 删除操作记录数
+        0, ...
+      ]
+    },
+    ... // 更多应答
+  ]
 }
 ```
