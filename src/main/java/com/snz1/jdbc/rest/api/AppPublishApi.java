@@ -16,7 +16,6 @@ import com.snz1.utils.WebUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -60,7 +59,6 @@ public class AppPublishApi {
 
   @ApiOperation("获取请求头信息")
 	@GetMapping(path = "/headers")
-  @PreAuthorize("hasRole('gateway_dashboard_v2_setup')")
   public Return<Map<String, String>> get_request_headers() {
     HttpServletRequest request = ContextUtils.getHttpServletRequest();
     Enumeration<String> header_names = request.getHeaderNames();
