@@ -29,6 +29,7 @@ service:
   envs:
   - CONFIG_PROFILE=prod
   - TZ=Asia/Shanghai
+  - APP_CODE=jdbcrest
   - PG_POOL_SIZE=3
   - PG_POOL_IDLE=3
   - PG_POOL_MAX=15
