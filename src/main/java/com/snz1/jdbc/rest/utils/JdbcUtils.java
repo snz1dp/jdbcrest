@@ -1,6 +1,8 @@
 package com.snz1.jdbc.rest.utils;
 
 import java.lang.reflect.Array;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,10 +19,21 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.postgresql.jdbc.PgArray;
 
+import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.utils.JsonUtils;
 
 public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUtils {
-  
+
+  public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {
+    JdbcMetaData temp_meta = new JdbcMetaData();
+    DatabaseMetaData table_meta =  conn.getMetaData();
+    temp_meta.setProduct_name(table_meta.getDatabaseProductName());
+    temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
+    temp_meta.setDriver_name(table_meta.getDriverName());
+    temp_meta.setDriver_version(table_meta.getDriverVersion());
+    return temp_meta;
+  }
+
   public static Object getResultSetValue(ResultSet rs, int index) throws SQLException {
     Object ret = org.springframework.jdbc.support.JdbcUtils.getResultSetValue(rs, index);
     if (ret != null) {

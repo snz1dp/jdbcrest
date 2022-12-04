@@ -1,25 +1,57 @@
-package com.snz1.jdbc.rest.service.postgres;
+package com.snz1.jdbc.rest.service.postgresql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
+import com.snz1.jdbc.rest.utils.JdbcUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
-public class PostgreSQLDialectProvider extends AbstractSQLDialectProvider {
+public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "postgresql";
 
   @Override
   public String getName() {
     return NAME;
+  }
+
+  public static void createDatabaseIfNotExisted(
+    Connection conn, String databaseName, String databaseUsername, String databasePassword
+  ) {
+    ResultSet result = null;
+    Statement stmt = null;
+    try {
+      stmt = conn.createStatement();
+      result = stmt.executeQuery(String.format("SELECT u.datname FROM pg_catalog.pg_database u where u.datname='%s';", databaseName));
+      if (!result.next()) {
+        String createSQL = String.format("CREATE DATABASE %s WITH OWNER %s;", databaseName, databaseUsername);
+        if (log.isDebugEnabled()) {} {
+          log.debug("执行SQL语句: " + createSQL);
+        }
+        stmt.execute(createSQL);
+      }
+    } catch(SQLException e) {
+      if (!StringUtils.contains(e.getMessage(), "already exists")) {
+        throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
+      }
+    } finally {
+      JdbcUtils.closeResultSet(result);
+      JdbcUtils.closeStatement(stmt);
+    }
   }
 
   @Override

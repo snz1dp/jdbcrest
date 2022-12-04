@@ -29,6 +29,15 @@ service:
   envs:
   - CONFIG_PROFILE=prod
   - TZ=Asia/Shanghai
+  - PG_POOL_SIZE=3
+  - PG_POOL_IDLE=3
+  - PG_POOL_MAX=15
+  - DB_TEST_IDLE=true
+  - DB_TEST_BORROW=false
+  - DB_TEST_RETURN=false
+  - CHECK_PROXY_SIGNATURE=false
+  - PROXY_SIGNATURE_SALT=
+  - DB_VALIDATION_QUERY="select CURRENT_TIMESTAMP"
   - JWT_TOKEN="{{ .Snz1dp.Jwt.Token }}"
   - JWT_PRIVKEY="{{ .Snz1dp.Jwt.PrivateKey }}"
   - CACHE_TYPE=none
@@ -39,7 +48,7 @@ service:
 
   # 心跳检查
   healthcheck:
-    url: /gateway/dashboard/api/health
+    url: /jdbc/rest/api/health
     interval: 10s
     timeout: 10s
     period: 30s
@@ -48,14 +57,14 @@ service:
   # 路由定义
   ingress:
   - backend-port: 80
-    sso:
-    - /gateway/dashboard/api
+    jwt:
+    - /jdbc/rest/api
     anonymous:
-    - /gateway/dashboard/api/health
-    - /gateway/dashboard/api/version
-    - /gateway/dashboard/api/v2
-    - /gateway/dashboard/api/swagger-ui
-    - /gateway/dashboard/api/swagger-resources
+    - /jdbc/rest/api/health
+    - /jdbc/rest/api/version
+    - /jdbc/rest/api/v2
+    - /jdbc/rest/api/swagger-ui
+    - /jdbc/rest/api/swagger-resources
 
 # 开发配置
 develop:

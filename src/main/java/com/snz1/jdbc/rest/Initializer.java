@@ -1,17 +1,22 @@
 package com.snz1.jdbc.rest;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.boot.ConfigurableBootstrapContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,27 +45,39 @@ public class Initializer implements SpringApplicationRunListener {
       throw new IllegalStateException("创建数据库连接失败: " + e.getMessage(), e);
     }
 
-    ResultSet result = null;
+    JdbcMetaData jdbc_meta;
     try {
-      Statement stmt = conn.createStatement();
-      result = stmt.executeQuery(String.format("SELECT u.datname FROM pg_catalog.pg_database u where u.datname='%s';", databaseName));
-      if (!result.next()) {
-        String createSQL = String.format("CREATE DATABASE %s WITH OWNER %s;", databaseName, databaseUsername);
-        log.info("执行SQL语句: " + createSQL);
-        stmt.execute(createSQL);
-      }
-    } catch(SQLException e) {
-      if (!StringUtils.contains(e.getMessage(), "already exists")) {
-        throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
-      }
-    } finally {
-      try {
-        if (result != null) {
-          result.close();
-        }
-        conn.close();
-      } catch(Throwable e) {
-      }
+      jdbc_meta = JdbcUtils.getJdbcMetaData(conn);
+    } catch (SQLException e) {
+      throw new IllegalStateException("获取数据库信息失败: " + e.getMessage(), e);
+    }
+
+    String sql_dialect_clazz_name = String.format(
+      "%s.service.%s.SQLDialectProvider",
+      getClass().getPackage().getName(), 
+      jdbc_meta.getProduct_name().toLowerCase()
+    );
+
+    Class<?> sql_dialect_clazz;
+    try {
+      sql_dialect_clazz = ClassUtils.getClass(sql_dialect_clazz_name);
+    } catch(ClassNotFoundException e) {
+      throw new IllegalStateException(String.format("暂不支持%s:%s", jdbc_meta.getProduct_name(), e.getMessage()), e);
+    }
+
+    Method create_database_if_not_existed = MethodUtils.getAccessibleMethod(
+      sql_dialect_clazz,
+      "createDatabaseIfNotExisted",
+      Connection.class,
+      String.class, String.class, String.class
+    );
+    try {
+      create_database_if_not_existed.invoke(
+        null, conn, databaseName, databaseUsername, databasePassword
+      );
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      log.warn(e.getMessage(), e);
+      throw new IllegalStateException(e.getMessage(), e);
     }
 
   }
