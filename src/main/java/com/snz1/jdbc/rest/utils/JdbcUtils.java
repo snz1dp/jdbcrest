@@ -69,6 +69,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     if (input == null || type == null) {
       return input;
     }
+    // TODO: 数据类型转换不尽如意
     if (type == JDBCType.INTEGER ||
       type == JDBCType.SMALLINT ||
       type == JDBCType.TINYINT ||
@@ -158,6 +159,11 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
         return new Date((Long)input);
       } else if (input instanceof Integer) {
         return new Date((Integer)input);
+      }
+      return input;
+    } else if (type == JDBCType.BOOLEAN) {
+      if (input instanceof String) {
+        return Boolean.parseBoolean((String)input);
       }
       return input;
     } else if (type == JDBCType.BLOB) {
