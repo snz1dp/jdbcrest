@@ -152,11 +152,6 @@
 			<version>${commons-compress.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>api.gateway</groupId>
-			<artifactId>sc-client-api</artifactId>
-		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api -->
 		<dependency>
 			<groupId>javax.annotation</groupId>
