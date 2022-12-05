@@ -1,2 +1,5 @@
 org.springframework.boot.SpringApplicationRunListener=\
  com.snz1.jdbc.rest.Initializer
+
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.snz1.jdbc.rest.conf.SecurityConfig

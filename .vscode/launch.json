@@ -15,7 +15,16 @@
       "name": "Launch Application",
       "request": "launch",
       "mainClass": "com.snz1.jdbc.rest.Application",
-      "projectName": "dashboard"
+      "projectName": "dashboard",
+      "env": {
+        "TABLE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/table-authorize.yaml",
+        "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
+        "PERMISSION_DEFINITION": "file://${workspaceFolder}/src/test/resources/permission-definition.yaml",
+        "PERMISSION_ENABLED": "true",
+        "SSO_ENABLED": "true",
+        "SSO_SIMULATE": "true",
+        "CONFIG_TYPE": "cluster"
+      }
     }
   ]
 }

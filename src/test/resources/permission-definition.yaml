@@ -1,0 +1,40 @@
+enabled: true
+
+# 设置默认版本
+version: 2
+
+# 默认管理用户
+organizations:
+- name: 开发团队
+  children:
+  - name: 默认管理员
+    employeeid: '9527'
+    groups:
+    - all
+    password: ${app.admin.default.password:changeme}
+    user_name: ${app.admin.default.username:root}
+  code: developer
+  type: organization
+
+# 功能树
+functions: 
+- name: JDBC转REST
+  code: jdbcrest
+  function_type: app
+  rolecode: jdbcrest
+  children: 
+  - name: 系统概况
+    code: jdbcrest
+    function_type: unit
+    rolecode: jdbcrest
+  - name: 测试菜单
+    code: jdbcrest.test
+    function_type: unit
+    rolecode: jdbcrest_test
+
+# 角色
+roles: 
+- name: 访问JDBC转REST系统
+  code: jdbcrest
+- name: 访问测试菜单
+  code: jdbcrest_test

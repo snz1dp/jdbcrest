@@ -12,6 +12,7 @@ import com.snz1.web.security.User;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import gateway.sc.v2.FunctionManager;
 import gateway.sc.v2.UserManager;
 
 @Component
+@ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
 public class LoggedUserContextImpl implements LoggedUserContext {
 
   @Resource

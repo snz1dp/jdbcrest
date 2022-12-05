@@ -1,0 +1,26 @@
+# 心跳检查
+- path: /health/**
+  access: permitAll
+
+# 文档资源
+- path: /v2/**
+  access: permitAll
+- path: /swagger/**
+  access: permitAll
+- path: /swagger-resources/**
+  access: permitAll
+- path: /swagger-ui/**
+  access: permitAll
+- path: /webjars/**
+  access: permitAll
+- path: /version
+  access: permitAll
+
+# 路径权限
+- path: /**
+  access: isAuthenticated
+
+# 测试权限
+- path: /student/**
+  method: 
+  access: hasRole('jdbcrest_test')
