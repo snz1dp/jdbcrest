@@ -15,7 +15,10 @@
       "name": "Launch Application",
       "request": "launch",
       "mainClass": "com.snz1.jdbc.rest.Application",
-      "projectName": "dashboard"
+      "projectName": "dashboard",
+      "env": {
+        "SQL_LOCATION": "file://${workspaceFolder}/src/test/resources/sql/services"
+      }
     }
   ]
 }

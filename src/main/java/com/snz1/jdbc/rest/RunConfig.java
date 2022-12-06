@@ -2,8 +2,6 @@ package com.snz1.jdbc.rest;
 
 import javax.annotation.Resource;
 
-import com.snz1.utils.Configurer;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +14,8 @@ public class RunConfig {
   @Value("${app.code}")
   private String applicationCode;
 
-  @Value("${app.user.scope:developer}")
-  private String defaultUserScope;
+  @Value("${app.sql.location:}")
+  private String sql_location;
 
   @Resource
   private Version appVerison;
@@ -34,20 +32,8 @@ public class RunConfig {
     return appVerison;
   }
 
-  /**
-   * 获取缺省的用户组织域代码
-   * @return
-   */
-  public String getDefaultUserScope() {
-    return Configurer.getAppProperty("default.user_scope", this.defaultUserScope);
-  }
-
-  /**
-   * 设置缺省的用户组织域代码
-   * @param val
-   */
-  public void getDefaultUserScope(String val) {
-    Configurer.setAppProperty("default.user_scope", val);
+  public String getSql_location() {
+    return sql_location;
   }
 
 }

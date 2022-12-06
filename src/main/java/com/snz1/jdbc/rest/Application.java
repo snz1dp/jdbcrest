@@ -22,12 +22,7 @@ import org.springframework.core.env.Environment;
 @com.snz1.annotation.Snz1dpApplication //启用Snz1p应用配置
 @com.snz1.annotation.EnableAutoCaching //启用默认缓存配置
 @com.snz1.annotation.EnableWebMvc // 启用Mvc默认配置
-@com.snz1.annotation.EnableSecurity //启用用户权限配置
-@com.snz1.annotation.EnableWebSso // 启用单点登录配置
-@com.snz1.annotation.EnableMyBatis //启用MyBatis配置
-@com.snz1.annotation.EnableDynamicConfig //启用动态配置服务
-// @com.snz1.annotation.EnableAutoScheme //启用自动构建数据库
-// @gateway.sc.v2.EnableSecurityClient //启用安全客户端配置
+@com.snz1.annotation.EnableDruid // 启用Mvc默认配置
 public class Application {
 
   public static void main(String[] args) {

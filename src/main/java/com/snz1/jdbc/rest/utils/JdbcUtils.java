@@ -1,6 +1,11 @@
 package com.snz1.jdbc.rest.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
@@ -9,16 +14,20 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.postgresql.jdbc.PgArray;
 
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.utils.JsonUtils;
 
@@ -198,6 +207,82 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
       return input;
     }
     return input;
+  }
+
+  
+	public static List<String> loadSQLBatchFromURL(File file, String batch_splitter, Charset defaultCharset) throws IOException {
+    List<String> sql_batchs = new LinkedList<String>();
+    List<String> filelines = readURLToLines(file, defaultCharset);
+    StringBuffer batch_sql = new StringBuffer();
+    boolean in_annotation = false;
+    for (String line : filelines) {
+      line = StringUtils.trim(line);
+      if (in_annotation) {
+        in_annotation = !line.endsWith("*/");
+        continue;
+      } else if (line.startsWith("/*")) {
+        in_annotation = !line.endsWith("*/");
+        continue;
+      } else if (line.startsWith("--")) {
+        continue;
+      }
+
+      if (line.endsWith(batch_splitter)) {
+        batch_sql.append(line.substring(0, line.length() - batch_splitter.length()));
+        sql_batchs.add(batch_sql.toString());
+        batch_sql = new StringBuffer();
+      } else {
+        batch_sql.append(line);
+        batch_sql.append("\r\n");
+      }
+    }
+    return new ArrayList<String>(sql_batchs);
+  }
+
+  public static List<String> readURLToLines(File url, Charset defaultCharset) throws IOException {
+    InputStream in = new FileInputStream(url);
+    try {
+      return IOUtils.readLines(in, defaultCharset);
+    } finally {
+      IOUtils.closeQuietly(in);
+    }
+  }
+
+  // 分析SQL参数
+  public static Map<String, JDBCType> parseSQLParamters(String sql, Map<String, JDBCType> paramters) {
+    int index_start = 1;
+    int param_start = sql.indexOf(Constants.SQL_PARAM_PREFIX, index_start);
+    while(param_start > 0) {
+      int param_end = sql.indexOf(Constants.SQL_PARAM_SUFFIX, param_start);
+      if (param_end < 0) break;
+      String param_content = sql.substring(param_start + Constants.SQL_PARAM_PREFIX.length(), param_end);
+      String param_array[] = StringUtils.split(param_content, ",");
+      if (param_array == null || param_array.length == 0 || param_array.length != 2) {
+        throw new IllegalArgumentException("参数格式错误");
+      }
+      JDBCType param_type;
+      String type_array[] = StringUtils.split(param_array[1], "=");
+      if (type_array == null || type_array.length != 2 || StringUtils.isBlank(param_array[0])) {
+        throw new IllegalArgumentException("参数类型定义错误");
+      }
+      if (!StringUtils.equalsIgnoreCase("jdbcType", StringUtils.trim(type_array[0]))) {
+        throw new IllegalArgumentException("参数类型格式错误");
+      }
+      try {
+        param_type = JDBCType.valueOf(type_array[1]);
+      } catch(IllegalArgumentException e) {
+        throw new IllegalArgumentException(String.format("#{%s}类型错误", param_array[0]), e);
+      }
+
+      paramters.put(
+        StringUtils.trim(param_array[0]),
+        param_type
+      );
+      index_start = param_end + 1;
+      param_start = sql.indexOf(Constants.SQL_PARAM_PREFIX, index_start);
+    }
+
+    return paramters;
   }
 
 }
