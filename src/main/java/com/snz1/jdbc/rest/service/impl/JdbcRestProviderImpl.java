@@ -34,9 +34,9 @@ import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQuery;
-import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.Page;
+import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableIndex;
@@ -72,7 +72,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 执行获取结果集
   @SuppressWarnings("null")
   protected JdbcQueryResponse<List<Object>> doFetchResultSet(
-    ResultSet rs, JdbcQueryRequest.ResultMeta return_meta,
+    ResultSet rs, ResultDefinition return_meta,
     Object primary_key, List<TableIndex> unique_index
   ) throws SQLException {
     boolean onepack = true; 
@@ -82,7 +82,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     if (return_meta != null) {
       meta = return_meta.isContain_meta();
       onepack = return_meta.isColumn_compact();
-      objlist = JdbcQueryRequest.ResultMeta.ResultObjectStruct.list.equals(return_meta.getRow_struct());
+      objlist = ResultDefinition.ResultRowStruct.list.equals(return_meta.getRow_struct());
     }
 
     TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key, unique_index);
@@ -103,15 +103,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         String col_name = col_item.getName();
         Object col_obj = JdbcUtils.getResultSetValue(rs, col_item.getIndex() + 1);
         if (col_obj != null) {
-          JdbcQueryRequest.ResultMeta.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
-          if (coldef != null && !Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.raw)) {
-            if (Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.list)) {
+          ResultDefinition.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
+          if (coldef != null && !Objects.equals(coldef.getType(), ResultDefinition.ResultType.raw)) {
+            if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.list)) {
               if (col_item.getJdbc_type() == JDBCType.BLOB) {
                 col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), List.class);
               } else {
                 col_obj = JsonUtils.fromJson(col_obj.toString(), List.class);
               }
-            } else if (Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.map)) {
+            } else if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.map)) {
               if (col_item.getJdbc_type() == JDBCType.BLOB) {
                 col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), Map.class);
               } else {
@@ -213,7 +213,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 获取表类表
   @Override
   public JdbcQueryResponse<List<Object>> getTables(
-    JdbcQueryRequest.ResultMeta return_meta,
+    ResultDefinition return_meta,
     String catalog, String schema_pattern,
     String table_name_pattern, String...types
   ) throws SQLException {
@@ -490,7 +490,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   public long queryAllCountResult(TableQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    table_query.getResult().setRow_struct(JdbcQueryRequest.ResultMeta.ResultObjectStruct.list);
+    table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     return (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
@@ -770,6 +770,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
           Validate.notBlank(update_request.getTable_name(), "[%d-%d]更新请求未设置表名", i, j);
+          Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(update_request.getTable_name());
           if (table_meta == null) {
             table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(update_request.getTable_name())));
@@ -782,6 +783,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
           Validate.notBlank(delete_request.getTable_name(), "[%d-%d]删除请求未设置表名", i, j);
+          Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(delete_request.getTable_name());
           if (table_meta == null) {
             table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(delete_request.getTable_name())));

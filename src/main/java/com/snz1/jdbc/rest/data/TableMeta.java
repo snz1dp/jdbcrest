@@ -150,7 +150,7 @@ public class TableMeta implements Serializable {
 
   public static TableMeta of(
     ResultSetMetaData rs_meta,
-    JdbcQueryRequest.ResultMeta request,
+    ResultDefinition request,
     Object primary_key,
     List<TableIndex> unique_index
   ) throws SQLException {

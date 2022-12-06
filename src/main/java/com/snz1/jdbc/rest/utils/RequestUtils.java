@@ -19,6 +19,7 @@ import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
+import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import gateway.api.JsonUtils;
@@ -26,26 +27,26 @@ import gateway.api.JsonUtils;
 public abstract class RequestUtils {
 
   // 从请求中获取响应字段
-  public static Map<String, JdbcQueryRequest.ResultMeta.ResultColumn> getQueryRequestResultColumns(HttpServletRequest request) {
-    Map<String, JdbcQueryRequest.ResultMeta.ResultColumn> columns = new HashMap<>();
+  public static Map<String, ResultDefinition.ResultColumn> getQueryRequestResultColumns(HttpServletRequest request) {
+    Map<String, ResultDefinition.ResultColumn> columns = new HashMap<>();
     return fetchQueryRequestResultColumns(request, columns);
   }
 
   // 从请求中提取响应字段
-  public static Map<String, JdbcQueryRequest.ResultMeta.ResultColumn> fetchQueryRequestResultColumns(HttpServletRequest request, Map<String, JdbcQueryRequest.ResultMeta.ResultColumn> columns) {
+  public static Map<String, ResultDefinition.ResultColumn> fetchQueryRequestResultColumns(HttpServletRequest request, Map<String, ResultDefinition.ResultColumn> columns) {
     String[] result_column_names = request.getParameterValues(Constants.RESULT_COLUMNS_ARG);
     if (result_column_names == null) return columns;
     for (String input_column_name : result_column_names) {
       String[] column_split_names = StringUtils.split(input_column_name, ',');
       if (column_split_names == null || column_split_names.length == 0) continue;
       for (String column_name : column_split_names) {
-        JdbcQueryRequest.ResultMeta.ResultColumn column = JdbcQueryRequest.ResultMeta.ResultColumn.of(column_name);
+        ResultDefinition.ResultColumn column = ResultDefinition.ResultColumn.of(column_name);
         String column_type_arg = String.format("%s.%s.type", Constants.RESULT_COLUMNS_ARG, column_name);
         String column_alias_arg = String.format("%s.%s.alias", Constants.RESULT_COLUMNS_ARG, column_name);
         String type_name = request.getParameter(column_type_arg);
         String alias_name = request.getParameter(column_alias_arg);
         if (StringUtils.isNotBlank(type_name)) {
-          JdbcQueryRequest.ResultMeta.ColumnType column_type = JdbcQueryRequest.ResultMeta.ColumnType.valueOf(type_name);
+          ResultDefinition.ResultType column_type = ResultDefinition.ResultType.valueOf(type_name);
           column.setType(column_type);
         }
         if (StringUtils.isNotBlank(alias_name)) {
@@ -182,7 +183,7 @@ public abstract class RequestUtils {
   }
 
   // 从请求中获取查询应答描述
-  public static JdbcQueryRequest.ResultMeta fetchQueryRequestResultMeta(HttpServletRequest request, JdbcQueryRequest.ResultMeta result_meta) {
+  public static ResultDefinition fetchQueryRequestResultMeta(HttpServletRequest request, ResultDefinition result_meta) {
 
     // 获取返回字段定义
     fetchQueryRequestResultColumns(request, result_meta.getColumns());
@@ -217,7 +218,7 @@ public abstract class RequestUtils {
     // 返回行返回结构
     String row_struct = request.getParameter(Constants.RESULT_ROW_STRUCT_ARG);
     if (StringUtils.isNotBlank(row_struct)) {
-      JdbcQueryRequest.ResultMeta.ResultObjectStruct enum_val = JdbcQueryRequest.ResultMeta.ResultObjectStruct.valueOf(row_struct);
+      ResultDefinition.ResultRowStruct enum_val = ResultDefinition.ResultRowStruct.valueOf(row_struct);
       result_meta.setRow_struct(enum_val);
     }
 

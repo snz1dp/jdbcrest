@@ -3,10 +3,8 @@ package com.snz1.jdbc.rest.data;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.sql.JDBCType;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,7 +34,7 @@ public class JdbcQueryRequest implements Serializable, Cloneable {
   private List<WhereCloumn> where = new LinkedList<>();
 
   // 查询结果描述
-  private ResultMeta result = new ResultMeta();
+  private ResultDefinition result = new ResultDefinition();
 
   // 表元信息
   private TableMeta table_meta;
@@ -325,97 +323,6 @@ public class JdbcQueryRequest implements Serializable, Cloneable {
       join.setJoin_column(join_column);
       join.setOuter_column(right_column);
       return join;
-    }
-
-  }
-
-  // 返回描述
-  @Data
-  public static class ResultMeta implements Serializable {
-
-    // 默认返回查询的字段
-    private boolean all_columns = true;
-
-    // 单对象返回
-    private boolean signleton = false;
-
-    // 字段
-    private Map<String, ResultColumn> columns = new HashMap<String, ResultColumn>();
-
-    // 是否包含元信息
-    private boolean contain_meta = false;
-
-    // 是否包含行统计
-    private boolean row_total = false;
-
-    // 对象结构
-    private ResultObjectStruct row_struct = ResultObjectStruct.map;
-
-    // 仅一列则返回紧凑模式
-    private boolean column_compact;
-
-    // 开始索引
-    private long offset;
-
-    // 返回限制
-    private long limit;
-
-    // 列
-    @Data
-    public static class ResultColumn implements Serializable {
-
-      // 字段名
-      private String name;
-
-      // 别名
-      private String alias;
-
-      private ColumnType type = ColumnType.raw;
-
-      public static ResultColumn of(String name) {
-        ResultColumn ret = new ResultColumn();
-        ret.setName(name);
-        return ret;
-      }
-
-      public boolean hasAlias() {
-        return alias != null;
-      }
-
-    }
-
-    // 列类型
-    public static enum ColumnType {
-
-      raw,
-
-      map,
-
-      list,
-
-      base64;
-
-    }
-
-    // 返回的对象数据结构
-    public static enum ResultObjectStruct {
-
-      // 返回对象
-      map("对象"),
-      
-      // 返回列表
-      list("列表");
-
-      private String title;
-
-      private ResultObjectStruct(String title) {
-        this.title = title;
-      }
-
-      public String title() {
-        return title;
-      }
-
     }
 
   }

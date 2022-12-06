@@ -6,9 +6,9 @@ import java.util.List;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
-import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
@@ -31,7 +31,7 @@ public interface JdbcRestProvider {
 
   // 获取表
   JdbcQueryResponse<List<Object>> getTables(
-    JdbcQueryRequest.ResultMeta return_meta,
+    ResultDefinition return_meta,
     String catalog, String schemaPattern,
     String tableNamePattern, String... types
   ) throws SQLException;
