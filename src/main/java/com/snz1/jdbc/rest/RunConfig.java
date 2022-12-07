@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class RunConfig {
 
+  @Value("${server.context-path:/jdbc/rest/api}")
+  private String webroot;
+
   @Value("${app.default_url:/index.html}")
 	private String defaultTargetUrl;
 
@@ -19,6 +22,10 @@ public class RunConfig {
 
   @Resource
   private Version appVerison;
+
+  public String getWebroot() {
+    return webroot;
+  }
 
   public String getDefaultTargetUrl() {
     return defaultTargetUrl;

@@ -209,7 +209,7 @@ public abstract class RequestUtils {
     // 获取返回所有查询字段
     String all_columns_val = request.getParameter(Constants.RESULT_ALL_COLUMNS_ARG);
     if (all_columns_val != null) {
-      result_meta.setAll_columns(
+      result_meta.setAll_column(
         StringUtils.isBlank(all_columns_val) ||
         all_columns_val.equals("true")
       );
@@ -330,7 +330,11 @@ public abstract class RequestUtils {
 
   // 从请求中获取数据
   public static Object fetchManipulationRequestData(HttpServletRequest request) throws IOException {
-    if (request.getParameterNames().hasMoreElements()) {
+    return fetchManipulationRequestData(request, true);
+  }
+
+  public static Object fetchManipulationRequestData(HttpServletRequest request, boolean parameter) throws IOException {
+    if (parameter && request.getParameterNames().hasMoreElements()) {
       Map<String, Object> ret = new LinkedHashMap<String, Object>();
       Enumeration<String> name_enumeration = request.getParameterNames();
       while(name_enumeration.hasMoreElements()) {

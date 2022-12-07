@@ -9,6 +9,7 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 
@@ -85,5 +86,10 @@ public interface JdbcRestProvider {
   public List<JdbcDMLResponse> executeDMLRequest(
     JdbcDMLRequest[] request
   ) throws SQLException;
+
+  // 执行SQL服务
+  Object executeSQLService(
+    SQLServiceRequest sql_request
+  );
 
 }

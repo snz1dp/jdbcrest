@@ -22,7 +22,7 @@ import org.springframework.core.env.Environment;
 @com.snz1.annotation.Snz1dpApplication //启用Snz1p应用配置
 @com.snz1.annotation.EnableAutoCaching //启用默认缓存配置
 @com.snz1.annotation.EnableWebMvc // 启用Mvc默认配置
-@com.snz1.annotation.EnableDruid // 启用Mvc默认配置
+@com.snz1.annotation.EnableMyBatis // 启用MyBatis默认配置
 public class Application {
 
   public static void main(String[] args) {

@@ -17,18 +17,28 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.ResultMap;
+import org.apache.ibatis.mapping.ResultMapping;
+import org.apache.ibatis.mapping.SqlCommandType;
+import org.apache.ibatis.scripting.defaults.RawSqlSource;
+import org.apache.ibatis.session.Configuration;
 import org.postgresql.jdbc.PgArray;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SQLClauses;
 import com.snz1.utils.JsonUtils;
 
 public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUtils {
@@ -209,34 +219,48 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     return input;
   }
 
-  
-	public static List<String> loadSQLBatchFromURL(File file, String batch_splitter, Charset defaultCharset) throws IOException {
-    List<String> sql_batchs = new LinkedList<String>();
+	public static List<SQLClauses> loadSQLClausesFromFile(File file, String batch_splitter, Charset defaultCharset) throws IOException {
+    List<SQLClauses> sql_batchs = new LinkedList<SQLClauses>();
     List<String> filelines = readURLToLines(file, defaultCharset);
-    StringBuffer batch_sql = new StringBuffer();
+    SQLClauses sql_clauses = new SQLClauses();
+
     boolean in_annotation = false;
     for (String line : filelines) {
-      line = StringUtils.trim(line);
       if (in_annotation) {
-        in_annotation = !line.endsWith("*/");
+        in_annotation = !StringUtils.trim(line).endsWith("*/");
+        if (in_annotation) {
+          sql_clauses.getNote().append(line);
+          sql_clauses.getNote().append("\n");
+        } else {
+          sql_clauses.getNote().append(StringUtils.stripEnd(line, " ").substring(0, line.length() - 2));
+        }
         continue;
-      } else if (line.startsWith("/*")) {
-        in_annotation = !line.endsWith("*/");
+      } else if (StringUtils.trim(line).startsWith("/*")) {
+        in_annotation = !StringUtils.trim(line).endsWith("*/");
+        if (in_annotation) {
+          sql_clauses.getNote().append(StringUtils.stripEnd(line, " ").substring(2));
+        } else {
+          sql_clauses.getNote().append(StringUtils.stripEnd(line, " ").substring(2, StringUtils.stripEnd(line, " ").length() - 2));
+        }
         continue;
-      } else if (line.startsWith("--")) {
+      } else if (StringUtils.trim(line).startsWith("--")) {
+        sql_clauses.getNote().append(StringUtils.stripStart(line, " ").substring(2));
         continue;
       }
 
       if (line.endsWith(batch_splitter)) {
-        batch_sql.append(line.substring(0, line.length() - batch_splitter.length()));
-        sql_batchs.add(batch_sql.toString());
-        batch_sql = new StringBuffer();
+        sql_clauses.getSql().append(line.substring(0, line.length() - batch_splitter.length()));
+        sql_batchs.add(sql_clauses);
+        sql_clauses = new SQLClauses();
       } else {
-        batch_sql.append(line);
-        batch_sql.append("\r\n");
+        sql_clauses.getSql().append(line);
+        sql_clauses.getSql().append("\n");
       }
     }
-    return new ArrayList<String>(sql_batchs);
+    if (StringUtils.isNotBlank(sql_clauses.getSql().toString())) {
+      sql_batchs.add(sql_clauses);
+    }
+    return new ArrayList<SQLClauses>(sql_batchs);
   }
 
   public static List<String> readURLToLines(File url, Charset defaultCharset) throws IOException {
@@ -246,6 +270,12 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     } finally {
       IOUtils.closeQuietly(in);
     }
+  }
+
+  // 分析SQL参数
+  public static Map<String, JDBCType> parseSQLParamters(String sql) {
+    Map<String, JDBCType> paramters = new LinkedHashMap<>();
+    return parseSQLParamters(sql, paramters);
   }
 
   // 分析SQL参数
@@ -283,6 +313,55 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     }
 
     return paramters;
+  }
+
+  public static MappedStatement createMappedStatement(
+    String mapped_id,
+    Configuration configuration,
+    SqlCommandType command_type,
+    String sql,
+    ResultDefinition result
+  ) {
+    RawSqlSource sql_source = new RawSqlSource(
+      configuration, sql, null
+    );
+
+    List<ResultMapping> result_lst = new ArrayList<>();
+
+    if (result != null && result.hasColumn()) {
+      for (String column_name : result.getColumns().keySet()) {
+        ResultDefinition.ResultColumn result_column = result.getColumns().get(column_name);
+        if (Objects.equals(ResultDefinition.ResultType.raw, result_column.getType())) {
+          continue;
+        }
+        ResultMapping.Builder mapping_builder = new ResultMapping.Builder(
+          configuration, result_column.getName()
+        );
+        mapping_builder.column(result_column.getName());
+        if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.map)) {
+          mapping_builder.javaType(Map.class);
+          mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.MapTypeHandler());
+        } else if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.list)) {
+          mapping_builder.javaType(List.class);
+          mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.ListTypeHandler());
+        } else if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.base64)) {
+          mapping_builder.javaType(String.class);
+          mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.Base64TypeHandler());
+        }
+        result_lst.add(mapping_builder.build());
+      }
+    }
+
+    ResultMap result_map = new ResultMap.Builder(
+      configuration, mapped_id,
+      Map.class, result_lst,
+      true
+    ).build();
+
+    MappedStatement ms = new MappedStatement.Builder(
+      configuration, mapped_id, sql_source, command_type
+    ).resultMaps(Arrays.asList(result_map)).build();
+    return ms;
   }
 
 }

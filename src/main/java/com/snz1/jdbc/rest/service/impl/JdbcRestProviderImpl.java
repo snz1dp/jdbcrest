@@ -20,6 +20,9 @@ import javax.annotation.Resource;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
+import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataAccessException;
@@ -37,6 +40,8 @@ import com.snz1.jdbc.rest.data.JdbcQuery;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableIndex;
@@ -46,6 +51,7 @@ import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
+import org.apache.ibatis.mapping.SqlCommandType;
 
 import gateway.api.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +64,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   @Resource
   private JdbcTemplate jdbcTemplate;
+
+  @Resource
+  private SqlSessionFactory sessionFactory;
 
   @Resource
   private Map<String, SQLDialectProvider> sqlDialectProviders = new HashMap<>();
@@ -875,6 +884,156 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       responses.add(response);
     }
     return responses;
+  }
+
+  @Override
+  public Object executeSQLService(SQLServiceRequest sql_request) {
+    SqlSession session = this.sessionFactory.openSession();
+    List<Object> output_list = new LinkedList<>();
+    try {
+      for (Map<String, Object> input_data : sql_request.getInput_list()) {
+        Object last_output = null;
+        for (SQLServiceDefinition.SQLFragment sql_fragment : sql_request.getDefinition().getSql_fragments()) {
+          Map<String, Object> input_wrap = new HashMap<String, Object>(2);
+          input_wrap.put("input", input_data);
+          if (last_output != null) {
+            input_wrap.put("lastout", last_output);
+          }
+          if (output_list.size() > 0) {
+            input_wrap.put("output", output_list);
+          }
+          last_output = doExecuteSQLService(session, sql_fragment, input_wrap);
+        }
+        output_list.add(last_output);
+      }
+    } finally {
+      session.close();
+    }
+    if (sql_request.testSignletonData()) {
+      if (output_list.size() > 0) {
+        return output_list.get(0);
+      } else {
+        return null;
+      }
+    } else {
+      return output_list;
+    }
+  }
+
+  public Object doExecuteSQLService(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    resolveMappedStatement(sql_fragment);
+    SqlCommandType sql_cmd_type = sql_fragment.getCommand_type();
+    if (sql_cmd_type == null || Objects.equals(SqlCommandType.UNKNOWN, sql_cmd_type)) {
+      throw new IllegalStateException("无效SQL语句");
+    }
+
+    try {
+      switch(sql_cmd_type) {
+      case SELECT:
+        return doSQLServiceSelect(session, sql_fragment, input_data);
+      case INSERT:
+        return doSQLServiceInsert(session, sql_fragment, input_data);
+      case UPDATE:
+        return doSQLServiceUpdate(session, sql_fragment, input_data);
+      case DELETE:
+        return doSQLServiceDelete(session, sql_fragment, input_data);
+      default:
+        throw new IllegalStateException("无效SQL语句");
+      }
+    } finally {
+    }
+  }
+
+  private Object doSQLServiceInsert(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.insert(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}插入耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private Object doSQLServiceUpdate(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.update(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}更新耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private Object doSQLServiceDelete(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.delete(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}删除耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Object doSQLServiceSelect(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      List<Object> result = session.selectList(mapped_id, input_data);
+      if (sql_fragment.getResult().isSignleton()) {
+        if (result == null || result.size() == 0) {
+          return null;
+        }
+        Map<String, Object> map = (Map<String, Object>)result.get(0);
+        if (sql_fragment.getResult().isColumn_compact()) {
+          return map.get(map.keySet().iterator().next());
+        } else {
+          return map;
+        }
+      } else {
+        return result;
+      }
+    } finally {
+      log.debug("执行{}查询耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private String resolveMappedStatement(
+    SQLServiceDefinition.SQLFragment sql_fragment
+  ) {
+    long start_time = System.currentTimeMillis();
+    try {
+      Configuration mybatis_config = this.sessionFactory.getConfiguration();
+      if (mybatis_config.hasStatement(sql_fragment.getMapped_id(), false)) {
+        return sql_fragment.getMapped_id();
+      }
+      mybatis_config.addMappedStatement(sql_fragment.getMapped_statement());
+      return sql_fragment.getMapped_id();
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug("构建{}耗时{}毫秒", sql_fragment.getMapped_id(), (System.currentTimeMillis() - start_time));
+      }
+    }
   }
 
 }

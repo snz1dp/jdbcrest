@@ -11,13 +11,17 @@ import lombok.Data;
 public class ResultDefinition implements Serializable {
 
   // 默认返回查询的字段
-  private boolean all_columns = true;
+  private boolean all_column = true;
 
   // 单对象返回
   private boolean signleton = false;
 
   // 字段
   private Map<String, ResultDefinition.ResultColumn> columns = new HashMap<String, ResultDefinition.ResultColumn>();
+
+  public boolean hasColumn() {
+    return this.columns != null;
+  }
 
   // 是否包含元信息
   private boolean contain_meta = false;
