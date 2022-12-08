@@ -20,6 +20,7 @@
 | _select              | 字符串   |  否     |          | QueryString | 查询字段，格式为：<br>字段1,字段2,字段3,字段4<br>sum:字段1,avg:字段2,max:字段3,min:字段4->>别名1  |
 | _distinct              | 字符串   |  否     | true       | QueryString   | 为true时表示排除重行  |
 | _groupby              | 字符串   |  否     |         | QueryString  | 分组查询，格式为：<br>分组字段->>having:sum(test):$gt:12<br>分组字段  |
+| _join              | 字符串   |  否     |         | QueryString  | 关联表参数，格式为：<br>关联表名:字段名:主表字段  |
 | _order              | 字符串   |  否     |          | QueryString | 字段排序，格式为：<br>-字段1,字段2  |
 | _count              | 字符串   |  否     | *        | QueryString  | 统计数量，格式为：字段名  |
 | _result.signleton   | 布尔   |  否     | true       | QueryString   | 为true时表示对象数据返回  |
@@ -31,7 +32,6 @@
 | _result.column.&lt;field&gt;.type | 枚举  |  否     | raw    | QueryString   | 可选值：<br>raw表示保留Jdbc原值<br>map表示转换为对象值<br>list表示转换为列表值<br>base64表示转换为Base64编码值          |
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |      | QueryString  | 设置指定的字段返回为其他名称          |
 | &lt;field&gt;[$&lt;type&gt;] | 字符串  |  否     |       | QueryString | 字段名格式：字段名$JDBC类型<br>值格式：条件操作符[.&lt;值&gt;]          |
-
 
 **条件操作符说明**
 
