@@ -17,25 +17,23 @@ import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "3、数据插入")
+@Tag(name = "3、数据插入")
 @RequestMapping
 public class DatabaseInsertApi {
 
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("插入数据表")
+  @Operation(summary = "插入数据表")
   @RequestMapping(path = "/tables/{table:.*}", method = {
     org.springframework.web.bind.annotation.RequestMethod.POST,
     org.springframework.web.bind.annotation.RequestMethod.PUT
   })
   public Return<?> createTableData(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
     HttpServletRequest request

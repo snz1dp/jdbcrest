@@ -24,25 +24,22 @@ import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "5、数据删除")
+@Tag(name = "5、数据删除")
 @RequestMapping
 public class DatabaseDeleteApi {
 
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("根据主键删除数据")
+  @Operation(summary = "根据主键删除数据")
   @DeleteMapping(path = "/tables/{table:.*}/{key:.*}")
   public Return<?> deleteTableRow(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
-    @ApiParam("主键")
     @PathVariable("key")
     String key,
     HttpServletRequest request
@@ -89,10 +86,9 @@ public class DatabaseDeleteApi {
     return delete_request;
   }
 
-  @ApiOperation("批量删除表数据")
+  @Operation(summary = "批量删除表数据")
   @DeleteMapping(path = "/tables/{table:.*}")
   public Return<?> deleteTableData(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
     HttpServletRequest request

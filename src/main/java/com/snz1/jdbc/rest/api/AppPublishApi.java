@@ -23,12 +23,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 import gateway.api.Return;
-
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "0、应用信息")
+@Tag(name = "0、应用信息")
 @RequestMapping
 public class AppPublishApi {
 
@@ -38,7 +37,7 @@ public class AppPublishApi {
   @Resource
   private AppInfoResolver appInfoResolver;
 
-	@ApiOperation(value="目录默认跳转", hidden = true)
+	@Operation(summary = "目录默认跳转", hidden = true)
 	@GetMapping(path = "index", produces = MediaType.TEXT_HTML_VALUE)
 	public ModelAndView handleDefaultPage(
     HttpServletRequest request,
@@ -50,14 +49,14 @@ public class AppPublishApi {
     return mav;
 	}
 
-  @ApiOperation("应用版本信息")
+  @Operation(summary = "应用版本信息")
   @GetMapping(path = "/version")
   public Return<Version> getAppVersion() {
     Version appVersion = appInfoResolver.getVersion();
     return Return.wrap(appVersion);
   }
 
-  @ApiOperation("获取请求头信息")
+  @Operation(summary = "获取请求头信息")
 	@GetMapping(path = "/headers")
   public Return<Map<String, String>> get_request_headers() {
     HttpServletRequest request = ContextUtils.getHttpServletRequest();

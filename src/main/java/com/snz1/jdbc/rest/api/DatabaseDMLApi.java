@@ -15,22 +15,20 @@ import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "6、高级功能")
+@Tag(name = "6、高级功能")
 @RequestMapping
 public class DatabaseDMLApi {
 
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("批量DML")
+  @Operation(summary = "批量DML")
   @PostMapping(path = "/dml")
   public Return<?> updateData(
-    @ApiParam("操作定义")
     @RequestBody
     JdbcDMLRequest []dmls,
     HttpServletRequest request
