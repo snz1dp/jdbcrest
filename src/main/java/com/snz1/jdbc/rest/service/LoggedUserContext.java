@@ -8,9 +8,6 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.web.security.User;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 public interface LoggedUserContext {
 
   /**
@@ -38,7 +35,6 @@ public interface LoggedUserContext {
   // 是否有任何权限
   boolean hasAnyRole(String ...roles);
 
-  @ApiModel("用户信息对象")
   public class UserInfo implements User, Serializable {
 
     private static final long serialVersionUID = 6161077033448193041L;
@@ -50,7 +46,6 @@ public interface LoggedUserContext {
 
     private String login_scope;
 
-    @ApiModelProperty("用户角色集合")
     private List<String> roles;
 
     public UserInfo(gateway.sc.v2.User user, String auth_mode, String login_scope, List<String> roles) {
@@ -169,18 +164,15 @@ public interface LoggedUserContext {
     }
 
     @Override
-    @ApiModelProperty("用户账号")
     public String getAccount_name() {
       return proxy.getUser_name();
     }
 
     @Override
-    @ApiModelProperty("用户姓名")
     public String getDisplay_name() {
       return proxy.getName();
     }
 
-    @ApiModelProperty("登录组织域")
     public String getLogin_scope() {
       return login_scope;
     }
@@ -191,19 +183,16 @@ public interface LoggedUserContext {
     }
 
     @Override
-    @ApiModelProperty("用户认证模式")
     public String getAuth_mode() {
       return auth_mode;
     }
 
     @Override
-    @ApiModelProperty("用户邮箱")
     public String getRegist_email() {
       return proxy.getRegist_email();
     }
 
     @Override
-    @ApiModelProperty("用户手机号码")
     public String getRegist_mobile() {
       return proxy.getRegist_mobile();
     }
@@ -253,7 +242,6 @@ public interface LoggedUserContext {
       this.roles = roles;
     }
 
-    @ApiModelProperty("当前状态")
     public Boolean getEnabled () {
       return proxy.getEnabled();
     }

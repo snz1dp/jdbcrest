@@ -27,17 +27,17 @@ import gateway.sc.v2.FunctionNode;
 import gateway.sc.v2.FunctionTreeNode;
 import gateway.sc.v2.UserManager;
 import gateway.sc.v2.User.IdType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 
-@Api(tags = "7、用户帐户")
+@Tag(name = "7、用户帐户")
 @RestController
 @Slf4j
 @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
@@ -74,7 +74,7 @@ public class UserProfileApi {
   }
 
   @GetMapping(path = "/user/headimg")
-  @ApiOperation("当前用户头像")
+  @Operation(summary = "当前用户头像")
   @PreAuthorize("isAuthenticated()")
   public byte[] user_headimg() {
     UserInfo user = loggedUserContext.getLoginUserInfo();
@@ -103,7 +103,7 @@ public class UserProfileApi {
   }
 
   @GetMapping(path = "/user/profile")
-  @ApiOperation("当前用户信息")
+  @Operation(summary = "当前用户信息")
   @PreAuthorize("isAuthenticated()")
   public Return<UserInfo> userinfo() {
     UserInfo userinfo = loggedUserContext.getLoginUserInfo(false);
@@ -114,20 +114,20 @@ public class UserProfileApi {
     return Return.wrap(userinfo);
   }
 
-  @ApiOperation(value = "修改人员帐号")
+  @Operation(summary = "修改人员帐号")
 	@PostMapping("/user/profile")
   @PreAuthorize("isAuthenticated()")
 	public Return<UserInfo> updateUser(
-    @ApiParam("确认密码")
+    @Parameter(description = "确认密码")
     @RequestParam(value = "verify_password", required = false)
     String verify_password,
-    @ApiParam("新的密码")
+    @Parameter(description = "新的密码")
     @RequestParam(value = "new_password", required = false)
     String new_password,
-    @ApiParam("用户密码")
+    @Parameter(description = "用户密码")
     @RequestParam(value = "password", required = false)
     String password,
-		@ApiParam("帐号配置")
+		@Parameter(description = "帐号配置")
 		@RequestBody
 		gateway.sc.v2.User user
 	) {
@@ -160,17 +160,17 @@ public class UserProfileApi {
 		return Return.wrap(loggedUserContext.getLoginUserInfo());
 	}
 
-  @ApiOperation(value = "获取人员权限角色")
+  @Operation(summary = "获取人员权限角色")
 	@GetMapping("/user/roles")
   @PreAuthorize("isAuthenticated()")
 	public Return<List<String>> getUserRole(//
-		@ApiParam("组织域代码（缺省为默认）")
+		@Parameter(description = "组织域代码（缺省为默认）")
 		@RequestParam(value = "version", required = false)
 		String version,
-		@ApiParam("是否包含职位角色")
+		@Parameter(description = "是否包含职位角色")
 		@RequestParam(value = "contain_positions_roles", required = false)
 		Boolean contain_positions_roles,
-		@ApiParam("应用ID")
+		@Parameter(description = "应用ID")
 		@RequestParam(value = "appid", required = false)
 		String appid
 	) {
@@ -184,7 +184,7 @@ public class UserProfileApi {
     return Return.wrap(new LinkedList<>(roles));
 	}
 
-  @ApiOperation("当前用户拥有权限的功能模块代码")
+  @Operation(summary = "当前用户拥有权限的功能模块代码")
   @GetMapping(path = "/user/functions")
   @PreAuthorize("isAuthenticated()")
   public Return<List<String>> getUserFuntionCodes() {
