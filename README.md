@@ -550,5 +550,5 @@ docker run --rm -ti -p 7188:7188 \
   -e JDBC_URL=jdbc:postgresql://your-db-host:5432/dbname \
   -e JDBC_USER=postgres \
   -e JDBC_PASSWORD=yourpass \
-  snz1/jdbcrest:latest
+  snz1dp/jdbcrest:beta
 ```
