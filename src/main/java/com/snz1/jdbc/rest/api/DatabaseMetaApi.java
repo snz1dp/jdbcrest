@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.snz1.jdbc.rest.data.JdbcMetaData;
-import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
@@ -68,7 +68,7 @@ public class DatabaseMetaApi {
     String []types,
     HttpServletRequest request
   ) throws SQLException {
-    JdbcQueryRequest.ResultMeta result_meta = new JdbcQueryRequest.ResultMeta();
+    ResultDefinition result_meta = new ResultDefinition();
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
     return restProvider.getTables(result_meta, catalog, schemaPattern, tableNamePattern, types);
   }

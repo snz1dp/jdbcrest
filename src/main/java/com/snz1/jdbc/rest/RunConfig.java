@@ -11,20 +11,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class RunConfig {
 
+  @Value("${server.context-path:/jdbc/rest/api}")
+  private String webroot;
+
   @Value("${app.default_url:/swagger-ui/index.html}")
 	private String defaultTargetUrl;
 
   @Value("${app.code}")
   private String applicationCode;
 
-  @Value("${app.user.scope:developer}")
-  private String defaultUserScope;
+  @Value("${app.sql.location:}")
+  private String sql_location;
 
   @Autowired(required = false)
   private PermissionDefinition permissionDefinition;
 
   @Resource
   private Version appVerison;
+
+  public String getWebroot() {
+    return webroot;
+  }
 
   public String getDefaultTargetUrl() {
     return defaultTargetUrl;
@@ -44,6 +51,10 @@ public class RunConfig {
 
   public boolean hasPermissionDefinition() {
     return this.getPermissionDefinition() != null;
+  }
+
+  public String getSql_location() {
+    return sql_location;
   }
 
 }

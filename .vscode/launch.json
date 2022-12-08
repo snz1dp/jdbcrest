@@ -6,6 +6,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Launch SQLServiceRegistryImpl",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.service.impl.SQLServiceRegistryImpl",
+      "projectName": "dashboard"
+    },
+    {
+      "type": "java",
       "name": "Launch Current File",
       "request": "launch",
       "mainClass": "${file}"
@@ -23,7 +30,8 @@
         "PERMISSION_ENABLED": "true",
         "SSO_ENABLED": "true",
         "SSO_SIMULATE": "true",
-        "CONFIG_TYPE": "cluster"
+        "CONFIG_TYPE": "cluster",
+        "SQL_LOCATION": "file://${workspaceFolder}/src/test/resources/sql/services"
       }
     }
   ]

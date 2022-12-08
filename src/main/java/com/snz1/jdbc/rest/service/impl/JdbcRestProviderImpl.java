@@ -20,6 +20,9 @@ import javax.annotation.Resource;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
+import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataAccessException;
@@ -34,9 +37,11 @@ import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQuery;
-import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.Page;
+import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableIndex;
@@ -46,6 +51,7 @@ import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
+import org.apache.ibatis.mapping.SqlCommandType;
 
 import gateway.api.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +66,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   private JdbcTemplate jdbcTemplate;
 
   @Resource
+  private SqlSessionFactory sessionFactory;
+
+  @Resource
   private Map<String, SQLDialectProvider> sqlDialectProviders = new HashMap<>();
 
   @EventListener(ContextRefreshedEvent.class)
@@ -72,7 +81,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 执行获取结果集
   @SuppressWarnings("null")
   protected JdbcQueryResponse<List<Object>> doFetchResultSet(
-    ResultSet rs, JdbcQueryRequest.ResultMeta return_meta,
+    ResultSet rs, ResultDefinition return_meta,
     Object primary_key, List<TableIndex> unique_index
   ) throws SQLException {
     boolean onepack = true; 
@@ -82,7 +91,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     if (return_meta != null) {
       meta = return_meta.isContain_meta();
       onepack = return_meta.isColumn_compact();
-      objlist = JdbcQueryRequest.ResultMeta.ResultObjectStruct.list.equals(return_meta.getRow_struct());
+      objlist = ResultDefinition.ResultRowStruct.list.equals(return_meta.getRow_struct());
     }
 
     TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key, unique_index);
@@ -103,15 +112,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         String col_name = col_item.getName();
         Object col_obj = JdbcUtils.getResultSetValue(rs, col_item.getIndex() + 1);
         if (col_obj != null) {
-          JdbcQueryRequest.ResultMeta.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
-          if (coldef != null && !Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.raw)) {
-            if (Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.list)) {
+          ResultDefinition.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
+          if (coldef != null && !Objects.equals(coldef.getType(), ResultDefinition.ResultType.raw)) {
+            if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.list)) {
               if (col_item.getJdbc_type() == JDBCType.BLOB) {
                 col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), List.class);
               } else {
                 col_obj = JsonUtils.fromJson(col_obj.toString(), List.class);
               }
-            } else if (Objects.equals(coldef.getType(), JdbcQueryRequest.ResultMeta.ColumnType.map)) {
+            } else if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.map)) {
               if (col_item.getJdbc_type() == JDBCType.BLOB) {
                 col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), Map.class);
               } else {
@@ -213,7 +222,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 获取表类表
   @Override
   public JdbcQueryResponse<List<Object>> getTables(
-    JdbcQueryRequest.ResultMeta return_meta,
+    ResultDefinition return_meta,
     String catalog, String schema_pattern,
     String table_name_pattern, String...types
   ) throws SQLException {
@@ -490,7 +499,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   public long queryAllCountResult(TableQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    table_query.getResult().setRow_struct(JdbcQueryRequest.ResultMeta.ResultObjectStruct.list);
+    table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     return (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
@@ -770,6 +779,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
           Validate.notBlank(update_request.getTable_name(), "[%d-%d]更新请求未设置表名", i, j);
+          Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(update_request.getTable_name());
           if (table_meta == null) {
             table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(update_request.getTable_name())));
@@ -782,6 +792,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
           Validate.notBlank(delete_request.getTable_name(), "[%d-%d]删除请求未设置表名", i, j);
+          Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(delete_request.getTable_name());
           if (table_meta == null) {
             table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(delete_request.getTable_name())));
@@ -873,6 +884,156 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       responses.add(response);
     }
     return responses;
+  }
+
+  @Override
+  public Object executeSQLService(SQLServiceRequest sql_request) {
+    SqlSession session = this.sessionFactory.openSession();
+    List<Object> output_list = new LinkedList<>();
+    try {
+      for (Map<String, Object> input_data : sql_request.getInput_list()) {
+        Object last_output = null;
+        for (SQLServiceDefinition.SQLFragment sql_fragment : sql_request.getDefinition().getSql_fragments()) {
+          Map<String, Object> input_wrap = new HashMap<String, Object>(2);
+          input_wrap.put("input", input_data);
+          if (last_output != null) {
+            input_wrap.put("lastout", last_output);
+          }
+          if (output_list.size() > 0) {
+            input_wrap.put("output", output_list);
+          }
+          last_output = doExecuteSQLService(session, sql_fragment, input_wrap);
+        }
+        output_list.add(last_output);
+      }
+    } finally {
+      session.close();
+    }
+    if (sql_request.testSignletonData()) {
+      if (output_list.size() > 0) {
+        return output_list.get(0);
+      } else {
+        return null;
+      }
+    } else {
+      return output_list;
+    }
+  }
+
+  public Object doExecuteSQLService(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    resolveMappedStatement(sql_fragment);
+    SqlCommandType sql_cmd_type = sql_fragment.getCommand_type();
+    if (sql_cmd_type == null || Objects.equals(SqlCommandType.UNKNOWN, sql_cmd_type)) {
+      throw new IllegalStateException("无效SQL语句");
+    }
+
+    try {
+      switch(sql_cmd_type) {
+      case SELECT:
+        return doSQLServiceSelect(session, sql_fragment, input_data);
+      case INSERT:
+        return doSQLServiceInsert(session, sql_fragment, input_data);
+      case UPDATE:
+        return doSQLServiceUpdate(session, sql_fragment, input_data);
+      case DELETE:
+        return doSQLServiceDelete(session, sql_fragment, input_data);
+      default:
+        throw new IllegalStateException("无效SQL语句");
+      }
+    } finally {
+    }
+  }
+
+  private Object doSQLServiceInsert(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.insert(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}插入耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private Object doSQLServiceUpdate(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.update(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}更新耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private Object doSQLServiceDelete(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      return session.delete(mapped_id, input_data);
+    } finally {
+      log.debug("执行{}删除耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Object doSQLServiceSelect(
+    SqlSession session,
+    SQLServiceDefinition.SQLFragment sql_fragment,
+    Object input_data
+  ) {
+    String mapped_id = sql_fragment.getMapped_id();
+    long start_time = System.currentTimeMillis();
+    try {
+      List<Object> result = session.selectList(mapped_id, input_data);
+      if (sql_fragment.getResult().isSignleton()) {
+        if (result == null || result.size() == 0) {
+          return null;
+        }
+        Map<String, Object> map = (Map<String, Object>)result.get(0);
+        if (sql_fragment.getResult().isColumn_compact()) {
+          return map.get(map.keySet().iterator().next());
+        } else {
+          return map;
+        }
+      } else {
+        return result;
+      }
+    } finally {
+      log.debug("执行{}查询耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+    }
+  }
+
+  private String resolveMappedStatement(
+    SQLServiceDefinition.SQLFragment sql_fragment
+  ) {
+    long start_time = System.currentTimeMillis();
+    try {
+      Configuration mybatis_config = this.sessionFactory.getConfiguration();
+      if (mybatis_config.hasStatement(sql_fragment.getMapped_id(), false)) {
+        return sql_fragment.getMapped_id();
+      }
+      mybatis_config.addMappedStatement(sql_fragment.getMapped_statement());
+      return sql_fragment.getMapped_id();
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug("构建{}耗时{}毫秒", sql_fragment.getMapped_id(), (System.currentTimeMillis() - start_time));
+      }
+    }
   }
 
 }

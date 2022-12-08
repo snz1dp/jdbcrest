@@ -65,4 +65,13 @@ public abstract class Constants {
   // 条件前缀
   public static final String HEADER_WHERE_PREFIX = "jdbcrest-";
 
+  // SQL分割
+  public static final String SQL_SPLITTER = ";";
+
+  // SQL参数开始
+  public static final String SQL_PARAM_PREFIX = "#{";
+
+  // SQL参数结束
+  public static final String SQL_PARAM_SUFFIX = "}";
+
 }
