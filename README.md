@@ -536,6 +536,12 @@ select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
 
 > 使用与`MyBatis`一样传参定义方式，其中`input`表示传入参数主体。
 
+**类型处理**
+
+- com.snz1.jdbc.rest.dao.ListTypeHandler 列表参数转字段
+- com.snz1.jdbc.rest.dao.MapTypeHandler  对象参数转字段
+- com.snz1.jdbc.rest.dao.Base64TypeHandler  Base64参数转`Blob`、`CLOB`字段
+
 ## 7、部署运行说明
 
 ```bash
