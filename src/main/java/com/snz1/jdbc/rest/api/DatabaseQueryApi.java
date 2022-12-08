@@ -25,23 +25,21 @@ import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "2、数据查询")
+@Tag(name = "2、数据查询")
 @RequestMapping
 public class DatabaseQueryApi {
 
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("分页查询")
+  @Operation(summary = "分页查询")
   @GetMapping(path = "/tables/{table:.*}")
   @ResponseBody
   public Return<?> getTablePage(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
     HttpServletRequest request
@@ -49,11 +47,10 @@ public class DatabaseQueryApi {
     return doQueryTable(table_name, request);
   }
 
-  @ApiOperation("高级查询")
+  @Operation(summary = "高级查询")
   @PostMapping(path = "/query")
   @ResponseBody
   public Return<?> queryTable(
-    @ApiParam("表名")
     @RequestParam("table")
     String table_name,
     HttpServletRequest request
@@ -93,13 +90,11 @@ public class DatabaseQueryApi {
   }
 
   @SuppressWarnings("unchecked")
-  @ApiOperation("主键查询")
+  @Operation(summary = "主键查询")
   @GetMapping(path = "/tables/{table:.*}/{key:.*}")
   public Return<?> queryTableRow(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
-    @ApiParam("主键")
     @PathVariable("key")
     String key,
     HttpServletRequest request

@@ -21,49 +21,44 @@ import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "1、数据信息")
+@Tag(name = "1、数据信息")
 @RequestMapping
 public class DatabaseMetaApi {
   
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("服务元信息")
+  @Operation(summary = "服务元信息")
   @GetMapping(path = "/meta")
   public Return<JdbcMetaData> getMetaData() throws SQLException {
     return Return.wrap(restProvider.getMetaData());
   }
 
-  @ApiOperation("获取模式")
+  @Operation(summary = "获取模式")
   @GetMapping(path = "/schemas")
   public Return<List<Object>> getSchemas() throws SQLException {
     return restProvider.getSchemas();
   }
 
-  @ApiOperation("获取目录")
+  @Operation(summary = "获取目录")
   @GetMapping(path = "/catalogs")
   public Return<List<Object>> getCatalogs() throws SQLException {
     return restProvider.getCatalogs();
   }
 
-  @ApiOperation("获取数据表")
+  @Operation(summary = "获取数据表")
   @GetMapping(path = "/tables")
   public Return<List<Object>> getTables(
-    @ApiParam("目录")
     @RequestParam(value="catalog", required = false)
     String catalog,
-    @ApiParam("模式")
     @RequestParam(value="schema", required = false)
     String schemaPattern,
-    @ApiParam("表名")
     @RequestParam(value="table", required = false)
     String tableNamePattern,
-    @ApiParam("类型")
     @RequestParam(value="type", required = false)
     String []types,
     HttpServletRequest request
@@ -73,13 +68,12 @@ public class DatabaseMetaApi {
     return restProvider.getTables(result_meta, catalog, schemaPattern, tableNamePattern, types);
   }
 
-  @ApiOperation("表元信息")
+  @Operation(summary = "表元信息")
   @RequestMapping(path = "/tables/{table:.*}/meta", method = {
     RequestMethod.GET,
     RequestMethod.POST,
   })
   public Return<TableMeta> queryMeta(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
     HttpServletRequest request

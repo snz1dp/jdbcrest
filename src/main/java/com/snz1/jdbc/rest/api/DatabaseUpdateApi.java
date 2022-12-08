@@ -24,28 +24,25 @@ import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
 import gateway.api.Return;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "4、数据更新")
+@Tag(name = "4、数据更新")
 @RequestMapping
 public class DatabaseUpdateApi {
 
   @Resource
   private JdbcRestProvider restProvider;
 
-  @ApiOperation("根据主键更新数据")
+  @Operation(summary = "根据主键更新数据")
   @RequestMapping(path = "/tables/{table:.*}/{key:.*}", method = {
     org.springframework.web.bind.annotation.RequestMethod.POST,
     org.springframework.web.bind.annotation.RequestMethod.PUT
   })
   public Return<?> updateTableRow(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
-    @ApiParam("主键")
     @PathVariable("key")
     String key,
     HttpServletRequest request
@@ -56,13 +53,11 @@ public class DatabaseUpdateApi {
     return Return.wrap(result);
   }
 
-  @ApiOperation("根据主键补丁更新")
+  @Operation(summary = "根据主键补丁更新")
   @PatchMapping(path = "/tables/{table:.*}/{key:.*}")
   public Return<?> patchTableRow(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
-    @ApiParam("主键")
     @PathVariable("key")
     String key,
     HttpServletRequest request
@@ -115,10 +110,9 @@ public class DatabaseUpdateApi {
     return update_request;
   }
 
-  @ApiOperation("条件批量更新表数据")
+  @Operation(summary = "条件批量更新表数据")
   @PatchMapping(path = "/tables/{table:.*}")
   public Return<?> updateTableData(
-    @ApiParam("表名")
     @PathVariable("table")
     String table_name,
     HttpServletRequest request

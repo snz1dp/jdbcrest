@@ -26,11 +26,11 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import gateway.api.Return;
 import gateway.sc.v2.FunctionTreeNode;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Api(tags = "0、应用信息")
+@Tag(name = "0、应用信息")
 @RequestMapping
 public class AppPublishApi {
 
@@ -42,39 +42,42 @@ public class AppPublishApi {
   @Resource
   private AppInfoResolver appInfoResolver;
 
-  private ModelAndView rootRedirecrt(HttpServletRequest request, HttpServletResponse response) {
+	@Operation(summary = "目录默认跳转", hidden = true)
+	@GetMapping(path = "index", produces = MediaType.TEXT_HTML_VALUE)
+	public ModelAndView handleDefaultPage(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
+    return rootRedirect(request, response);
+  }
+
+  @Operation(summary = "目录默认跳转", hidden = true)
+	@GetMapping(path = "", produces = MediaType.TEXT_HTML_VALUE)
+	public ModelAndView handleDessfaultPage(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
+    return rootRedirect(request, response);
+	}
+
+  private ModelAndView rootRedirect(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
     ModelAndView mav = new ModelAndView();
     String dash_url = WebUtils.getPublishURLViaGateway(request, runConfig.getDefaultTargetUrl());
     mav.setView(new RedirectView(dash_url));
     return mav;
   }
 
-	@ApiOperation(value="默认页面跳转", hidden = true)
-	@GetMapping(path = "/index", produces = MediaType.TEXT_HTML_VALUE)
-	public ModelAndView handleDefaultPage(
-    HttpServletRequest request,
-    HttpServletResponse response
-  ) {
-    return rootRedirecrt(request, response);
-	}
-
-	@ApiOperation(value="目录默认跳转", hidden = true)
-	@GetMapping(path = "", produces = MediaType.TEXT_HTML_VALUE)
-	public ModelAndView handleDessfaultPage(
-    HttpServletRequest request,
-    HttpServletResponse response
-  ) {
-    return rootRedirecrt(request, response);
-	}
-
-  @ApiOperation("应用版本信息")
+  @Operation(summary = "应用版本信息")
   @GetMapping(path = "/version")
   public Return<Version> getAppVersion() {
     Version appVersion = appInfoResolver.getVersion();
     return Return.wrap(appVersion);
   }
 
-  @ApiOperation("获取请求头信息")
+  @Operation(summary = "获取请求头信息")
 	@GetMapping(path = "/headers")
   public Return<Map<String, String>> get_request_headers() {
     HttpServletRequest request = ContextUtils.getHttpServletRequest();
@@ -87,9 +90,8 @@ public class AppPublishApi {
     return Return.wrap(header_map);
   }
 
-
   @GetMapping(path = "/functions")
-  @ApiOperation("系统功能树")
+  @Operation(summary = "系统功能树")
   @PreAuthorize("isAuthenticated")
   @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
   public Return<FunctionTreeNode[]> functions() {
