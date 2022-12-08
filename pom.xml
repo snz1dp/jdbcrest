@@ -163,6 +163,11 @@
 			<artifactId>admin-api</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>api.gateway</groupId>
+			<artifactId>sc-client-api</artifactId>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/commons-validator/commons-validator -->
 		<dependency>
 			<groupId>commons-validator</groupId>
