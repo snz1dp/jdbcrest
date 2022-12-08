@@ -495,3 +495,54 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
   ]
 }
 ```
+
+## 6、SQL实现服务
+
+启动运行时设置`SQL_LOCATION`环境变量为一个目录地址，如此您可以在该目录下放置`SQL`文件用于实现REST服务，规则如下：
+
+- 后缀为`.sql`的`xxx`文件都对应一个`/jdbc/rest/api/services/xxx`地址；
+- `SQL`实现服务只能使用`POST`方法调用；
+- 请求必须通过`JSON`方式传入请求参数；
+
+`SQL`文件可以是任何增删改查语句，可定义多段`SQL`，默认返回最后一段查询结果，示例如下所示：
+
+```SQL
+/*
+################################################
+# 定义返回格式(YAML格式)
+################################################
+
+# 是否单行返回，默认为false
+signleton: false
+
+# 单行返回且只有一个字段则只返回字段内容，默认为false
+column_compact: false
+
+# 字段定义，主要是为了
+#columns:
+#- name: <字段名>
+#  type: raw, map, list, base64
+
+################################################
+*/
+select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
+```
+
+**注释说明**
+
+> 注释部分使用`YAML`格式定义查询返回
+
+**`SQL`部分**
+
+> 使用与`MyBatis`一样传参定义方式，其中`input`表示传入参数主体。
+
+## 7、部署运行说明
+
+```bash
+docker run --rm -ti -p 7188:7188 \
+  -e JDBC_DRIVER=org.postgresql.Driver \
+  -e JDBC_URL=jdbc:postgresql://your-db-host:5432/dbname \
+  -e JDBC_USER=postgres \
+  -e JDBC_PASSWORD=yourpass \
+  snz1/jdbcrest:latest
+```
