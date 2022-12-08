@@ -183,12 +183,6 @@
 		<dependency>
 			<groupId>com.snz1</groupId>
 			<artifactId>utility</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.security</groupId>
-					<artifactId>*</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 	</dependencies>
