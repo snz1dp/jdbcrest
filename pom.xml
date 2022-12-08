@@ -19,9 +19,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-
-		<start-class>com.snz1.gateway.dash.Application</start-class>
-		<commons-compress.version>1.21</commons-compress.version>
+		<start-class>com.snz1.jdbc.rest.Application</start-class>
 	</properties>
 
 	<dependencies>
@@ -144,12 +142,6 @@
 		<dependency>
 			<groupId>org.springframework.session</groupId>
 			<artifactId>spring-session-core</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-compress</artifactId>
-			<version>${commons-compress.version}</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api -->
