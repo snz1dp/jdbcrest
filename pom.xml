@@ -181,6 +181,12 @@
 		<dependency>
 			<groupId>com.snz1</groupId>
 			<artifactId>utility</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.springfox</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 	</dependencies>

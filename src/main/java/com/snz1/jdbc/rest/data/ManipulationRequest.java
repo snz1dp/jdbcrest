@@ -1,6 +1,5 @@
 package com.snz1.jdbc.rest.data;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -16,15 +15,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-@ToString
-@EqualsAndHashCode
-public class ManipulationRequest implements Serializable {
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class ManipulationRequest extends JdbcRestfulRequest {
  
-  // 表名
-  @Setter
-  @Getter
-  private String table_name;
-
   // 主键
   @Setter
   @JsonIgnore

@@ -36,7 +36,7 @@ import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
-import com.snz1.jdbc.rest.data.JdbcQuery;
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
@@ -45,7 +45,7 @@ import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableIndex;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
@@ -332,7 +332,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 执行获取结果集元信息
-  protected TableMeta doFetchResultSetMeta(final TableQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
+  protected TableMeta doFetchResultSetMeta(final JdbcQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
     // TODO 实现表元信息缓存
     return jdbcTemplate.execute(new ConnectionCallback<TableMeta>() {
       @Override
@@ -361,7 +361,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   // 元信息
   public TableMeta queryResultMeta(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException {
     if (table_query.hasTable_meta()) return table_query.getTable_meta();
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
@@ -374,11 +374,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 分页查询统计信息
-  protected boolean doFetchQueryPageTotal(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
+  protected boolean doFetchQueryPageTotal(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
     long start_time = System.currentTimeMillis();
     try {
       // 获取统计
-      JdbcQuery count_query = sql_dialect_provider.prepareQueryCount(table_query);
+      JdbcQueryStatement count_query = sql_dialect_provider.prepareQueryCount(table_query);
       Long query_count = 0l;
       if (count_query.hasParameter()) {
         query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class, count_query.getParameters().toArray(new Object[0]));
@@ -413,7 +413,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 查询列表结果
-  protected JdbcQueryResponse<?> doQueryListResult(TableQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
+  protected JdbcQueryResponse<?> doQueryListResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
     try {
       // 获取列表数据
@@ -457,7 +457,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
   public JdbcQueryResponse<?> queryPageResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
@@ -499,7 +499,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   @Override
   @SuppressWarnings("unchecked")
-  public long queryAllCountResult(TableQueryRequest table_query) throws SQLException {
+  public long queryAllCountResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
@@ -509,7 +509,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   @Override
-  public JdbcQueryResponse<?> queryGroupCountResult(TableQueryRequest table_query) throws SQLException {
+  public JdbcQueryResponse<?> queryGroupCountResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
@@ -518,7 +518,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   @Override
-  public JdbcQueryResponse<?> queryGroupResult(TableQueryRequest table_query) throws SQLException {
+  public JdbcQueryResponse<?> queryGroupResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
@@ -528,7 +528,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   @Override
   @SuppressWarnings("unchecked")
-  public JdbcQueryResponse<?> querySignletonResult(TableQueryRequest table_query) throws SQLException {
+  public JdbcQueryResponse<?> querySignletonResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     table_query.getResult().setLimit(1l);
@@ -772,7 +772,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           Validate.notBlank(insert_request.getTable_name(), "[%d-%d]插入请求未设置表名", i, j);
           TableMeta table_meta = table_metas.get(insert_request.getTable_name());
           if (table_meta == null) {
-            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(insert_request.getTable_name())));
+            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(insert_request.getTable_name())));
           }
           insert_request.copyTableMeta(table_meta);
           insert_request.rebuildWhere();
@@ -785,7 +785,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(update_request.getTable_name());
           if (table_meta == null) {
-            table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(update_request.getTable_name())));
+            table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(update_request.getTable_name())));
           }
           update_request.copyTableMeta(table_meta);
           update_request.rebuildWhere();
@@ -798,7 +798,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
           TableMeta table_meta = table_metas.get(delete_request.getTable_name());
           if (table_meta == null) {
-            table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(TableQueryRequest.of(delete_request.getTable_name())));
+            table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(delete_request.getTable_name())));
           }
           delete_request.copyTableMeta(table_meta);
           delete_request.rebuildWhere();

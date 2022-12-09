@@ -4,9 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import com.snz1.jdbc.rest.data.JdbcQuery;
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 
 // SQL方言实现
 public interface SQLDialectProvider {
@@ -15,18 +15,18 @@ public interface SQLDialectProvider {
   String getName();
 
   // 获取查询的合计
-  JdbcQuery prepareQueryCount(TableQueryRequest table_query);
+  JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);
 
   // 准备无行查询
   PreparedStatement prepareNoRowSelect(
     Connection conn,
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 准备分页查询
   PreparedStatement preparePageSelect(
     Connection conn,
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 准备插入数据
