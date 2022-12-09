@@ -6,13 +6,6 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Launch SQLServiceRegistryImpl",
-      "request": "launch",
-      "mainClass": "com.snz1.jdbc.rest.service.impl.SQLServiceRegistryImpl",
-      "projectName": "dashboard"
-    },
-    {
-      "type": "java",
       "name": "Launch Current File",
       "request": "launch",
       "mainClass": "${file}"
