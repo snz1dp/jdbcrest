@@ -4,9 +4,12 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.web.security.User;
+
+import gateway.sc.v2.User.IdType;
 
 public interface LoggedUserContext {
 
@@ -268,6 +271,20 @@ public interface LoggedUserContext {
 
     public void setName(String val) {
       proxy.setName(val);
+    }
+
+    public String getIdByType(IdType idtype) {
+      User logged_user = this.proxy;
+      if (Objects.equals(IdType.id, idtype)) {
+        return logged_user.getUserid();
+      } else if (Objects.equals(IdType.uname, idtype)) {
+        return logged_user.getAccount_name();
+      } else if (Objects.equals(IdType.email, idtype)) {
+        return logged_user.getRegist_email();
+      } else if (Objects.equals(IdType.mobi, idtype)) {
+        return logged_user.getRegist_mobile();
+      }
+      return logged_user.getAccount_name();
     }
 
   }

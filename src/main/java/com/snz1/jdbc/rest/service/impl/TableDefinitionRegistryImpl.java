@@ -39,12 +39,12 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
   @PostConstruct
   public void loadTableDefinitions() {
     if (StringUtils.isBlank(this.tableDefinitionFile)) {
-      log.info("未设置数据表权限配置文件参数");
+      log.info("未设置数据表配置文件参数");
       return;
     }
 
     if (log.isInfoEnabled()) {
-      log.info("加载数据表权限配置文件{} ...", this.tableDefinitionFile);
+      log.info("加载数据表配置文件{} ...", this.tableDefinitionFile);
     }
 
     Resource tdf_resource;
@@ -54,7 +54,7 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
       if (e instanceof MalformedURLException) {
         tdf_resource = new ClassPathResource(this.tableDefinitionFile);
       } else {
-        throw new IllegalArgumentException(String.format("错误的数据表权限配置文件路径: %s", this.tableDefinitionFile));
+        throw new IllegalArgumentException(String.format("错误的数据表配置文件路径: %s", this.tableDefinitionFile));
       }
     }
 
@@ -63,7 +63,7 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
 		try {
 			tdf_ism = tdf_resource.getInputStream();
 		} catch (IOException e) {
-			throw new IllegalStateException(String.format("无法读取数据表权限配置文件: %s", this.tableDefinitionFile), e);
+			throw new IllegalStateException(String.format("无法读取数据表配置文件: %s", this.tableDefinitionFile), e);
 		}
 
     // 读取配置
@@ -72,11 +72,11 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     try {
       table_definitions = yamlReader.read(TableDefinition[].class);
     } catch (YamlException e) {
-			throw new IllegalStateException(String.format("读取数据表权限配置文件%s出错: %s", this.tableDefinitionFile, e.getMessage()), e);
+			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", this.tableDefinitionFile, e.getMessage()), e);
     }
 
     if (table_definitions == null || table_definitions.length == 0) {
-      log.warn("数据表权限配置文件 {} 中无任何配置内容", this.tableDefinitionFile);
+      log.warn("数据表配置文件 {} 中无任何配置内容", this.tableDefinitionFile);
       return;
     }
 
@@ -100,7 +100,7 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     // 加载定义
     this.tableDefinitionMap = new HashMap<>(table_definitions.length);
     for (TableDefinition table_def : table_definitions) {
-      this.tableDefinitionMap.put(tableDefinitionFile, table_def);
+      this.tableDefinitionMap.put(table_def.getName(), table_def);
     }
 
   }

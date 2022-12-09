@@ -6,18 +6,25 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.annotation.Resource;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
+import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
+
+  @Resource
+  private LoggedUserContext loggedUserContext;
 
   // 获取查询的合计
   @Override
@@ -114,8 +121,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         });
       }
 
+      boolean where_append = false;
       if (table_query.hasWhere()) {
-        boolean where_append = false;
         for (WhereCloumn w : table_query.getWhere()) {
           if (where_append) {
             sql.AND();
@@ -126,6 +133,23 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           w.buildParameters(parameters);
         };
       }
+
+      if (table_query.hasDefinition()) {
+        TableDefinition table_definition = table_query.getDefinition();
+        if (table_definition.hasOwner_id_column()) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          sql.WHERE(String.format("%s = ?", table_definition.getOwner_id_column().getName()));
+          if (loggedUserContext.isUserLogged()) { 
+            parameters.add(loggedUserContext.getLoginUserInfo().getIdByType(table_definition.getOwner_id_column().getIdtype()));
+          } else {
+            parameters.add(null);
+          }
+        }
+      } 
 
       if (!docount && table_query.hasOrder_by()) {
         boolean order_append = false;
@@ -187,6 +211,14 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           TableColumn v = update_request.findColumn(k);
           if (v.getRead_only() != null && v.getRead_only()) return;
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+          if (update_request.hasDefinition() &&
+            update_request.getDefinition().hasCreated_time_column() &&
+            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
+          ) return;
+          if (update_request.hasDefinition() &&
+            update_request.getDefinition().hasCreator_id_column() &&
+            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
+          ) return;
           if (v.getWritable() != null && v.getWritable()) {
             sql.SET(String.format("%s = ?", v.getName()));
           }
@@ -196,6 +228,14 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           if (v.getRead_only() != null && v.getRead_only()) return;
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
           if (update_request.testRow_key(v.getName())) return;
+          if (update_request.hasDefinition() &&
+            update_request.getDefinition().hasCreated_time_column() &&
+            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
+          ) return;
+          if (update_request.hasDefinition() &&
+            update_request.getDefinition().hasCreator_id_column() &&
+            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
+          ) return;
           if (v.getWritable() != null && v.getWritable()) {
             sql.SET(String.format("%s = ?", v.getName()));
           }

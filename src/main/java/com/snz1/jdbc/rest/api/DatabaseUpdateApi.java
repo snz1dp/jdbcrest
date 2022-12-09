@@ -20,6 +20,7 @@ import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
+import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
@@ -34,6 +35,9 @@ public class DatabaseUpdateApi {
 
   @Resource
   private JdbcRestProvider restProvider;
+
+  @Resource
+  private TableDefinitionRegistry definitionRegistry;
 
   @Operation(summary = "根据主键更新数据")
   @RequestMapping(path = "/tables/{table:.*}/{key:.*}", method = {
@@ -74,19 +78,21 @@ public class DatabaseUpdateApi {
     String table_name, String key,
     HttpServletRequest request
   ) throws IOException, SQLException {
+    // 获取表元信息
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
+    table_name = result_meta.getTable_name();
+
     // 构建操作请求
     ManipulationRequest update_request = new ManipulationRequest();
     update_request.setTable_name(table_name);
+    // 获取表元信息
+    update_request.copyTableMeta(result_meta);
 
     // 提取更新输入
     Object input_data = RequestUtils.fetchManipulationRequestData(request);
 
     // 提取自定义主键
     RequestUtils.fetchManipulationRequestCustomKey(request, update_request.getCustom_key());
-
-    // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    update_request.copyTableMeta(result_meta);
 
     // 获取主键
     RequestCustomKey custom_key = update_request.getCustom_key();
@@ -117,8 +123,13 @@ public class DatabaseUpdateApi {
     String table_name,
     HttpServletRequest request
   ) throws IOException, SQLException {
+    // 获取表元信息
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
+    table_name = result_meta.getTable_name();
+
     // 构建操作请求
     ManipulationRequest batch_patch_request = new ManipulationRequest();
+    batch_patch_request.copyTableMeta(result_meta);
     batch_patch_request.setTable_name(table_name);
 
     // 提取更新输入
@@ -131,9 +142,6 @@ public class DatabaseUpdateApi {
       "请传入条件请求头参数"
     );
 
-    // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    batch_patch_request.copyTableMeta(result_meta);
     batch_patch_request.setPatch_update(true);
     batch_patch_request.setInput_data(input_data);
 

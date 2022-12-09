@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.druid.util.StringUtils;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
@@ -44,12 +45,15 @@ import com.snz1.jdbc.rest.data.SQLServiceDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableColumn;
+import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
+import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
+import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -72,6 +76,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   @Resource
   private TableDefinitionRegistry tableDefinitionRegistry;
 
+  @Resource
+  private LoggedUserContext loggedUserContext;
+
   private Map<String, SQLDialectProvider> sqlDialectProviders = new HashMap<>();
 
   @EventListener(ContextRefreshedEvent.class)
@@ -85,7 +92,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   @SuppressWarnings("null")
   protected JdbcQueryResponse<List<Object>> doFetchResultSet(
     ResultSet rs, ResultDefinition return_meta,
-    Object primary_key, List<TableIndex> unique_index
+    Object primary_key, List<TableIndex> unique_index,
+    TableDefinition table_definition
   ) throws SQLException {
     boolean onepack = true; 
     boolean meta = false;
@@ -97,7 +105,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       objlist = ResultDefinition.ResultRowStruct.list.equals(return_meta.getRow_struct());
     }
 
-    TableMeta result_meta = TableMeta.of(rs.getMetaData(), return_meta, primary_key, unique_index);
+    TableMeta result_meta = TableMeta.of(
+      rs.getMetaData(),
+      return_meta,
+      primary_key,
+      unique_index,
+      table_definition
+    );
     List<Object> rows = new LinkedList<>();
 
     while(rs.next()) {
@@ -175,7 +189,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getSchemas();
         try {
-          return doFetchResultSet(rs, null, null, null);
+          return doFetchResultSet(rs, null, null, null, null);
         } finally {
           JdbcUtils.closeResultSet(rs);
         }
@@ -193,7 +207,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta =  conn.getMetaData();
         ResultSet rs = table_meta.getCatalogs();
         try {
-          return doFetchResultSet(rs, null, null, null);
+          return doFetchResultSet(rs, null, null, null, null);
         } finally {
           JdbcUtils.closeResultSet(rs);
         }
@@ -237,7 +251,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         DatabaseMetaData table_meta = conn.getMetaData();
         ResultSet rs = table_meta.getTables(catalog, schema_pattern, table_name_pattern, types != null && types.length > 0 ? types : null);
         try {
-          return doFetchResultSet(rs, return_meta, null, null);
+          return doFetchResultSet(rs, return_meta, null, null, null);
         } finally {
           JdbcUtils.closeResultSet(rs);
         }
@@ -258,7 +272,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
             DatabaseMetaData table_meta = conn.getMetaData();
             ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
             try {
-              return doFetchResultSet(rs, null, null, null);
+              return doFetchResultSet(rs, null, null, null, null);
             } finally {
               JdbcUtils.closeResultSet(rs);
             }
@@ -290,7 +304,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     Object primary_key = null;
     ResultSet ks = conn.getMetaData().getPrimaryKeys(null, null, table_name);
     try {
-      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null);
+      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         List<Object> primary_key_lst = new LinkedList<>();
         for (Object keycol : list.getData()) {
@@ -313,7 +327,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     List<TableIndex> index_lst = new LinkedList<>();
     ResultSet ks = conn.getMetaData().getIndexInfo(null, null, table_name, true, false);
     try {
-      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null);
+      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         for (Object index_item : list.getData()) {
           Map<String, Object> colobj = (Map<String, Object>)index_item;
@@ -333,7 +347,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   // 执行获取结果集元信息
   protected TableMeta doFetchResultSetMeta(final JdbcQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
-    // TODO 实现表元信息缓存
     return jdbcTemplate.execute(new ConnectionCallback<TableMeta>() {
       @Override
       @Nullable
@@ -348,7 +361,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           ResultSet rs = ps.executeQuery();
           try {
             rs = ps.getResultSet();
-            return TableMeta.of(rs.getMetaData(), table_query.getResult(), primary_key, unique_index);
+            return TableMeta.of(
+              rs.getMetaData(),
+              table_query.getResult(),
+              primary_key,
+              unique_index,
+              table_query.getDefinition()
+            );
           } finally {
             JdbcUtils.closeResultSet(rs);
           }
@@ -367,6 +386,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     String table_name = table_query.getTable_name();
+    if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
+      TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_name);
+      table_query.setDefinition(definition);
+      if (definition.hasAlias_name()) {
+        table_name = definition.getAlias();
+      }
+    }
     if (!testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
@@ -436,7 +462,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               ResultSet rs = null;
               try {
                 rs = ps.executeQuery();
-                return doFetchResultSet(rs, table_query.getResult(), primary_key, unique_index);
+                return doFetchResultSet(
+                  rs, table_query.getResult(),
+                  primary_key, unique_index,
+                  table_query.getDefinition()
+                );
               } finally {
                 if (rs != null) {
                   JdbcUtils.closeResultSet(rs);
@@ -544,6 +574,80 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     return ret;
   }
 
+  // 构建
+  private Map<String, Object> buildInsertRequestInputData(ManipulationRequest insert_request, Map<String, Object> input_data) {
+    if (!insert_request.hasDefinition()) {
+      return input_data;
+    }
+    input_data = new HashMap<>(input_data);
+    TableDefinition definition = insert_request.getDefinition();
+    if (definition.hasCreated_time_column()) {
+      input_data.put(definition.getCreated_time_column(), insert_request.getRequest_time());
+    }
+    if (definition.hasUpdated_time_column()) {
+      input_data.put(definition.getUpdated_time_column(), insert_request.getRequest_time());
+    }
+
+    if (loggedUserContext.isUserLogged()) {
+      UserInfo logged_user = loggedUserContext.getLoginUserInfo();
+      if (definition.hasOwner_id_column()) {
+        TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+        if (definition.hasOwner_name_column()) {
+          input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
+        }
+      }
+      if (definition.hasCreator_id_column()) {
+        TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      }
+      if (definition.hasCreator_name_column()) {
+        input_data.put(definition.getCreator_name_column(), logged_user.getDisplay_name());
+      }
+      if (definition.hasMender_id_column()) {
+        TableDefinition.UserIdColumn userid = definition.getMender_id_column();
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      }
+      if (definition.hasMender_name_column()) {
+        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
+      }
+    }
+    return input_data;
+  }
+
+  // 构建
+  private Map<String, Object> buildUpdateRequestInputData(ManipulationRequest update_request, Map<String, Object> input_data) {
+    if (update_request.hasDefinition()) {
+      Map<String, Object> wrap_data = new HashMap<>(input_data);
+      TableDefinition definition = update_request.getDefinition();
+
+      if (definition.hasUpdated_time_column()) {
+        input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
+      }
+
+      if (loggedUserContext.isUserLogged()) {
+        UserInfo logged_user = loggedUserContext.getLoginUserInfo();
+        if (definition.hasOwner_id_column()) {
+          TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+          input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+        }
+        if (definition.hasOwner_name_column()) {
+          input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
+        }
+        if (definition.hasMender_id_column()) {
+          TableDefinition.UserIdColumn userid = definition.getMender_id_column();
+          input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+        }
+        if (definition.hasMender_name_column()) {
+          input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
+        }
+      }
+      return wrap_data;
+    }  else {
+      return input_data;
+    }
+  }
+
   protected Object doInsertTableData(
     ManipulationRequest insert_request,
     SQLDialectProvider sql_dialect_provider
@@ -556,6 +660,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         try {
           List<Map<String, Object>> input_datas = insert_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
+            input_data = buildInsertRequestInputData(insert_request, input_data);
             int i = 1;
             for (TableColumn v : insert_request.getColumns()) {
               if (v.getRead_only() != null && v.getRead_only()) continue;
@@ -601,11 +706,20 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           List<Map<String, Object>> input_datas = update_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
             int i = 1;
+            input_data = buildUpdateRequestInputData(update_request, input_data);
             if (update_request.hasWhere() || update_request.isPatch_update()) {
               for (Map.Entry<String, Object> input_entry : input_data.entrySet()) {
                 TableColumn v = update_request.findColumn(input_entry.getKey());
                 if (v.getRead_only() != null && v.getRead_only()) continue;
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+                if (update_request.hasDefinition() &&
+                  update_request.getDefinition().hasCreated_time_column() &&
+                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
+                ) continue;
+                if (update_request.hasDefinition() &&
+                  update_request.getDefinition().hasCreator_id_column() &&
+                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
+                ) continue;
                 if (v.getWritable() != null && v.getWritable()) {
                   ps.setObject(i, JdbcUtils.convert(input_entry.getValue(), v.getJdbc_type()));
                   i = i + 1;
@@ -616,6 +730,14 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (v.getRead_only() != null && v.getRead_only()) continue;
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
                 if (update_request.testRow_key(v.getName())) continue;
+                if (update_request.hasDefinition() &&
+                  update_request.getDefinition().hasCreated_time_column() &&
+                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
+                ) continue;
+                if (update_request.hasDefinition() &&
+                  update_request.getDefinition().hasCreator_id_column() &&
+                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
+                ) continue;
                 if (v.getWritable() != null && v.getWritable()) {
                   ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
@@ -769,10 +891,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getInsert() != null && dml.getInsert().length > 0) {
         for (int j = 0; j < dml.getInsert().length; j++) {
           ManipulationRequest insert_request = dml.getInsert()[j];
-          Validate.notBlank(insert_request.getTable_name(), "[%d-%d]插入请求未设置表名", i, j);
-          TableMeta table_meta = table_metas.get(insert_request.getTable_name());
+          String table_name = insert_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(insert_request.getTable_name())));
+            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           insert_request.copyTableMeta(table_meta);
           insert_request.rebuildWhere();
@@ -781,11 +904,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getUpdate() != null && dml.getUpdate().length > 0) {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
-          Validate.notBlank(update_request.getTable_name(), "[%d-%d]更新请求未设置表名", i, j);
+          String table_name = update_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]更新请求未设置表名", i, j);
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(update_request.getTable_name());
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(update_request.getTable_name())));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           update_request.copyTableMeta(table_meta);
           update_request.rebuildWhere();
@@ -794,11 +918,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getDelete() != null && dml.getDelete().length > 0) {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
-          Validate.notBlank(delete_request.getTable_name(), "[%d-%d]删除请求未设置表名", i, j);
+          String table_name = delete_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]删除请求未设置表名", i, j);
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(delete_request.getTable_name());
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(delete_request.getTable_name())));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           delete_request.copyTableMeta(table_meta);
           delete_request.rebuildWhere();

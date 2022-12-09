@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableColumn;
+import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
+import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
@@ -35,6 +37,9 @@ public class DatabaseQueryApi {
 
   @Resource
   private JdbcRestProvider restProvider;
+
+  @Resource
+  private TableDefinitionRegistry definitionRegistry;
 
   @Operation(summary = "分页查询")
   @GetMapping(path = "/tables/{table:.*}")
@@ -62,8 +67,13 @@ public class DatabaseQueryApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
+    table_name = result_meta.getTable_name();
+
     JdbcQueryRequest table_query = new JdbcQueryRequest(); 
     table_query.setTable_name(table_name);
+    table_query.copyTableMeta(result_meta);
+
     RequestUtils.fetchJdbcQueryRequest(request, table_query);
 
     if (table_query.hasWhere()) {
@@ -99,13 +109,16 @@ public class DatabaseQueryApi {
     String key,
     HttpServletRequest request
   ) throws SQLException {
-    // 获取自定义主键
-    RequestCustomKey custom_key = RequestUtils.fetchManipulationRequestCustomKey(request, new RequestCustomKey());
+    TableMeta table_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
+    table_name = table_meta.getTable_name();
 
     // 获取表元信息
     JdbcQueryRequest table_query = new JdbcQueryRequest();
     table_query.setTable_name(table_name);
-    table_query.setTable_meta(restProvider.queryResultMeta(JdbcQueryRequest.of(table_name)));
+    table_query.copyTableMeta(table_meta);
+
+    // 获取自定义主键
+    RequestCustomKey custom_key = RequestUtils.fetchManipulationRequestCustomKey(request, new RequestCustomKey());
 
     // 获取主键
     Object keycolumn = custom_key.hasCustom_key() ? custom_key.getCustom_key() : table_query.getTable_meta().getRow_key();

@@ -6,15 +6,6 @@
 # 数据表名
 - name: test
 
-  # 别名
-  alias: test
-
-  # 所属应用ID字段
-  app_id_column: owner_app_id
-
-  # 所属应用名称字段
-  app_name_column: owner_app_name
-
   # 所属用户ID字段
   owner_id_column:
     # 字段名称

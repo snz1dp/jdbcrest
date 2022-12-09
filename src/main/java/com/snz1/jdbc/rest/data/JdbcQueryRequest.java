@@ -89,6 +89,13 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
     return this.where != null && this.where.size() > 0;
   }
 
+  // 复制表元信息
+  public void copyTableMeta(TableMeta table_meta) {
+    this.setTable_meta(table_meta);
+    this.setTable_name(table_meta.getTable_name());
+    this.setDefinition(table_meta.getDefinition());
+  }
+
   //排序
   @Data
   public static class OrderBy implements Serializable {

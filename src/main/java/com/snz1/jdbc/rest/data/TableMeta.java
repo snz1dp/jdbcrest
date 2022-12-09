@@ -49,6 +49,15 @@ public class TableMeta implements Serializable {
   @JsonIgnore
   private List<TableIndex> _unique_index;
 
+  // 定义
+  @Getter
+  @Setter
+  private TableDefinition definition;
+  
+  public boolean hasDefinition() {
+    return this.definition != null;
+  }
+
   public TableMeta addColumn(TableColumn col) {
     this.columns.add(col);
     return this;
@@ -152,13 +161,15 @@ public class TableMeta implements Serializable {
     ResultSetMetaData rs_meta,
     ResultDefinition request,
     Object primary_key,
-    List<TableIndex> unique_index
+    List<TableIndex> unique_index,
+    TableDefinition definition
   ) throws SQLException {
     TableMeta metadata = new TableMeta();
     metadata.setPrimary_key(primary_key);
     int col_count = rs_meta.getColumnCount();
     metadata.setColumn_count(col_count);
     metadata.setUnique_indexs(unique_index);
+    metadata.setDefinition(definition);
 
     for (int i = 1; i <= col_count; i++) {
       if (metadata.getTable_name() == null) {

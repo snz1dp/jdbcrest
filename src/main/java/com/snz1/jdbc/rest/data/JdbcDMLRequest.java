@@ -12,5 +12,5 @@ public class JdbcDMLRequest implements Serializable {
   private ManipulationRequest[] update;
 
   private ManipulationRequest[] delete;
-    
+
 }
