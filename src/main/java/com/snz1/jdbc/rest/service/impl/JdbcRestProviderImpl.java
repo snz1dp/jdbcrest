@@ -49,6 +49,7 @@ import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
+import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -69,6 +70,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   private SqlSessionFactory sessionFactory;
 
   @Resource
+  private TableDefinitionRegistry tableDefinitionRegistry;
+
   private Map<String, SQLDialectProvider> sqlDialectProviders = new HashMap<>();
 
   @EventListener(ContextRefreshedEvent.class)

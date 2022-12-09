@@ -1,0 +1,60 @@
+
+################################################
+# 数据表定义列表
+################################################
+
+# 数据表名
+- name: test
+
+  # 别名
+  alias: test
+
+  # 所属应用ID字段
+  app_id_column: owner_app_id
+
+  # 所属应用名称字段
+  app_name_column: owner_app_name
+
+  # 所属用户ID字段
+  owner_id_column:
+    # 字段名称
+    name: owner_id
+    # ID类型：
+    # uname（用户名）【默认】
+    # id（ID）
+    # mobi（手机号）
+    # email（EMAIL）
+    # code（代码）
+    # idcard（身份证）
+    # empid（员工编号）
+    idtype: uname
+
+  # 所属用户称呼字段
+  owner_name_column: owner_name
+
+  # 创建时间字段
+  created_time_column: created_time
+
+  # 创建用户ID字段
+  creator_id_column:
+    # 字段名称
+    name: creator_id
+    # ID类型
+    idtype: uname
+
+  # 创建用户称呼字段
+  creator_name_column: creator_name
+
+  # 更新时间字段
+  updated_time_column: updated_time
+
+  # 修改用户ID字段
+  mender_id_column:
+    # 字段名称
+    name: mender_id
+    # ID类型
+    idtype: uname
+
+  # 修改用户称呼
+  mender_name_column: mender_name
+

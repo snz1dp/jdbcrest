@@ -14,7 +14,7 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -22,13 +22,13 @@ import org.springframework.stereotype.Service;
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.snz1.jdbc.rest.data.TableDefinition;
-import com.snz1.jdbc.rest.service.TabelDefinitionRegistry;
+import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class TabelDefinitionRegistryImpl implements TabelDefinitionRegistry {
+public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
   
   @Value("${app.table.definition:}")
   private String tableDefinitionFile;
@@ -48,14 +48,14 @@ public class TabelDefinitionRegistryImpl implements TabelDefinitionRegistry {
     }
 
     Resource tdf_resource;
-    if (StringUtils.startsWithAny(this.tableDefinitionFile, "file://", "http://", "https://")) {
-      try {
-        tdf_resource = new UrlResource(this.tableDefinitionFile);
-      } catch (MalformedURLException e) {
+    try {
+      tdf_resource = new UrlResource(this.tableDefinitionFile);
+    } catch (IOException e) {
+      if (e instanceof MalformedURLException) {
+        tdf_resource = new ClassPathResource(this.tableDefinitionFile);
+      } else {
         throw new IllegalArgumentException(String.format("错误的数据表权限配置文件路径: %s", this.tableDefinitionFile));
       }
-    } else {
-      tdf_resource = new FileSystemResource(this.tableDefinitionFile);
     }
 
     // 加载资源
@@ -85,13 +85,13 @@ public class TabelDefinitionRegistryImpl implements TabelDefinitionRegistry {
     for (TableDefinition table_def : table_definitions) {
       try {
         Validate.isTrue(
-          !table_set.contains(table_def.getTable_name()),
+          !table_set.contains(table_def.getName()),
           "数据表重复定义"
         );
         table_def.validate();
       } catch (Throwable e) {
         if (log.isDebugEnabled()) {
-          log.debug("{} 定义错误: {}", table_def.getTable_name(), e.getMessage(), e);
+          log.debug("{} 定义错误: {}", table_def.getName(), e.getMessage(), e);
         }
         throw new IllegalStateException(String.format(""));
       }

@@ -14,47 +14,47 @@ import lombok.Data;
 public class TableDefinition implements Serializable {
 
   // 数据表名称
-  private String table_name;
+  private String name;
 
   // 数据表别名
-  private String alias_name;
+  private String alias;
 
   // 是否有别名
   public boolean hasAlias_name() {
-    return StringUtils.isNotBlank(alias_name);
+    return StringUtils.isNotBlank(alias);
   }
 
   // 所属应用ID字段
   // 定义了此字段则表查询或关联查询将以当前请求应用ID作为限定范围
-  private String owner_app_id;
+  private String app_id_column;
 
   // 所属应用名称字段
-  private String owner_app_name;
+  private String app_name_column;
 
   // 所属用户ID字段
   // 定义了此字段则表查询或关联查询将以当前请求用户ID作为限定范围
-  private TableDefinition.UserIdColumn owner_user_id;
+  private TableDefinition.UserIdColumn owner_id_column;
 
   // 所属用户称呼
-  private String owner_user_compellation;
+  private String owner_name_column;
 
   // 创建时间字段
   private String created_time_column;
 
   // 创建用户ID字段
-  private TableDefinition.UserIdColumn created_user_id;
+  private TableDefinition.UserIdColumn creator_id_column;
 
   // 创建用户称呼字段
-  private String created_user_compellation;
+  private String creator_name_column;
 
   // 更新时间字段
   private String updated_time_column;
 
   // 更新用户ID字段
-  private TableDefinition.UserIdColumn updated_user_id;
+  private TableDefinition.UserIdColumn mender_id_column;
 
   // 更新用户称呼字段
-  private String updated_user_compellation;
+  private String mender_name_column;
 
   // 字段操作授权定义
   private Map<String, ColumnDefinition> column_definition;
@@ -92,10 +92,10 @@ public class TableDefinition implements Serializable {
   public static class UserIdColumn implements Serializable {
 
     // 字段名
-    private String column;
+    private String name;
 
     // ID类型
-    private User.IdType idtype;
+    private User.IdType idtype = User.IdType.uname;
 
   }
 
@@ -119,7 +119,7 @@ public class TableDefinition implements Serializable {
   }
 
   public void validate() throws Exception {
-    Validate.notBlank(this.getTable_name(), "数据表名不能为空");
+    Validate.notBlank(this.getName(), "数据表名不能为空");
     if (this.hasColumn_definition()) {
       for (Map.Entry<String, ColumnDefinition> kv : this.getColumn_definition().entrySet()) {
         String k = kv.getKey();
