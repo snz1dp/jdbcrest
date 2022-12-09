@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
@@ -38,7 +38,7 @@ public class DatabaseInsertApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException, IOException {
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
     ManipulationRequest insert_request = new ManipulationRequest();
     insert_request.copyTableMeta(result_meta);
     insert_request.setInput_data(RequestUtils.fetchManipulationRequestData(request));

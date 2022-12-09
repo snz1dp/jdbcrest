@@ -6,12 +6,12 @@ import java.util.List;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
 
 public interface JdbcRestProvider {
 
@@ -39,32 +39,32 @@ public interface JdbcRestProvider {
 
   // 查询表
   public JdbcQueryResponse<?> queryPageResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 查询统计信息
   public long queryAllCountResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 查询统计信息
   public JdbcQueryResponse<?> queryGroupCountResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 元信息
   public TableMeta queryResultMeta(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 查询分组信息
   public JdbcQueryResponse<?> queryGroupResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 查询单个应答
   public JdbcQueryResponse<?> querySignletonResult(
-    TableQueryRequest table_query
+    JdbcQueryRequest table_query
   ) throws SQLException;
 
   // 插入表数据

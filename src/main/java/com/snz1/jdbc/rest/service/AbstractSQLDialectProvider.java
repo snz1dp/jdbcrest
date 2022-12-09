@@ -8,11 +8,10 @@ import java.util.List;
 
 import org.apache.ibatis.jdbc.SQL;
 
-import com.snz1.jdbc.rest.data.JdbcQuery;
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +21,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
   // 获取查询的合计
   @Override
-  public JdbcQuery prepareQueryCount(TableQueryRequest table_query) {
+  public JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query) {
     long start_time = System.currentTimeMillis();
-    JdbcQuery base_query = null;
+    JdbcQueryStatement base_query = null;
     try {
       base_query = this.createQueryRequestBaseSQL(table_query, true);
       return base_query;
@@ -40,7 +39,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 查询对象
-  protected JdbcQuery createQueryRequestBaseSQL(TableQueryRequest table_query, boolean docount) {
+  protected JdbcQueryStatement createQueryRequestBaseSQL(JdbcQueryRequest table_query, boolean docount) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
@@ -149,7 +148,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
     }
 
-    return new JdbcQuery(sql.toString(), parameters);
+    return new JdbcQueryStatement(sql.toString(), parameters);
   }
 
   // 插入数据

@@ -11,12 +11,13 @@ import org.apache.commons.lang3.StringUtils;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Data
-public class JdbcQueryRequest implements Serializable, Cloneable {
-
-  // 请求ID
-  private String request_id;
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class JdbcQueryRequest extends JdbcRestfulRequest {
 
   // 查询请求
   private SelectMeta select = new SelectMeta();
@@ -41,11 +42,7 @@ public class JdbcQueryRequest implements Serializable, Cloneable {
 
   // 克隆
   public JdbcQueryRequest clone() {
-    try {
-      return (JdbcQueryRequest)super.clone();
-    } catch (CloneNotSupportedException e) {
-      throw new IllegalStateException(e.getMessage(), e);
-    }
+    return (JdbcQueryRequest)super.clone();
   }
 
   public void resetWhere() {
@@ -325,6 +322,12 @@ public class JdbcQueryRequest implements Serializable, Cloneable {
       return join;
     }
 
+  }
+
+  public static JdbcQueryRequest of(String table_name) {
+    JdbcQueryRequest treq = new JdbcQueryRequest();
+    treq.setTable_name(table_name);
+    return treq;
   }
 
 }

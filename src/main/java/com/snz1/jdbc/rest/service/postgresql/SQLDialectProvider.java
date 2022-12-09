@@ -10,9 +10,9 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.snz1.jdbc.rest.data.JdbcQuery;
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
@@ -55,8 +55,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   @Override
-  public PreparedStatement prepareNoRowSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
-    JdbcQuery base_query = this.createQueryRequestBaseSQL(table_query, false);
+  public PreparedStatement prepareNoRowSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
+    JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql()).append(" LIMIT 0");
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
@@ -70,8 +70,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   @Override
-  public PreparedStatement preparePageSelect(Connection conn, TableQueryRequest table_query) throws SQLException {
-    JdbcQuery base_query = this.createQueryRequestBaseSQL(table_query, false);
+  public PreparedStatement preparePageSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
+    JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
           .append(" OFFSET ")

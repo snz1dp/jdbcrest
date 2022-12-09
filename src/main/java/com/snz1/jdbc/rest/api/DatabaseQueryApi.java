@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableColumn;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
@@ -62,12 +62,12 @@ public class DatabaseQueryApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
-    TableQueryRequest table_query = new TableQueryRequest(); 
+    JdbcQueryRequest table_query = new JdbcQueryRequest(); 
     table_query.setTable_name(table_name);
     RequestUtils.fetchJdbcQueryRequest(request, table_query);
 
     if (table_query.hasWhere()) {
-      TableQueryRequest metaquery = table_query.clone();
+      JdbcQueryRequest metaquery = table_query.clone();
       metaquery.resetWhere();
       metaquery.resetGroup_by();
       table_query.setTable_meta(restProvider.queryResultMeta(metaquery));
@@ -103,9 +103,9 @@ public class DatabaseQueryApi {
     RequestCustomKey custom_key = RequestUtils.fetchManipulationRequestCustomKey(request, new RequestCustomKey());
 
     // 获取表元信息
-    TableQueryRequest table_query = new TableQueryRequest();
+    JdbcQueryRequest table_query = new JdbcQueryRequest();
     table_query.setTable_name(table_name);
-    table_query.setTable_meta(restProvider.queryResultMeta(TableQueryRequest.of(table_name)));
+    table_query.setTable_meta(restProvider.queryResultMeta(JdbcQueryRequest.of(table_name)));
 
     // 获取主键
     Object keycolumn = custom_key.hasCustom_key() ? custom_key.getCustom_key() : table_query.getTable_meta().getRow_key();
@@ -125,7 +125,7 @@ public class DatabaseQueryApi {
         if (col != null) {
           where_col.setType(col.getJdbc_type());
         }
-        where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key_values[i]);
+        where_col.addCondition(JdbcQueryRequest.ConditionOperation.$eq, key_values[i]);
         table_query.getWhere().add(where_col);
       } 
     } else {
@@ -134,7 +134,7 @@ public class DatabaseQueryApi {
       if (col != null) {
         where_col.setType(col.getJdbc_type());
       }
-      where_col.addCondition(TableQueryRequest.ConditionOperation.$eq, key);
+      where_col.addCondition(JdbcQueryRequest.ConditionOperation.$eq, key);
       table_query.getWhere().add(where_col);
     }
 

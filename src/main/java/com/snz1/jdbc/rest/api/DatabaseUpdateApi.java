@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableMeta;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
@@ -85,7 +85,7 @@ public class DatabaseUpdateApi {
     RequestUtils.fetchManipulationRequestCustomKey(request, update_request.getCustom_key());
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
     update_request.copyTableMeta(result_meta);
 
     // 获取主键
@@ -132,7 +132,7 @@ public class DatabaseUpdateApi {
     );
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
     batch_patch_request.copyTableMeta(result_meta);
     batch_patch_request.setPatch_update(true);
     batch_patch_request.setInput_data(input_data);

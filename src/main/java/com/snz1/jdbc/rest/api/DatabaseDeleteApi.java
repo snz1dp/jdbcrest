@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableMeta;
-import com.snz1.jdbc.rest.data.TableQueryRequest;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
@@ -63,7 +63,7 @@ public class DatabaseDeleteApi {
     RequestUtils.fetchManipulationRequestCustomKey(request, delete_request.getCustom_key());
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
     delete_request.copyTableMeta(result_meta);
 
     // 获取主键
@@ -98,7 +98,7 @@ public class DatabaseDeleteApi {
     delete_request.setTable_name(table_name);
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(TableQueryRequest.of(table_name));
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
     delete_request.copyTableMeta(result_meta);
 
     // 提取删除条件
