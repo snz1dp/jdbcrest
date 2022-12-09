@@ -43,11 +43,27 @@ public class AppPublishApi {
     HttpServletRequest request,
     HttpServletResponse response
   ) {
+    return rootRedirect(request, response);
+  }
+
+  @Operation(summary = "目录默认跳转", hidden = true)
+	@GetMapping(path = "", produces = MediaType.TEXT_HTML_VALUE)
+	public ModelAndView handleDessfaultPage(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
+    return rootRedirect(request, response);
+	}
+
+  private ModelAndView rootRedirect(
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
     ModelAndView mav = new ModelAndView();
     String dash_url = WebUtils.getPublishURLViaGateway(request, runConfig.getDefaultTargetUrl());
     mav.setView(new RedirectView(dash_url));
     return mav;
-	}
+  }
 
   @Operation(summary = "应用版本信息")
   @GetMapping(path = "/version")
