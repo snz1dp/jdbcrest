@@ -4,7 +4,10 @@
 ################################################
 
 # 数据表名
-- name: test
+- name: usertest
+
+  # 实际表名
+  alias: test
 
   # 所属用户ID字段
   owner_id_column:

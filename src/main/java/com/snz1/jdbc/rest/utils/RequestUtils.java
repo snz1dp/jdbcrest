@@ -1,6 +1,7 @@
 package com.snz1.jdbc.rest.utils;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -12,6 +13,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.reflect.TypeToken;
@@ -395,7 +398,11 @@ public abstract class RequestUtils {
       if (StringUtils.equals(param_name, Constants.HEADER_UPDATE_MODE_ARG)) continue;
       String header_name = param_name.substring(Constants.HEADER_WHERE_PREFIX.length());
       Enumeration<String> header_values = request.getHeaders(param_name);
-      param_name = header_name;
+      try {
+        param_name = new URLCodec().decode(header_name, "UTF-8");
+      } catch(DecoderException | UnsupportedEncodingException e) {
+        throw new IllegalArgumentException(e.getMessage(), e);
+      }
       if (header_values == null || !header_values.hasMoreElements()) continue;
       List<String> param_list = new LinkedList<>();
       while(header_values.hasMoreElements()) {
@@ -414,6 +421,11 @@ public abstract class RequestUtils {
       where_column.setType(column_type);
 
       for (String param_value : param_values) {
+        try {
+          param_value = new URLCodec().decode(param_value, "UTF-8");
+        } catch (UnsupportedEncodingException | DecoderException e) {
+          throw new IllegalArgumentException(e.getMessage(), e);
+        }
         if (StringUtils.startsWith(param_value, "$")) {
           int operation_end = param_value.indexOf('.', 1);
           if (operation_end < 0) {

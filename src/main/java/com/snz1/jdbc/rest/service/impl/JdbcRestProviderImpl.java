@@ -31,7 +31,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.druid.util.StringUtils;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
@@ -396,6 +395,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     if (!testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
+    table_query.setTable_name(table_name);
     return doFetchResultSetMeta(table_query, sql_dialect_provider);
   }
 
@@ -575,12 +575,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   }
 
   // 构建
-  private Map<String, Object> buildInsertRequestInputData(ManipulationRequest insert_request, Map<String, Object> input_data) {
-    if (!insert_request.hasDefinition()) {
+  private Map<String, Object> doBuildInsertRequestInputData(ManipulationRequest insert_request, Map<String, Object> input_data) {
+    TableDefinition definition = insert_request.getDefinition();
+    if (definition == null) {
       return input_data;
     }
     input_data = new HashMap<>(input_data);
-    TableDefinition definition = insert_request.getDefinition();
     if (definition.hasCreated_time_column()) {
       input_data.put(definition.getCreated_time_column(), insert_request.getRequest_time());
     }
@@ -588,64 +588,113 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       input_data.put(definition.getUpdated_time_column(), insert_request.getRequest_time());
     }
 
+    UserInfo logged_user = null;
     if (loggedUserContext.isUserLogged()) {
-      UserInfo logged_user = loggedUserContext.getLoginUserInfo();
-      if (definition.hasOwner_id_column()) {
-        TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+      logged_user = loggedUserContext.getLoginUserInfo();
+    }
+
+    if (definition.hasOwner_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+      if (logged_user != null) {
         input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
         if (definition.hasOwner_name_column()) {
           input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
         }
+      } else {
+        input_data.put(userid.getName(), null);
+        input_data.put(definition.getOwner_name_column(), null);
       }
-      if (definition.hasCreator_id_column()) {
-        TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
+    }
+
+    if (definition.hasCreator_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
+      if (logged_user != null) {
         input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      } else {
+        input_data.put(userid.getName(), null);
       }
-      if (definition.hasCreator_name_column()) {
+    }
+
+    if (definition.hasCreator_name_column()) {
+      if (logged_user != null) {
         input_data.put(definition.getCreator_name_column(), logged_user.getDisplay_name());
+      } else {
+        input_data.put(definition.getCreator_name_column(), null);
       }
-      if (definition.hasMender_id_column()) {
-        TableDefinition.UserIdColumn userid = definition.getMender_id_column();
+    }
+
+    if (definition.hasMender_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getMender_id_column();
+      if (logged_user != null) {
         input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      } else {
+        input_data.put(userid.getName(), null);
       }
-      if (definition.hasMender_name_column()) {
+    }
+
+    if (definition.hasMender_name_column()) {
+      if (logged_user != null) {
         input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
+      } else {
+        input_data.put(definition.getMender_name_column(), null);
       }
     }
     return input_data;
   }
 
   // 构建
-  private Map<String, Object> buildUpdateRequestInputData(ManipulationRequest update_request, Map<String, Object> input_data) {
-    if (update_request.hasDefinition()) {
-      Map<String, Object> wrap_data = new HashMap<>(input_data);
-      TableDefinition definition = update_request.getDefinition();
+  private Map<String, Object> doBuildUpdateRequestInputData(ManipulationRequest update_request, Map<String, Object> input_data) {
+    TableDefinition definition = update_request.getDefinition();
+    if (definition == null) return input_data;
+    input_data = new LinkedHashMap<>(input_data);
 
-      if (definition.hasUpdated_time_column()) {
-        input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
-      }
-
-      if (loggedUserContext.isUserLogged()) {
-        UserInfo logged_user = loggedUserContext.getLoginUserInfo();
-        if (definition.hasOwner_id_column()) {
-          TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
-          input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-        }
-        if (definition.hasOwner_name_column()) {
-          input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
-        }
-        if (definition.hasMender_id_column()) {
-          TableDefinition.UserIdColumn userid = definition.getMender_id_column();
-          input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-        }
-        if (definition.hasMender_name_column()) {
-          input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
-        }
-      }
-      return wrap_data;
-    }  else {
-      return input_data;
+    if (definition.hasUpdated_time_column()) {
+      input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
     }
+
+    UserInfo logged_user = null;
+    if (loggedUserContext.isUserLogged()) {
+      logged_user = loggedUserContext.getLoginUserInfo();
+    }
+
+    if (definition.hasOwner_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+      if (logged_user != null) {
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      } else {
+        input_data.put(userid.getName(), null);
+      }
+    }
+    if (definition.hasOwner_name_column()) {
+      if (logged_user != null) {
+        input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
+      } else {
+        input_data.put(definition.getOwner_name_column(), null);
+      }
+    }
+
+    if (definition.hasUpdated_time_column()) {
+      input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
+    }
+
+    if (definition.hasMender_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getMender_id_column();
+      if (logged_user != null) {
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      } else {
+        input_data.put(userid.getName(), null);
+      }
+    }
+
+    if (definition.hasMender_name_column()) {
+      if (logged_user != null) {
+        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
+      } else {
+        input_data.put(definition.getMender_name_column(), null);
+      }
+    }
+
+    return input_data;
   }
 
   protected Object doInsertTableData(
@@ -660,7 +709,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         try {
           List<Map<String, Object>> input_datas = insert_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
-            input_data = buildInsertRequestInputData(insert_request, input_data);
+            input_data = doBuildInsertRequestInputData(insert_request, input_data);
             int i = 1;
             for (TableColumn v : insert_request.getColumns()) {
               if (v.getRead_only() != null && v.getRead_only()) continue;
@@ -701,27 +750,24 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       @Override
       @Nullable
       public int[] doInConnection(Connection conn) throws SQLException, DataAccessException {
+        TableDefinition tdf = update_request.getDefinition();
         PreparedStatement ps = sql_dialect_provider.prepareDataUpdate(conn, update_request);
         try {
           List<Map<String, Object>> input_datas = update_request.getInput_list();
           for (Map<String, Object> input_data : input_datas) {
             int i = 1;
-            input_data = buildUpdateRequestInputData(update_request, input_data);
+            input_data = doBuildUpdateRequestInputData(update_request, input_data);
             if (update_request.hasWhere() || update_request.isPatch_update()) {
-              for (Map.Entry<String, Object> input_entry : input_data.entrySet()) {
-                TableColumn v = update_request.findColumn(input_entry.getKey());
+              for (TableColumn v : update_request.getColumns()) {
+                if (!input_data.containsKey(v.getName())) continue;
                 if (v.getRead_only() != null && v.getRead_only()) continue;
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-                if (update_request.hasDefinition() &&
-                  update_request.getDefinition().hasCreated_time_column() &&
-                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
-                ) continue;
-                if (update_request.hasDefinition() &&
-                  update_request.getDefinition().hasCreator_id_column() &&
-                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
-                ) continue;
+                if (tdf != null && tdf.inColumn(v.getName())) continue;
                 if (v.getWritable() != null && v.getWritable()) {
-                  ps.setObject(i, JdbcUtils.convert(input_entry.getValue(), v.getJdbc_type()));
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
+                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
@@ -730,20 +776,65 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (v.getRead_only() != null && v.getRead_only()) continue;
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
                 if (update_request.testRow_key(v.getName())) continue;
-                if (update_request.hasDefinition() &&
-                  update_request.getDefinition().hasCreated_time_column() &&
-                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
-                ) continue;
-                if (update_request.hasDefinition() &&
-                  update_request.getDefinition().hasCreator_id_column() &&
-                  StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
-                ) continue;
+                if (tdf != null && tdf.inColumn(v.getName())) continue;
                 if (v.getWritable() != null && v.getWritable()) {
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
                   ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
             }
+
+            if (tdf != null) {
+              if (!update_request.isPatch_update()) {
+                if (tdf.hasOwner_id_column()) {
+                  TableColumn v = update_request.findColumn(tdf.getOwner_id_column().getName());
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
+                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  i = i + 1;
+                }
+                if (tdf.hasOwner_name_column()) {
+                  TableColumn v = update_request.findColumn(tdf.getOwner_name_column());
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
+                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  i = i + 1;
+                }
+              }
+
+              if (tdf.hasUpdated_time_column()) {
+                TableColumn v = update_request.findColumn(tdf.getUpdated_time_column());
+                if (log.isDebugEnabled()) {
+                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                }
+                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                i = i + 1;
+              }
+      
+              if (tdf.hasMender_id_column()) {
+                TableColumn v = update_request.findColumn(tdf.getMender_id_column().getName());
+                if (log.isDebugEnabled()) {
+                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                }
+                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                i = i + 1;
+              }
+      
+              if (tdf.hasMender_name_column()) {
+                TableColumn v = update_request.findColumn(tdf.getMender_name_column());
+                if (log.isDebugEnabled()) {
+                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                }
+                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                i = i + 1;
+              }
+            }
+
             if (update_request.hasWhere()) {
               List<Object> where_conditions = new LinkedList<>();
               for (WhereCloumn w : update_request.getWhere()) {
@@ -751,6 +842,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               }
               for (Object where_object : where_conditions) {
                 ps.setObject(i, where_object);
+                if (log.isDebugEnabled()) {
+                  log.debug("设置更新条件参数: PI={}, WHERE={}", i, where_object);
+                }
                 i = i + 1;
               }
             } else {
@@ -762,20 +856,36 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 for (int j = 0; j < row_keys.size(); j++) {
                   String keyname = (String)row_keys.get(j);
                   Object keyval = key_values.get(j);
-                  TableColumn keycol = update_request.findColumn(keyname);
+                  TableColumn v = update_request.findColumn(keyname);
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置多主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyval);
+                  }
                   ps.setObject(i, JdbcUtils.convert(
-                    keyval, keycol != null ? keycol.getJdbc_type() : null
+                    keyval, v != null ? v.getJdbc_type() : null
                   ));
                   i = i + 1;
                 }
               } else {
-                TableColumn keycol = update_request.findColumn((String)rowkey);
+                TableColumn v = update_request.findColumn((String)rowkey);
+                if (log.isDebugEnabled()) {
+                  log.debug("设置单主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyvalue);
+                }
                 ps.setObject(i, JdbcUtils.convert(
-                  keyvalue, keycol != null ? keycol.getJdbc_type() : null
+                  keyvalue, v != null ? v.getJdbc_type() : null
                 ));
                 i = i + 1;
               }
             }
+
+            if (tdf != null && tdf.hasOwner_id_column()) {
+              TableColumn v = update_request.findColumn(tdf.getOwner_id_column().getName());
+              if (log.isDebugEnabled()) {
+                log.debug("设置上下文条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+              }
+              ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+              i = i + 1;
+            }
+
             ps.addBatch();
           }
           return ps.executeBatch();
@@ -795,6 +905,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       @Override
       @Nullable
       public Integer doInConnection(Connection conn) throws SQLException, DataAccessException {
+        TableDefinition tdf = update_request.getDefinition();
         PreparedStatement ps = sql_dialect_provider.prepareDataDelete(conn, update_request);
         try {
           int i = 1;
@@ -830,6 +941,17 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               i = i + 1;
             }
           }
+
+          if (tdf != null && tdf.hasOwner_id_column()) {
+            if (loggedUserContext.isUserLogged()) {
+              UserInfo logged_user = loggedUserContext.getLoginUserInfo();
+              ps.setObject(i, logged_user.getIdByType(tdf.getOwner_id_column().getIdtype()));
+            } else {
+              ps.setObject(i, null);
+            }
+            i = i + 1;
+          }
+
           return ps.executeUpdate();
         } finally {
           JdbcUtils.closeStatement(ps);

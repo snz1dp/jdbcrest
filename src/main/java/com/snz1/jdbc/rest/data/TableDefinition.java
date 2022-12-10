@@ -23,6 +23,10 @@ public class TableDefinition implements Serializable {
     return StringUtils.isNotBlank(alias);
   }
 
+  public String resolveName() {
+    return this.hasAlias_name() ? this.getAlias() : this.getName();
+  }
+
   // 所属应用ID字段
   // 定义了此字段则表查询或关联查询将以当前请求应用ID作为限定范围
   private String app_id_column;
@@ -93,6 +97,31 @@ public class TableDefinition implements Serializable {
 
   public boolean hasMender_name_column() {
     return StringUtils.isNotBlank(this.mender_name_column);
+  }
+
+  public boolean inColumn(String name) {
+    if (this.hasCreated_time_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getCreated_time_column())
+    ) return true;
+    if (this.hasCreator_id_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getCreator_id_column().getName())
+    ) return true;
+    if (this.hasOwner_id_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getOwner_id_column().getName())
+    ) return true;
+    if (this.hasOwner_name_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getOwner_name_column())
+    ) return true;
+    if (this.hasUpdated_time_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getUpdated_time_column())
+    ) return true;
+    if (this.hasMender_id_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getMender_id_column().getName())
+    ) return true;
+    if (this.hasMender_name_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getMender_name_column())
+    ) return true;
+    return false;
   }
 
   // 用户标识字段

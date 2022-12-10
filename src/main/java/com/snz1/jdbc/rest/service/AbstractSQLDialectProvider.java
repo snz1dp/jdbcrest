@@ -5,10 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
@@ -134,22 +134,20 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         };
       }
 
-      if (table_query.hasDefinition()) {
-        TableDefinition table_definition = table_query.getDefinition();
-        if (table_definition.hasOwner_id_column()) {
-          if (where_append) {
-            sql.AND();
-          } else {
-            where_append = true;
-          }
-          sql.WHERE(String.format("%s = ?", table_definition.getOwner_id_column().getName()));
-          if (loggedUserContext.isUserLogged()) { 
-            parameters.add(loggedUserContext.getLoginUserInfo().getIdByType(table_definition.getOwner_id_column().getIdtype()));
-          } else {
-            parameters.add(null);
-          }
+      TableDefinition table_definition = table_query.getDefinition();
+      if (table_definition != null && table_definition.hasOwner_id_column()) {
+        if (where_append) {
+          sql.AND();
+        } else {
+          where_append = true;
         }
-      } 
+        sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
+        if (loggedUserContext.isUserLogged()) { 
+          parameters.add(loggedUserContext.getLoginUserInfo().getIdByType(table_definition.getOwner_id_column().getIdtype()));
+        } else {
+          parameters.add(null);
+        }
+      }
 
       if (!docount && table_query.hasOrder_by()) {
         boolean order_append = false;
@@ -205,44 +203,58 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
+      TableDefinition table_definition = update_request.getDefinition();
       sql.UPDATE(update_request.getTable_name());
       if (update_request.hasWhere() || update_request.isPatch_update()) { // 条件更新或补丁更新
-        update_request.getInput_map().forEach((k, p) -> {
-          TableColumn v = update_request.findColumn(k);
-          if (v.getRead_only() != null && v.getRead_only()) return;
-          if (v.getAuto_increment() != null && v.getAuto_increment()) return;
-          if (update_request.hasDefinition() &&
-            update_request.getDefinition().hasCreated_time_column() &&
-            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
-          ) return;
-          if (update_request.hasDefinition() &&
-            update_request.getDefinition().hasCreator_id_column() &&
-            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
-          ) return;
+        for (TableColumn v : update_request.getColumns()) {
+          String k = v.getName();
+          Map<String, Object> input_map = update_request.getInput_map();
+          if (!input_map.containsKey(k)) continue;
+          if (v.getRead_only() != null && v.getRead_only()) continue;
+          if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+          if (table_definition != null && table_definition.inColumn(v.getName())) continue;
           if (v.getWritable() != null && v.getWritable()) {
             sql.SET(String.format("%s = ?", v.getName()));
           }
-        });
+        }
       } else { // 主键更新
         update_request.getColumns().forEach(v -> {
           if (v.getRead_only() != null && v.getRead_only()) return;
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
           if (update_request.testRow_key(v.getName())) return;
-          if (update_request.hasDefinition() &&
-            update_request.getDefinition().hasCreated_time_column() &&
-            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreated_time_column())
-          ) return;
-          if (update_request.hasDefinition() &&
-            update_request.getDefinition().hasCreator_id_column() &&
-            StringUtils.equalsIgnoreCase(v.getName(), update_request.getDefinition().getCreator_id_column().getName())
-          ) return;
+          if (table_definition != null && table_definition.inColumn(v.getName())) return;
           if (v.getWritable() != null && v.getWritable()) {
             sql.SET(String.format("%s = ?", v.getName()));
           }
         });
       }
+
+      if (table_definition != null) {
+        if (!update_request.isPatch_update()) {
+          if (table_definition.hasOwner_id_column()) {
+            TableDefinition.UserIdColumn userid = table_definition.getOwner_id_column();
+            sql.SET(String.format("%s = ?", userid.getName()));
+          }
+          if (table_definition.hasOwner_name_column()) {
+            sql.SET(String.format("%s = ?", table_definition.getOwner_name_column()));
+          }
+        }
+
+        if (table_definition.hasUpdated_time_column()) {
+          sql.SET(String.format("%s = ?", table_definition.getUpdated_time_column()));
+        }
+
+        if (table_definition.hasMender_id_column()) {
+          sql.SET(String.format("%s = ?", table_definition.getMender_id_column().getName()));
+        }
+
+        if (table_definition.hasMender_name_column()) {
+          sql.SET(String.format("%s = ?", table_definition.getMender_name_column()));
+        }
+      }
+
+      boolean append = false;
       if (update_request.hasWhere()) { // 有查询条件的更新
-        boolean append = false;
         for (int i = 0; i < update_request.getWhere().size(); i++) {
           if (append) {
             sql.AND();
@@ -255,7 +267,6 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         Object rowkey = update_request.getRow_key();
         if (update_request.testComposite_key()) {
           List<?> row_keys = (List<?>)rowkey;
-          boolean append = false;
           for (int i = 0; i < row_keys.size(); i++) {
             if (append) {
               sql.AND();
@@ -267,6 +278,15 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         } else {
           sql.WHERE(String.format("%s = ?", rowkey));
         }
+      }
+
+      if (table_definition != null && table_definition.hasOwner_id_column()) {
+        if (append) {
+          sql.AND();
+        } else {
+          append = true;
+        }
+        sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
       return sql.toString();
     } finally {
@@ -286,8 +306,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     try {
       sql.DELETE_FROM(update_request.getTable_name());
+      boolean append = false;
       if (update_request.hasWhere()) { // 有查询条件的更新
-        boolean append = false;
         for (int i = 0; i < update_request.getWhere().size(); i++) {
           if (append) {
             sql.AND();
@@ -300,7 +320,6 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         Object rowkey = update_request.getRow_key();
         if (update_request.testComposite_key()) {
           List<?> row_keys = (List<?>)rowkey;
-          boolean append = false;
           for (int i = 0; i < row_keys.size(); i++) {
             if (append) {
               sql.AND();
@@ -313,6 +332,18 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           sql.WHERE(String.format("%s = ?", rowkey));
         }
       }
+
+      TableDefinition table_definition = update_request.getDefinition();
+
+      if (table_definition != null && table_definition.hasOwner_id_column()) {
+        if (append) {
+          sql.AND();
+        } else {
+          append = true;
+        }
+        sql.WHERE(String.format("%s.%s = ?", table_definition.getName(), table_definition.getOwner_id_column().getName()));
+      }
+
       return sql.toString();
     } finally {
       if (log.isDebugEnabled()) {
