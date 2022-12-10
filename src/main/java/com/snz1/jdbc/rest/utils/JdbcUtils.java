@@ -171,6 +171,8 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
           }
         }
       } if (input instanceof Date) {
+        return new java.sql.Time(((Date)input).getTime());
+      } else if (input instanceof Time) {
         return input;
       } else if (input instanceof Double) {
         return new Time(((Double)input).longValue());
@@ -194,7 +196,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
           }
         }
       } else if (input instanceof Date) {
-        return input;
+        return new java.sql.Timestamp(((Date)input).getTime());
       } else if (input instanceof Double) {
         return new Date(((Double)input).longValue());
       } else if (input instanceof Float) {
