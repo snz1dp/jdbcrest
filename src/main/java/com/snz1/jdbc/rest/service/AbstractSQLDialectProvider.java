@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 
 import org.apache.ibatis.jdbc.SQL;
 
@@ -183,14 +185,16 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     try {
       sql.UPDATE(update_request.getTable_name());
       if (update_request.hasWhere() || update_request.isPatch_update()) { // 条件更新或补丁更新
-        update_request.getInput_map().forEach((k, p) -> {
-          TableColumn v = update_request.findColumn(k);
-          if (v.getRead_only() != null && v.getRead_only()) return;
-          if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+        for (TableColumn v : update_request.getColumns()) {
+          String k = v.getName();
+          Map<String, Object> input_map = update_request.getInput_map();
+          if (!input_map.containsKey(k)) continue;
+          if (v.getRead_only() != null && v.getRead_only()) continue;
+          if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
           if (v.getWritable() != null && v.getWritable()) {
             sql.SET(String.format("%s = ?", v.getName()));
           }
-        });
+        }
       } else { // 主键更新
         update_request.getColumns().forEach(v -> {
           if (v.getRead_only() != null && v.getRead_only()) return;

@@ -599,12 +599,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           for (Map<String, Object> input_data : input_datas) {
             int i = 1;
             if (update_request.hasWhere() || update_request.isPatch_update()) {
-              for (Map.Entry<String, Object> input_entry : input_data.entrySet()) {
-                TableColumn v = update_request.findColumn(input_entry.getKey());
+              for (TableColumn v : update_request.getColumns()) {
+                if (!input_data.containsKey(v.getName())) continue;
                 if (v.getRead_only() != null && v.getRead_only()) continue;
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
                 if (v.getWritable() != null && v.getWritable()) {
-                  ps.setObject(i, JdbcUtils.convert(input_entry.getValue(), v.getJdbc_type()));
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
+                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
@@ -614,6 +617,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
                 if (update_request.testRow_key(v.getName())) continue;
                 if (v.getWritable() != null && v.getWritable()) {
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
+                  }
                   ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
@@ -626,6 +632,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               }
               for (Object where_object : where_conditions) {
                 ps.setObject(i, where_object);
+                if (log.isDebugEnabled()) {
+                  log.debug("设置更新条件参数: PI={}, WHERE={}", i, where_object);
+                }
                 i = i + 1;
               }
             } else {
@@ -637,16 +646,22 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 for (int j = 0; j < row_keys.size(); j++) {
                   String keyname = (String)row_keys.get(j);
                   Object keyval = key_values.get(j);
-                  TableColumn keycol = update_request.findColumn(keyname);
+                  TableColumn v = update_request.findColumn(keyname);
+                  if (log.isDebugEnabled()) {
+                    log.debug("设置多主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyval);
+                  }
                   ps.setObject(i, JdbcUtils.convert(
-                    keyval, keycol != null ? keycol.getJdbc_type() : null
+                    keyval, v != null ? v.getJdbc_type() : null
                   ));
                   i = i + 1;
                 }
               } else {
-                TableColumn keycol = update_request.findColumn((String)rowkey);
+                TableColumn v = update_request.findColumn((String)rowkey);
+                if (log.isDebugEnabled()) {
+                  log.debug("设置单主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyvalue);
+                }
                 ps.setObject(i, JdbcUtils.convert(
-                  keyvalue, keycol != null ? keycol.getJdbc_type() : null
+                  keyvalue, v != null ? v.getJdbc_type() : null
                 ));
                 i = i + 1;
               }
@@ -766,10 +781,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getInsert() != null && dml.getInsert().length > 0) {
         for (int j = 0; j < dml.getInsert().length; j++) {
           ManipulationRequest insert_request = dml.getInsert()[j];
-          Validate.notBlank(insert_request.getTable_name(), "[%d-%d]插入请求未设置表名", i, j);
-          TableMeta table_meta = table_metas.get(insert_request.getTable_name());
+          String table_name = insert_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(insert_request.getTable_name())));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           insert_request.copyTableMeta(table_meta);
           insert_request.rebuildWhere();
@@ -778,11 +794,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getUpdate() != null && dml.getUpdate().length > 0) {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
-          Validate.notBlank(update_request.getTable_name(), "[%d-%d]更新请求未设置表名", i, j);
+          String table_name = update_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]更新请求未设置表名", i, j);
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(update_request.getTable_name());
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(update_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(update_request.getTable_name())));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           update_request.copyTableMeta(table_meta);
           update_request.rebuildWhere();
@@ -791,11 +808,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       if (dml.getDelete() != null && dml.getDelete().length > 0) {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
-          Validate.notBlank(delete_request.getTable_name(), "[%d-%d]删除请求未设置表名", i, j);
+          String table_name = delete_request.getTable_name();
+          Validate.notBlank(table_name, "[%d-%d]删除请求未设置表名", i, j);
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(delete_request.getTable_name());
+          TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(delete_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(delete_request.getTable_name())));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           delete_request.copyTableMeta(table_meta);
           delete_request.rebuildWhere();
