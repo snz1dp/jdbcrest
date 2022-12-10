@@ -106,6 +106,9 @@ public class TableDefinition implements Serializable {
     if (this.hasCreator_id_column() &&
       StringUtils.equalsIgnoreCase(name, this.getCreator_id_column().getName())
     ) return true;
+    if (this.hasCreator_name_column() &&
+      StringUtils.equalsIgnoreCase(name, this.getCreator_name_column())
+    ) return true;
     if (this.hasOwner_id_column() &&
       StringUtils.equalsIgnoreCase(name, this.getOwner_id_column().getName())
     ) return true;
