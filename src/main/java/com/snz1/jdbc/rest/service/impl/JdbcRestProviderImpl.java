@@ -1017,7 +1017,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
           TableMeta table_meta = table_metas.get(table_name);
           if (table_meta == null) {
-            table_metas.put(insert_request.getTable_name(), table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
+            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
           }
           insert_request.copyTableMeta(table_meta);
           insert_request.rebuildWhere();
