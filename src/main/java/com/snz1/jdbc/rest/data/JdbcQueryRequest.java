@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.snz1.jdbc.rest.utils.JdbcUtils;
+import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -178,7 +178,7 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
       return ret;
     }
 
-    public String toHavingSQL() {
+    public String toHavingSQL(JdbcTypeConverterFactory factory) {
       if (this.operation.parameter_count() == 0) {
         return String.format("%s(%s) %s", this.func, this.column, this.operation.operator());
       } else if (this.operation.parameter_count() == 1) {
@@ -186,7 +186,7 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
       } else if (this.operation.parameter_count() == 2) {
         return String.format("%s(%s) %s ? and ?", this.func, this.column, this.operation.operator());
       } else {
-        this.setArray(JdbcUtils.toArray(this.getValue(), this.type));
+        this.setArray(factory.convertArray(this.getValue(), this.type));
         StringBuffer parambuf = new StringBuffer();
         boolean paramappend = false;
         for (int i = 0; i < this.getArray_length(); i++) {
@@ -201,11 +201,11 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
       }
     }
 
-    public void buildParameters(List<Object> parameters) {
+    public void buildParameters(List<Object> parameters, JdbcTypeConverterFactory factory) {
       if (this.operation.parameter_count() == 1) {
-        parameters.add(JdbcUtils.convert(this.value, this.type));
+        parameters.add(factory.convertObject(this.value, this.type));
       } else if (this.operation.parameter_count() == 2) {
-        Object data = JdbcUtils.toArray(this.value, this.type);
+        Object data = factory.convertArray(this.value, this.type);
         parameters.add(Array.get(data, 0));
         parameters.add(Array.get(data, 1));
       } else if (this.operation.parameter_count() == 3) {

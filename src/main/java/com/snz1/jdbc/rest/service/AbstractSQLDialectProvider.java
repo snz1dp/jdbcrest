@@ -26,6 +26,17 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   @Resource
   private LoggedUserContext loggedUserContext;
 
+  @Resource
+  private JdbcTypeConverterFactory typeConverterFactory;
+
+  public JdbcTypeConverterFactory getTypeConverterFactory() {
+    return typeConverterFactory;
+  }
+
+  public LoggedUserContext getLoggedUserContext() {
+    return loggedUserContext;
+  }
+
   // 获取查询的合计
   @Override
   public JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query) {
@@ -115,8 +126,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         table_query.getGroup_by().forEach(g -> {
           sql.GROUP_BY(g.getColumn());
           if (g.hasHaving()) {
-            sql.HAVING(g.getHaving().toHavingSQL());
-            g.getHaving().buildParameters(parameters);
+            sql.HAVING(g.getHaving().toHavingSQL(this.getTypeConverterFactory()));
+            g.getHaving().buildParameters(parameters, this.getTypeConverterFactory());
           }
         });
       }
@@ -129,8 +140,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL());
-          w.buildParameters(parameters);
+          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+          w.buildParameters(parameters, this.getTypeConverterFactory());
         };
       }
 
@@ -261,7 +272,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL());
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
         }
       } else { // 主键更新
         Object rowkey = update_request.getRow_key();
@@ -314,7 +325,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL());
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
         }
       } else { // 主键删除
         Object rowkey = update_request.getRow_key();

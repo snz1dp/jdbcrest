@@ -49,6 +49,7 @@ import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
+import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
@@ -78,13 +79,22 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   @Resource
   private LoggedUserContext loggedUserContext;
 
-  private Map<String, SQLDialectProvider> sqlDialectProviders = new HashMap<>();
+  @Resource
+  private JdbcTypeConverterFactory typeConverterFactory;
+
+  private Map<String, SQLDialectProvider> sqlDialectProviders;
+
+  public JdbcTypeConverterFactory getTypeConverterFactory() {
+    return this.typeConverterFactory;
+  }
 
   @EventListener(ContextRefreshedEvent.class)
   public void loadSQLDialectProviders(ContextRefreshedEvent event) {
+    final Map<String, SQLDialectProvider> map = new LinkedHashMap<>();
     event.getApplicationContext().getBeansOfType(SQLDialectProvider.class).forEach((k, v) -> {
-      sqlDialectProviders.put(v.getName(), v);
+      map.put(v.getName(), v);
     });
+    this.sqlDialectProviders = new HashMap<>(map);
   }
 
   // 执行获取结果集
@@ -699,7 +709,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   protected Object doInsertTableData(
     ManipulationRequest insert_request,
-    SQLDialectProvider sql_dialect_provider
+    SQLDialectProvider sql_dialect_provider,
+    JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<Object>() {
       @Override
@@ -715,7 +726,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               if (v.getRead_only() != null && v.getRead_only()) continue;
               if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
               if (v.getWritable() != null && v.getWritable()) {
-                Object val = JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type());
+                Object val = type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
                 ps.setObject(i, val);
                 i = i + 1;
               }
@@ -744,7 +755,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 执行更新
   protected int[] doUpdateTableData(
     ManipulationRequest update_request,
-    SQLDialectProvider sql_dialect_provider
+    SQLDialectProvider sql_dialect_provider,
+    JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<int[]>() {
       @Override
@@ -767,7 +779,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                   if (log.isDebugEnabled()) {
                     log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                   }
-                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
@@ -781,7 +793,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                   if (log.isDebugEnabled()) {
                     log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                   }
-                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
@@ -794,7 +806,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                   if (log.isDebugEnabled()) {
                     log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                   }
-                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
                 if (tdf.hasOwner_name_column()) {
@@ -802,7 +814,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                   if (log.isDebugEnabled()) {
                     log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                   }
-                  ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                   i = i + 1;
                 }
               }
@@ -812,7 +824,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (log.isDebugEnabled()) {
                   log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                 }
-                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                 i = i + 1;
               }
       
@@ -821,7 +833,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (log.isDebugEnabled()) {
                   log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                 }
-                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                 i = i + 1;
               }
       
@@ -830,7 +842,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (log.isDebugEnabled()) {
                   log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
                 }
-                ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
                 i = i + 1;
               }
             }
@@ -838,7 +850,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
             if (update_request.hasWhere()) {
               List<Object> where_conditions = new LinkedList<>();
               for (WhereCloumn w : update_request.getWhere()) {
-                w.buildParameters(where_conditions);
+                w.buildParameters(where_conditions, type_converter_factory);
               }
               for (Object where_object : where_conditions) {
                 ps.setObject(i, where_object);
@@ -860,7 +872,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                   if (log.isDebugEnabled()) {
                     log.debug("设置多主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyval);
                   }
-                  ps.setObject(i, JdbcUtils.convert(
+                  ps.setObject(i, type_converter_factory.convertObject(
                     keyval, v != null ? v.getJdbc_type() : null
                   ));
                   i = i + 1;
@@ -870,7 +882,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 if (log.isDebugEnabled()) {
                   log.debug("设置单主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyvalue);
                 }
-                ps.setObject(i, JdbcUtils.convert(
+                ps.setObject(i, type_converter_factory.convertObject(
                   keyvalue, v != null ? v.getJdbc_type() : null
                 ));
                 i = i + 1;
@@ -882,7 +894,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               if (log.isDebugEnabled()) {
                 log.debug("设置上下文条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
               }
-              ps.setObject(i, JdbcUtils.convert(input_data.get(v.getName()), v.getJdbc_type()));
+              ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
               i = i + 1;
             }
 
@@ -899,7 +911,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   // 执行更新
   protected Integer doDeleteTableData(
     ManipulationRequest update_request,
-    SQLDialectProvider sql_dialect_provider
+    SQLDialectProvider sql_dialect_provider,
+    JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     return jdbcTemplate.execute(new ConnectionCallback<Integer>() {
       @Override
@@ -912,7 +925,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           if (update_request.hasWhere()) {
             List<Object> where_conditions = new LinkedList<>();
             for (WhereCloumn w : update_request.getWhere()) {
-              w.buildParameters(where_conditions);
+              w.buildParameters(where_conditions, type_converter_factory);
             }
             for (Object where_object : where_conditions) {
               ps.setObject(i, where_object);
@@ -928,14 +941,14 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
                 String keyname = (String)row_keys.get(j);
                 Object keyval = key_values.get(j);
                 TableColumn keycol = update_request.findColumn(keyname);
-                ps.setObject(i, JdbcUtils.convert(
+                ps.setObject(i, type_converter_factory.convertObject(
                   keyval, keycol != null ? keycol.getJdbc_type() : null
                 ));
                 i = i + 1;
               }
             } else {
               TableColumn keycol = update_request.findColumn((String)rowkey);
-              ps.setObject(i, JdbcUtils.convert(
+              ps.setObject(i, type_converter_factory.convertObject(
                 keyvalue, keycol != null ? keycol.getJdbc_type() : null
               ));
               i = i + 1;
@@ -967,7 +980,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    Object result = doInsertTableData(insert_request, sql_dialect_provider);
+    Object result = doInsertTableData(
+      insert_request,
+      sql_dialect_provider,
+      this.getTypeConverterFactory()
+    );
     if (insert_request.testSignletonData()) {
       if (insert_request.hasAutoGenerated()) {
         return new Object[] {
@@ -988,7 +1005,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    int []result = doUpdateTableData(update_request, sql_dialect_provider);
+    int []result = doUpdateTableData(
+      update_request,
+      sql_dialect_provider,
+      this.getTypeConverterFactory()
+    );
     if (update_request.testSignletonData()) {
       return Array.get(result, 0);
     } else {
@@ -1002,7 +1023,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    Integer result = doDeleteTableData(delete_request, sql_dialect_provider);
+    Integer result = doDeleteTableData(
+      delete_request,
+      sql_dialect_provider,
+      this.getTypeConverterFactory()
+    );
     return result;
   }
 
@@ -1076,7 +1101,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getInsert().length; j++) {
           ManipulationRequest insert_request = dml.getInsert()[j];
           try {
-            Object result = doInsertTableData(insert_request, sql_dialect_provider);
+            Object result = doInsertTableData(
+              insert_request,
+              sql_dialect_provider,
+              this.getTypeConverterFactory()
+            );
             if (insert_request.testSignletonData()) {
               if (insert_request.hasAutoGenerated()) {
                 result = new Object[] {
@@ -1101,7 +1130,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
           try {
-            Object result = doUpdateTableData(update_request, sql_dialect_provider);
+            Object result = doUpdateTableData(
+              update_request,
+              sql_dialect_provider,
+              this.getTypeConverterFactory()
+            );
             if (update_request.testSignletonData()) {
               result = Array.get(result, 0);
             }
@@ -1119,7 +1152,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest update_request = dml.getDelete()[j];
           try {
-            Object result = doDeleteTableData(update_request, sql_dialect_provider);
+            Object result = doDeleteTableData(
+              update_request,
+              sql_dialect_provider,
+              this.getTypeConverterFactory()
+            );
             if (update_request.testSignletonData()) {
               result = Array.get(result, 0);
             }

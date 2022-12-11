@@ -8,7 +8,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest.ConditionOperation;
-import com.snz1.jdbc.rest.utils.JdbcUtils;
+import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
 import lombok.Data;
 
@@ -45,7 +45,7 @@ public class WhereCloumn implements Serializable {
     }
   }
 
-  public String toWhereSQL() {
+  public String toWhereSQL(JdbcTypeConverterFactory factory) {
     if (this.condition != null) {
       ConditionOperation operation = this.condition.getOperation();
       if (operation.parameter_count() == 0) {
@@ -55,7 +55,7 @@ public class WhereCloumn implements Serializable {
       } else if (operation.parameter_count() == 2) {
         return String.format("%s %s ? and ?", this.column, operation.operator());
       } else {
-        condition.setArray(JdbcUtils.toArray(condition.getValue(), this.type));
+        condition.setArray(factory.convertArray(condition.getValue(), this.type));
         StringBuffer parambuf = new StringBuffer();
         boolean paramappend = false;
         for (int i = 0; i < condition.getArray_length(); i++) {
@@ -86,7 +86,7 @@ public class WhereCloumn implements Serializable {
           sqlbuf.append(String.format("%s %s ? and ?", this.column, operation.operator()));
         } else {
           if (condition.getArray() == null) {
-            condition.setArray(JdbcUtils.toArray(condition.getValue(), this.type));
+            condition.setArray(factory.convertArray(condition.getValue(), this.type));
           }
           StringBuffer parambuf = new StringBuffer();
           boolean paramappend = false;
@@ -106,13 +106,13 @@ public class WhereCloumn implements Serializable {
     }
   }
 
-  public void buildParameters(List<Object> parameters) {
+  public void buildParameters(List<Object> parameters, JdbcTypeConverterFactory factory) {
     if (this.condition != null) {
       ConditionOperation operation = condition.getOperation();
       if (operation.parameter_count() == 1) {
-        parameters.add(JdbcUtils.convert(this.condition.getValue(), this.type));
+        parameters.add(factory.convertObject(this.condition.getValue(), this.type));
       } else if (operation.parameter_count() == 2) {
-        Object data = JdbcUtils.toArray(condition.getValue(), this.type);
+        Object data = factory.convertArray(condition.getValue(), this.type);
         parameters.add(Array.get(data, 0));
         parameters.add(Array.get(data, 0));
       } else if (operation.parameter_count() == 3) {
@@ -124,9 +124,9 @@ public class WhereCloumn implements Serializable {
       for (WhereCloumn.Condition condition : this.conditions) {
         ConditionOperation operation = condition.getOperation();
         if (operation.parameter_count() == 1) {
-          parameters.add(JdbcUtils.convert(this.condition.getValue(), this.type));
+          parameters.add(factory.convertObject(this.condition.getValue(), this.type));
         } else if (operation.parameter_count() == 2) {
-          Object data = JdbcUtils.toArray(condition.getValue(), this.type);
+          Object data = factory.convertArray(condition.getValue(), this.type);
           parameters.add(Array.get(data, 0));
           parameters.add(Array.get(data, 0));
         } else if (operation.parameter_count() == 3) {
