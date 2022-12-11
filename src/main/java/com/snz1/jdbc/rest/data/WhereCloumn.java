@@ -13,7 +13,7 @@ import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import lombok.Data;
 
 @Data
-public class WhereCloumn implements Serializable {
+public class WhereCloumn implements Serializable, Cloneable {
 
   private String column;
 
@@ -29,7 +29,26 @@ public class WhereCloumn implements Serializable {
     return where_column;
   }
 
-  public void addCondition(ConditionOperation operation, String val) {
+  @Override
+  public WhereCloumn clone() {
+    try {
+      final WhereCloumn w = (WhereCloumn)super.clone();
+      w.condition = null;
+      w.conditions = null;
+      if (this.condition != null) {
+        w.addCondition(this.condition.getOperation(), this.condition.value);
+      } else if (this.conditions != null && this.conditions.size() > 0) {
+        this.conditions.forEach(c -> {
+          w.addCondition(c.getOperation(), c.value);
+        });
+      }
+      return w;
+    } catch (CloneNotSupportedException e) {
+      throw new IllegalStateException(e.getMessage(), e);
+    }
+  }
+
+  public void addCondition(ConditionOperation operation, Object val) {
     WhereCloumn.Condition temp_condition = new Condition();
     temp_condition.setOperation(operation);
     temp_condition.setValue(val);

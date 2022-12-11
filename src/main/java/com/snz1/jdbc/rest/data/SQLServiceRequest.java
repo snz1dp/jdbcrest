@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,10 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class SQLServiceRequest implements Serializable {
+
+  // 更新时间
+  @Getter
+  private Date request_time = new Date();
 
   @Getter
   private SQLServiceDefinition definition;

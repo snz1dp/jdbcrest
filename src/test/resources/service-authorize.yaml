@@ -22,5 +22,4 @@
 
 # 测试权限
 - path: /student/**
-  method: 
   access: hasRole('jdbcrest_test')

@@ -1,6 +1,8 @@
 package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -23,38 +25,34 @@ public class TableDefinition implements Serializable {
     return StringUtils.isNotBlank(alias);
   }
 
+  // 获取实际表名
   public String resolveName() {
     return this.hasAlias_name() ? this.getAlias() : this.getName();
-  }
-
-  // 所属应用ID字段
-  // 定义了此字段则表查询或关联查询将以当前请求应用ID作为限定范围
-  private String app_id_column;
-
-  public boolean hasApp_id_column() {
-    return StringUtils.isNotBlank(this.app_id_column);
-  }
-
-  // 所属应用名称字段
-  private String app_name_column;
-
-  public boolean hasApp_name_column() {
-    return StringUtils.isNotBlank(this.app_name_column);
   }
 
   // 所属用户ID字段
   // 定义了此字段则表查询或关联查询将以当前请求用户ID作为限定范围
   private TableDefinition.UserIdColumn owner_id_column;
 
+  // 是否用户所属字段
   public boolean hasOwner_id_column() {
     return this.owner_id_column != null && StringUtils.isNotBlank(this.owner_id_column.getName());
   }
 
-  // 所属用户称呼
-  private String owner_name_column;
+  // 缺省条件
+  private List<WhereCloumn> default_where = new LinkedList<>();
 
-  public boolean hasOwner_name_column() {
-    return StringUtils.isNotBlank(this.owner_name_column);
+  // 是否有缺省条件
+  public boolean hasDefault_where() {
+    return this.default_where != null && this.default_where.size() > 0;
+  }
+
+  public List<WhereCloumn> copyDefault_where() {
+    final List<WhereCloumn> ret = new LinkedList<>();
+    this.default_where.forEach(w -> {
+      ret.add(w.clone());
+    });
+    return ret;
   }
 
   // 创建时间字段
@@ -111,9 +109,6 @@ public class TableDefinition implements Serializable {
     ) return true;
     if (this.hasOwner_id_column() &&
       StringUtils.equalsIgnoreCase(name, this.getOwner_id_column().getName())
-    ) return true;
-    if (this.hasOwner_name_column() &&
-      StringUtils.equalsIgnoreCase(name, this.getOwner_name_column())
     ) return true;
     if (this.hasUpdated_time_column() &&
       StringUtils.equalsIgnoreCase(name, this.getUpdated_time_column())

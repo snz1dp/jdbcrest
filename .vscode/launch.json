@@ -18,7 +18,7 @@
       "projectName": "dashboard",
       "env": {
         "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
-        "TABLE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
+        "TABLE_DEFINITION": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
         "PERMISSION_DEFINITION": "file://${workspaceFolder}/src/test/resources/permission-definition.yaml",
         "SQL_LOCATION": "file://${workspaceFolder}/src/test/resources/sql/services",
         "PERMISSION_ENABLED": "true",

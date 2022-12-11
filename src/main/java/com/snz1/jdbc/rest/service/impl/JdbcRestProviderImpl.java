@@ -56,6 +56,8 @@ import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
+import com.snz1.utils.WebUtils;
+
 import org.apache.ibatis.mapping.SqlCommandType;
 
 import gateway.api.NotFoundException;
@@ -603,19 +605,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       logged_user = loggedUserContext.getLoginUserInfo();
     }
 
-    if (definition.hasOwner_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-        if (definition.hasOwner_name_column()) {
-          input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
-        }
-      } else {
-        input_data.put(userid.getName(), null);
-        input_data.put(definition.getOwner_name_column(), null);
-      }
-    }
-
     if (definition.hasCreator_id_column()) {
       TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
       if (logged_user != null) {
@@ -665,22 +654,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     UserInfo logged_user = null;
     if (loggedUserContext.isUserLogged()) {
       logged_user = loggedUserContext.getLoginUserInfo();
-    }
-
-    if (definition.hasOwner_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
-    }
-    if (definition.hasOwner_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getOwner_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getOwner_name_column(), null);
-      }
     }
 
     if (definition.hasUpdated_time_column()) {
@@ -800,25 +773,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
             }
 
             if (tdf != null) {
-              if (!update_request.isPatch_update()) {
-                if (tdf.hasOwner_id_column()) {
-                  TableColumn v = update_request.findColumn(tdf.getOwner_id_column().getName());
-                  if (log.isDebugEnabled()) {
-                    log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                  }
-                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                  i = i + 1;
-                }
-                if (tdf.hasOwner_name_column()) {
-                  TableColumn v = update_request.findColumn(tdf.getOwner_name_column());
-                  if (log.isDebugEnabled()) {
-                    log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                  }
-                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                  i = i + 1;
-                }
-              }
-
               if (tdf.hasUpdated_time_column()) {
                 TableColumn v = update_request.findColumn(tdf.getUpdated_time_column());
                 if (log.isDebugEnabled()) {
@@ -898,6 +852,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               i = i + 1;
             }
 
+            if (tdf != null && tdf.hasDefault_where()) {
+              List<Object> where_conditions = new LinkedList<>();
+              List<WhereCloumn> copied_where = tdf.copyDefault_where();
+              for (WhereCloumn w : copied_where) {
+                w.buildParameters(where_conditions, type_converter_factory);
+              }
+              for (Object where_object : where_conditions) {
+                ps.setObject(i, where_object);
+                if (log.isDebugEnabled()) {
+                  log.debug("设置缺省定义条件参数: PI={}, WHERE={}", i, where_object);
+                }
+                i = i + 1;
+              }
+            }
+
             ps.addBatch();
           }
           return ps.executeBatch();
@@ -963,6 +932,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
               ps.setObject(i, null);
             }
             i = i + 1;
+          }
+
+          if (tdf != null && tdf.hasDefault_where()) {
+            List<Object> where_conditions = new LinkedList<>();
+            List<WhereCloumn> copied_where = tdf.copyDefault_where();
+            for (WhereCloumn w : copied_where) {
+              w.buildParameters(where_conditions, type_converter_factory);
+            }
+            for (Object where_object : where_conditions) {
+              ps.setObject(i, where_object);
+              if (log.isDebugEnabled()) {
+                log.debug("设置缺省定义条件参数: PI={}, WHERE={}", i, where_object);
+              }
+              i = i + 1;
+            }
           }
 
           return ps.executeUpdate();
@@ -1173,6 +1157,16 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     return responses;
   }
 
+  private void doPrepareSQLServiceInputParameters(SQLServiceRequest sql_request, Map<String, Object> input_wrap) {
+    if (loggedUserContext.isUserLogged()) {
+      input_wrap.put("user", loggedUserContext.getLoginUserInfo());
+    }
+    Map<String, Object> request = new HashMap<>(2);
+    input_wrap.put("req", request);
+    request.put("time", sql_request.getRequest_time());
+    request.put("client_ip", WebUtils.getClientRealIp());
+  }
+
   @Override
   public Object executeSQLService(SQLServiceRequest sql_request) {
     SqlSession session = this.sessionFactory.openSession();
@@ -1182,6 +1176,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         Object last_output = null;
         for (SQLServiceDefinition.SQLFragment sql_fragment : sql_request.getDefinition().getSql_fragments()) {
           Map<String, Object> input_wrap = new HashMap<String, Object>(2);
+          this.doPrepareSQLServiceInputParameters(sql_request, input_wrap);
           input_wrap.put("input", input_data);
           if (last_output != null) {
             input_wrap.put("lastout", last_output);

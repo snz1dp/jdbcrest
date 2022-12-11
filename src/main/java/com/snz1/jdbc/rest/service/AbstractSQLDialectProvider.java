@@ -160,6 +160,19 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         }
       }
 
+      if (table_definition != null && table_definition.hasDefault_where()) {
+        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
+        for (WhereCloumn w : append_wehre) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+          w.buildParameters(parameters, this.getTypeConverterFactory());
+        };
+      }
+
       if (!docount && table_query.hasOrder_by()) {
         boolean order_append = false;
         for (JdbcQueryRequest.OrderBy o : table_query.getOrder_by()) {
@@ -241,16 +254,6 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       if (table_definition != null) {
-        if (!update_request.isPatch_update()) {
-          if (table_definition.hasOwner_id_column()) {
-            TableDefinition.UserIdColumn userid = table_definition.getOwner_id_column();
-            sql.SET(String.format("%s = ?", userid.getName()));
-          }
-          if (table_definition.hasOwner_name_column()) {
-            sql.SET(String.format("%s = ?", table_definition.getOwner_name_column()));
-          }
-        }
-
         if (table_definition.hasUpdated_time_column()) {
           sql.SET(String.format("%s = ?", table_definition.getUpdated_time_column()));
         }
@@ -264,13 +267,13 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         }
       }
 
-      boolean append = false;
+      boolean where_append = false;
       if (update_request.hasWhere()) { // 有查询条件的更新
         for (int i = 0; i < update_request.getWhere().size(); i++) {
-          if (append) {
+          if (where_append) {
             sql.AND();
           } else {
-            append = true;
+            where_append = true;
           }
           sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
         }
@@ -279,10 +282,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         if (update_request.testComposite_key()) {
           List<?> row_keys = (List<?>)rowkey;
           for (int i = 0; i < row_keys.size(); i++) {
-            if (append) {
+            if (where_append) {
               sql.AND();
             } else {
-              append = true;
+              where_append = true;
             }
             sql.WHERE(String.format("%s = ?", row_keys.get(i)));
           }
@@ -292,13 +295,26 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       if (table_definition != null && table_definition.hasOwner_id_column()) {
-        if (append) {
+        if (where_append) {
           sql.AND();
         } else {
-          append = true;
+          where_append = true;
         }
         sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
+
+      if (table_definition != null && table_definition.hasDefault_where()) {
+        List<WhereCloumn> append_wehre = table_definition.getDefault_where();
+        for (WhereCloumn w : append_wehre) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+        };
+      }
+
       return sql.toString();
     } finally {
       if (log.isDebugEnabled()) {
@@ -317,13 +333,13 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     try {
       sql.DELETE_FROM(update_request.getTable_name());
-      boolean append = false;
+      boolean where_append = false;
       if (update_request.hasWhere()) { // 有查询条件的更新
         for (int i = 0; i < update_request.getWhere().size(); i++) {
-          if (append) {
+          if (where_append) {
             sql.AND();
           } else {
-            append = true;
+            where_append = true;
           }
           sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
         }
@@ -332,10 +348,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         if (update_request.testComposite_key()) {
           List<?> row_keys = (List<?>)rowkey;
           for (int i = 0; i < row_keys.size(); i++) {
-            if (append) {
+            if (where_append) {
               sql.AND();
             } else {
-              append = true;
+              where_append = true;
             }
             sql.WHERE(String.format("%s = ?", row_keys.get(i)));
           }
@@ -347,12 +363,24 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       TableDefinition table_definition = update_request.getDefinition();
 
       if (table_definition != null && table_definition.hasOwner_id_column()) {
-        if (append) {
+        if (where_append) {
           sql.AND();
         } else {
-          append = true;
+          where_append = true;
         }
         sql.WHERE(String.format("%s.%s = ?", table_definition.getName(), table_definition.getOwner_id_column().getName()));
+      }
+
+      if (table_definition != null && table_definition.hasDefault_where()) {
+        List<WhereCloumn> append_wehre = table_definition.getDefault_where();
+        for (WhereCloumn w : append_wehre) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+        };
       }
 
       return sql.toString();

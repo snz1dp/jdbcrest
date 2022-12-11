@@ -274,17 +274,22 @@ public interface LoggedUserContext {
     }
 
     public String getIdByType(IdType idtype) {
-      User logged_user = this.proxy;
       if (Objects.equals(IdType.id, idtype)) {
-        return logged_user.getUserid();
+        return this.getUser_id();
       } else if (Objects.equals(IdType.uname, idtype)) {
-        return logged_user.getAccount_name();
+        return this.getUser_name();
       } else if (Objects.equals(IdType.email, idtype)) {
-        return logged_user.getRegist_email();
+        return this.getRegist_email();
       } else if (Objects.equals(IdType.mobi, idtype)) {
-        return logged_user.getRegist_mobile();
+        return this.getRegist_mobile();
+      } else if (Objects.equals(IdType.code, idtype)) {
+        return this.getCode();
+      } else if (Objects.equals(IdType.idcard, idtype)) {
+        return this.getIdcard();
+      } else if (Objects.equals(IdType.empid, idtype)) {
+        return this.getEmployeeid();
       }
-      return logged_user.getAccount_name();
+      return this.getUser_name();
     }
 
   }

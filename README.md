@@ -500,7 +500,7 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 
 ## 6、SQL实现服务
 
-启动运行时设置`SQL_LOCATION`环境变量为一个目录地址，如此您可以在该目录下放置`SQL`文件用于实现REST服务，规则如下：
+启动运行时设置`SQL_LOCATION`环境变量为一个目录地址(如：`file://xxx/path`)，如此您可以在该目录下放置`SQL`文件用于实现REST服务，规则如下：
 
 - 后缀为`.sql`的`xxx`文件都对应一个`/jdbc/rest/api/services/xxx`地址；
 - `SQL`实现服务只能使用`POST`方法调用；
@@ -536,7 +536,16 @@ select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
 
 **`SQL`部分**
 
-> 使用与`MyBatis`一样传参定义方式，其中`input`表示传入参数主体。
+> 使用与`MyBatis`一样传参定义方式，其中`input`表示请求传入的参数主体，`user`表示登录用户信息（需要开启前端扩展功能），`req`表示当前请求信息。
+
+- user
+  - user_id 用户ID
+  - user_name 用户名
+  - display_name 显示名称
+  - idcard 身份证
+- req
+  - time 请求时间戳
+  - client_ip 客户端IP
 
 **类型处理**
 
@@ -553,4 +562,226 @@ docker run --rm -ti -p 7188:7188 \
   -e JDBC_USER=postgres \
   -e JDBC_PASSWORD=yourpass \
   snz1dp/jdbcrest:beta
+```
+
+## 8、高级扩展功能
+
+扩展功能包括前端扩展功能及数据表接口扩展配置功能。
+
+### 8.1、前端扩展功能
+
+> 设置`SSO_ENABLED`环境变量为`true`时表示启用前端单点登录扩展功能，此时可以启用权限定义及权限控制配置。
+
+启用前端单点登录后，默认只能通过用户身份访问`jdbcrest`数据服务接口，除非进行特别的权限配置。
+
+#### 8.1.1、配置数据接口访问权限
+
+
+通过设置环境变量`SERVICE_AUTHORIZE`指定文件地址(如:`file://xxxx/service-authorize.yaml`)则可以为`jdbcrest`数据服务接口设置用户访问权限，配置文件示例如下所示：
+
+```yaml
+
+# 所有路径要求登录
+- path: /**
+  # Spring的SPEL表达式，isAuthenticated表示要求登录
+  access: isAuthenticated
+
+# 测试权限
+- path: /student/**
+  access: hasRole('jdbcrest_test')
+
+# 心跳检查
+- path: /health/**
+  # 请求方法，缺省为全部
+  method: GET
+  # Spring的SPEL表达式，permitAll表示向所有人开放（包括匿名）
+  access: permitAll
+
+# 文档资源
+- path: /v2/**
+  access: permitAll
+- path: /swagger/**
+  access: permitAll
+- path: /swagger-resources/**
+  access: permitAll
+- path: /swagger-ui/**
+  access: permitAll
+- path: /webjars/**
+  access: permitAll
+- path: /version
+  access: permitAll
+
+```
+
+> 服务访问权限主要是通过配置文件中的`Spring`的`SPEL`表达式实现，具体参见`SpringSecurity`注解式安装拦截配置。
+
+#### 8.1.2、前端功能权限树定义
+
+> 通常为了实现一个前端应用我们需要配合前端输出用户可见权限的功能树，因此这个配置功能是为了实现前后端一致的功能权限控制。
+
+通过设置环境变量`PERMISSION_DEFINITION`指定文件地址(如:`file://xxxx/permission-definition.yaml`)则可以为`jdbcrest`
+应用配置功能权限树，其主要结构示例如下所示：
+
+```yaml
+# 启动时候是否自动化配置
+enabled: true
+
+# 设置当前配置版本，
+# 如果当前版本大于与已配置版本则自动重新配置
+version: 2
+
+# 配置默认用户
+organizations:
+- name: 开发团队
+  children:
+  - name: 默认管理员
+    employeeid: '9527'
+    groups:
+    - all
+    password: ${app.admin.default.password:changeme}
+    user_name: ${app.admin.default.username:root}
+  # 组织代码
+  code: developer
+  # 组织类型
+  type: organization
+
+# 角色分组
+groups:
+  # 分组代码
+- code: test
+  # 分组名称
+  name: 测试分组
+  # 该组拥有的权限
+  roles:
+  - jdbcrest_test
+
+# 功能树配置
+functions: 
+# 应用名称
+- name: JDBC转REST
+  # 应用名称
+  code: jdbcrest
+  # 应用类型必须为app
+  function_type: app
+  # 权限代码
+  rolecode: jdbcrest
+  # 子节点，任何一个节点都可以有子节点
+  children: 
+    # 子节点名称
+  - name: 系统概况
+    # 子节点代码
+    code: jdbcrest
+    # 节点类型：
+    # module表示模块或子模块
+    # unit表示功能单元
+    # action表示操作
+    # data表示数据
+    function_type: unit
+    # 权限代码，表示拥有此权限代码的用户才能使用
+    rolecode: jdbcrest
+  - name: 测试菜单
+    code: jdbcrest.test
+    function_type: unit
+    rolecode: jdbcrest_test
+
+# 权限列表
+roles: 
+  # 权限名称
+- name: 访问JDBC转REST系统
+  # 权限代码
+  # 授予用户则表示用户拥有访问某功能权限
+  code: jdbcrest
+- name: 访问测试菜单
+  code: jdbcrest_test
+```
+
+>前端功能权限树定义后可以通过`/jdbc/rest/api/functions`与`/jdbc/rest/api/groups`访问应用功能权限树与权限分组数据。
+
+### 8.2、数据表服务扩展配置
+
+通过设置环境变量`TABLE_DEFINITION`可以指定一个数据表服务扩展配置文件（如：`file://xxx/table-definition.yaml`，
+内容示例如下：
+
+```yaml
+
+################################################
+# 数据表服务扩展配置列表
+################################################
+
+# 数据表服务名，此表可实际不存在
+- name: usertest
+
+  # 实际表名，此表必须存在
+  alias: test
+
+  # 所属用户ID字段
+  # 根据此字段过滤数据
+  owner_id_column:
+    # 字段名称
+    name: creator_id
+    # ID类型：
+    # uname（用户名）【默认】
+    # id（ID）
+    # mobi（手机号）
+    # email（EMAIL）
+    # code（代码）
+    # idcard（身份证）
+    # empid（员工编号）
+    idtype: uname
+
+  # 缺省的查询条件
+  # 查询时默认附加条件
+  default_where:
+  - column: type
+    # JDBC类型
+    type: VARCHAR
+    # 条件
+    condition:
+      # 条件操作符：参见条件操作符
+      operation: $in
+      # 条件内容
+      value:
+      - test
+
+  # 创建时间字段
+  created_time_column: created_time
+
+  # 创建用户ID字段
+  # 启用单点登录后填入用户标识字段
+  creator_id_column:
+    # 字段名称
+    name: creator_id
+    # ID类型
+    # uname（用户名）【默认】
+    # id（ID）
+    # mobi（手机号）
+    # email（EMAIL）
+    # code（代码）
+    # idcard（身份证）
+    # empid（员工编号）
+    idtype: uname
+
+  # 创建用户称呼字段
+  # 启用单点登录后填入用户姓名
+  creator_name_column: creator_name
+
+  # 更新时间字段
+  updated_time_column: updated_time
+
+  # 修改用户ID字段
+  mender_id_column:
+    # 字段名称
+    name: mender_id
+    # ID类型
+    # uname（用户名）【默认】
+    # id（ID）
+    # mobi（手机号）
+    # email（EMAIL）
+    # code（代码）
+    # idcard（身份证）
+    # empid（员工编号）
+    idtype: uname
+
+  # 修改用户称呼
+  mender_name_column: mender_name
 ```

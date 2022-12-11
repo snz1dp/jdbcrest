@@ -26,6 +26,7 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import gateway.api.Return;
 import gateway.sc.v2.FunctionTreeNode;
+import gateway.sc.v2.RoleGroup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -35,6 +36,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AppPublishApi {
 
   private FunctionTreeNode[] EMPTY_TREENODES = new FunctionTreeNode[0];
+  private RoleGroup[] EMPTY_GROUPS = new RoleGroup[0];
 
   @Autowired
   private RunConfig runConfig;
@@ -103,6 +105,21 @@ public class AppPublishApi {
       return Return.wrap(nodes[0].getChildren().toArray(new FunctionTreeNode[0]));
     } else {
       return Return.wrap(EMPTY_TREENODES);
+    }
+  }
+
+  @GetMapping(path = "/groups")
+  @Operation(summary = "权限分组定义")
+  @PreAuthorize("isAuthenticated")
+  @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
+  public Return<RoleGroup[]> groups() {
+    if (runConfig.hasPermissionDefinition() &&
+      runConfig.getPermissionDefinition().getGroups() != null
+    ) {
+      RoleGroup[] nodes = runConfig.getPermissionDefinition().getGroups();
+      return Return.wrap(nodes);
+    } else {
+      return Return.wrap(EMPTY_GROUPS);
     }
   }
 

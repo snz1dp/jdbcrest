@@ -1,6 +1,6 @@
 
 ################################################
-# 数据表定义列表
+# 数据表服务扩展配置列表
 ################################################
 
 # 数据表名
@@ -12,7 +12,7 @@
   # 所属用户ID字段
   owner_id_column:
     # 字段名称
-    name: owner_id
+    name: creator_id
     # ID类型：
     # uname（用户名）【默认】
     # id（ID）
@@ -23,8 +23,18 @@
     # empid（员工编号）
     idtype: uname
 
-  # 所属用户称呼字段
-  owner_name_column: owner_name
+  # 缺省查询条件
+  default_where:
+  - column: type
+    # JDBC类型
+    type: VARCHAR
+    # 条件
+    condition:
+      # 条件操作符
+      operation: $in
+      # 条件内容
+      value:
+      - test
 
   # 创建时间字段
   created_time_column: created_time
