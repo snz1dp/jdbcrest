@@ -785,3 +785,33 @@ roles:
   # 修改用户称呼
   mender_name_column: mender_name
 ```
+
+### 8.3、扩展的环境变量配置
+
+- `DB_VALIDATION_QUERY` 配置连接池存活检查的`SQL`语句
+- `SERVICE_AUTHORIZE` 前端服务接口访问权限配置文件地址
+- `PERMISSION_DEFINITION` 前端功能权限树配置文件地址
+- `TABLE_DEFINITION` 数据表服务扩展配置文件地址
+- `APP_CODE` 发布的应用代码，默认：`jdbcrest`
+- `DB_POOL_SIZE` 连接池初始化连接数量，默认：`3`
+- `DB_POOL_IDLE` 连接池空闲连接数量，默认：`3`
+- `DB_POOL_MAX` 连接池最大连接数量，默认：`15`
+- `DB_MAX_WAIT` 获取连接最大等待时间，默认：`60000`
+- `DB_EVICTION_TIME` 连接剔除判定周期时间，默认：`60000`
+- `DB_IDLE_TIME` 连接最大空闲时间，默认：`300000`
+- `DB_TEST_IDLE` 是否测试空闲连接有效，默认：`true`
+- `DB_TEST_BORROW` 是否测试获取到的连接有效，默认：`false`
+- `DB_TEST_RETURN` 返回时是否测试连接有效，默认：`false`
+- `DB_POOL_PS` 是否查询缓存，默认：`true`
+- `DB_POOL_PS_MAX` 最大缓存数量，默认：`20`
+- `DB_VALIDATION_QUERY` 连接有效检测语句，默认：`select CURRENT_TIMESTAMP`
+- `CHECK_PROXY_SIGNATURE` 是否检查网关签名，默认：`false`
+- `PROXY_SIGNATURE_SALT` 网关签名
+- `CACHE_TYPE` 缓存策略，默认：`none`，可选值：`none`、`redis`、`ehcache`
+- `REDIS_SERVER` REDIS服务器地址与端口，`CACHE_TYPE`为`redis`时必须指定
+- `CONFIG_TYPE` 动态配置类型，默认：`cluster`，可选值：`none`、`cache`、`cluster`
+- `CONFIG_URL` 配置服务地址，`CONFIG_TYPE`为`cluster`时必须指定
+- `XEAI_URL` 认证服务地址，启用前端扩展功能功能时必须指定
+- `JAVA_OPTS` JAVA运行配置，默认：`-Xms128m -Xmx2g -XX:-UseGCOverheadLimit`
+- `JWT_TOKEN` 调用身份令牌，如果配置服务与认证服务需要后台身份认证时必须指定
+- `JWT_PRIVKEY` 调用身份私钥，如上

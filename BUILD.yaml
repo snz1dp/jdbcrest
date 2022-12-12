@@ -30,9 +30,12 @@ service:
   - CONFIG_PROFILE=prod
   - TZ=Asia/Shanghai
   - APP_CODE=jdbcrest
-  - PG_POOL_SIZE=3
-  - PG_POOL_IDLE=3
-  - PG_POOL_MAX=15
+  - DB_POOL_SIZE=3
+  - DB_POOL_IDLE=3
+  - DB_POOL_MAX=15
+  - DB_MAX_WAIT=60000
+  - DB_EVICTION_TIME=60000
+  - DB_IDLE_TIME=300000
   - DB_TEST_IDLE=true
   - DB_TEST_BORROW=false
   - DB_TEST_RETURN=false
