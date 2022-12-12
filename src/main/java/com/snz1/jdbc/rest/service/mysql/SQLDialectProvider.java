@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service.postgresql;
+package com.snz1.jdbc.rest.service.mysql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,10 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -23,10 +21,10 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("postgresqlSQLDialectProvider")
+@Component("mysqlSQLDialectProvider")
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
-  public static final String NAME = "postgresql";
+  public static final String NAME = "mysql";
 
   @Override
   public String getName() {
@@ -35,7 +33,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
-    database_properties.put("DB_VALIDATION_QUERY", "select CURRENT_TIMESTAMP");
+    database_properties.put("DB_VALIDATION_QUERY", "select 1");
 		environment.getPropertySources().addLast(new MapPropertySource("jdbcrest", database_properties));
   }
 
@@ -46,18 +44,16 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     Statement stmt = null;
     try {
       stmt = conn.createStatement();
-      result = stmt.executeQuery(String.format("SELECT u.datname FROM pg_catalog.pg_database u where u.datname='%s';", databaseName));
+      result = stmt.executeQuery(String.format("SHOW DATABASE LIKE '%s';", databaseName));
       if (!result.next()) {
-        String createSQL = String.format("CREATE DATABASE %s WITH OWNER %s;", databaseName, databaseUsername);
+        String createSQL = String.format("CREATE DATABASE IF NOT EXISTS %s;", databaseName);
         if (log.isDebugEnabled()) {} {
           log.debug("执行SQL语句: " + createSQL);
         }
         stmt.execute(createSQL);
       }
     } catch(SQLException e) {
-      if (!StringUtils.contains(e.getMessage(), "already exists")) {
-        throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
-      }
+      throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
     } finally {
       JdbcUtils.closeResultSet(result);
       JdbcUtils.closeStatement(stmt);
@@ -101,22 +97,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
-      sqlbuf.append(" on conflict(");
-      if (insert_request.testComposite_key()) {
-        boolean append = false;
-        List<?> keydata = (List<?>)insert_request.getPrimary_key();
-        for (int i = 0; i < keydata.size(); i++) {
-          if (append) {
-            sqlbuf.append(", ");
-          } else {
-            append = true;
-          }
-          sqlbuf.append(keydata.get(i));
-        }
-      } else {
-        sqlbuf.append(insert_request.getPrimary_key());
-      }
-      sqlbuf.append(") do nothing");
+      sqlbuf.insert(6, " ignore"); // 在insert后插入ignore
     }
     return conn.prepareStatement(sqlbuf.toString());
   }

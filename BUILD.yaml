@@ -41,7 +41,6 @@ service:
   - DB_TEST_RETURN=false
   - CHECK_PROXY_SIGNATURE=false
   - PROXY_SIGNATURE_SALT=
-  - DB_VALIDATION_QUERY="select CURRENT_TIMESTAMP"
   - JWT_TOKEN="{{ .Snz1dp.Jwt.Token }}"
   - JWT_PRIVKEY="{{ .Snz1dp.Jwt.PrivateKey }}"
   - CACHE_TYPE=none
