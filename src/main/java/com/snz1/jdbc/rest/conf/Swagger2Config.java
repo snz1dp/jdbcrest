@@ -32,18 +32,18 @@ public class Swagger2Config {
 
 	@Bean
 	public OpenAPI openApi() {
-			OpenAPI openAPI = new OpenAPI();
-			// 基本信息
-			Contact contact = new Contact();
-			contact.setName(version.getCompany_name());
-			contact.setEmail(version.getContact_email());
-			contact.setUrl(version.getCompany_url());
-			openAPI.info(new Info().title(version.getProduct_name())
-							.description(version.getDescription())
-							.version(version.getProduct_version())
-							.contact(contact)
-			);
-			return openAPI;
+		OpenAPI openAPI = new OpenAPI();
+		// 基本信息
+		Contact contact = new Contact();
+		contact.setName(version.getCompany_name());
+		contact.setEmail(version.getContact_email());
+		contact.setUrl(version.getCompany_url());
+		openAPI.info(new Info().title(version.getProduct_name())
+						.description(version.getDescription())
+						.version(version.getProduct_version())
+						.contact(contact)
+		);
+		return openAPI;
 	}
 
 }
