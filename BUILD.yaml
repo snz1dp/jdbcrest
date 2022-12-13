@@ -80,3 +80,40 @@ develop:
       admin:
         username: postgres
         password: snz1dp9527
+    redis:
+      host: redis
+      install: true
+      password: snz1dp9527
+      port: 6379
+      version: 6.2.5
+    confserv:
+      install: true
+      version: 2.2.1
+    appgateway:
+      version: 2.8.1-802
+      install: true
+      admin:
+        host: ingress
+        port: 91
+        protocol: http
+    xeai:
+      version: 2.6.5
+      install: true
+    snz1dp:
+      admin:
+        password: 123456
+        username: root
+        email: root@localhost.com
+      helmrepo:
+        url: https://snz1.cn/nexus/repository/helm-hosted
+      ingress:
+        host: localhost
+        port: 80
+        protocol: http
+      namespace: snz1dp-system
+      organization: ChangSha SNZ1
+      registry:
+        secure: true
+        url: gitlab.snz1.cn:9288
+      timezone: Asia/Shanghai
+      version: 1.1.0-911
