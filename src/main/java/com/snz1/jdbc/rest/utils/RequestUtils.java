@@ -171,7 +171,6 @@ public abstract class RequestUtils {
               as_name = select_field.substring(as_start + 3);
               select_field = select_field.substring(0, as_start);
             }
-            select_field = StringUtils.replace(select_field, ":", ",");
             select_column = JdbcQueryRequest.SelectMeta.SelectColumn.of(select_field);
             select_column.setFunction(function_name);
             select_column.setAs(as_name);

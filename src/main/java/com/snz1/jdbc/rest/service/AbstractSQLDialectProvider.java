@@ -304,7 +304,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       if (table_definition != null && table_definition.hasDefault_where()) {
-        List<WhereCloumn> append_wehre = table_definition.getDefault_where();
+        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
         for (WhereCloumn w : append_wehre) {
           if (where_append) {
             sql.AND();
@@ -372,7 +372,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       if (table_definition != null && table_definition.hasDefault_where()) {
-        List<WhereCloumn> append_wehre = table_definition.getDefault_where();
+        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
         for (WhereCloumn w : append_wehre) {
           if (where_append) {
             sql.AND();

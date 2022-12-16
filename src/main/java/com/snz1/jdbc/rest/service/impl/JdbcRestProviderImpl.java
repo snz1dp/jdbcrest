@@ -677,6 +677,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       }
     }
 
+    if (definition.hasOwner_id_column()) {
+      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
+      if (logged_user != null) {
+        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
+      } else {
+        input_data.put(userid.getName(), null);
+      }
+    }
+
     return input_data;
   }
 

@@ -4,9 +4,12 @@ import java.lang.reflect.Array;
 import java.sql.JDBCType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -15,6 +18,9 @@ import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.service.JdbcTypeConverter;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
+import com.snz1.jdbc.rest.service.LoggedUserContext;
+import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
+import com.snz1.utils.Configurer;
 import com.snz1.utils.JsonUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
+
+  @Resource
+  private LoggedUserContext loggedUserContext;
 
   private List<JdbcTypeConverter> jdbcTypeConverters;
 
@@ -37,9 +46,131 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
     this.jdbcTypeConverters = new ArrayList<>(list);
   }
 
+  // 换取内置变量
+  private Object fetchBuildInVariable(Object input, JDBCType type) {
+    StringBuffer input_buf = new StringBuffer();
+    int var_index = 0;
+    int var_start = StringUtils.indexOf((String)input, "${", var_index);
+    if (var_start < var_index) return input;
+    if (var_start > var_index) {
+      input_buf.append(StringUtils.substring((String)input, var_index, var_start));
+    }
+    int var_end = StringUtils.indexOf((String)input, "}", var_start + 2);
+    if (var_end < var_index) return input;
+    
+    do {
+      String var_name = StringUtils.substring((String)input, var_start + 2, var_end);
+      var_name = StringUtils.trim(var_name);
+      String default_val = null;
+      int default_start = StringUtils.indexOf(var_name, ":");
+      if (default_start != -1) { // 有缺省值
+        default_val = StringUtils.substring(var_name, default_start + 1);
+        var_name = StringUtils.substring(var_name, 0, default_start);
+      }
+      String var_path[] = StringUtils.split(var_name, ".");
+      // 假设为原值
+      Object var_val = StringUtils.substring((String)input, var_start, var_end + 1);
+      if (StringUtils.equals(var_path[0], "system") && var_path.length == 2) {
+        String endpath = var_path[1];
+        if (StringUtils.equals(endpath, "now")) {
+          var_val = JsonUtils.toJson(new Date());
+        } else if (StringUtils.equals(endpath, "timestamp")) {
+          var_val = System.currentTimeMillis();
+        }
+      } else if (var_path.length == 3 && StringUtils.equals(var_path[0], "app") && StringUtils.equals(var_path[1], "config")) {
+        var_val = Configurer.getAppProperty(var_path[2], default_val);
+        if (var_val == null) {
+          var_val = "";
+        }
+      } else if (var_path.length == 2 && StringUtils.equals(var_path[0], "user")) {
+        String endpath = var_path[1];
+        if (StringUtils.equals(endpath, "userid")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getUser_id();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "username")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getUser_name();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "nickname")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getDisplay_name();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "employeeid")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getEmployeeid();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "idcard")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getIdcard();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "mobile")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getRegist_mobile();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "email")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getRegist_email();
+          } else {
+            var_val = default_val;
+          }
+        } else if (StringUtils.equals(endpath, "code")) {
+          if (this.loggedUserContext.isUserLogged()) {
+            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            var_val = userinfo.getCode();
+          } else {
+            var_val = default_val;
+          }
+        }
+      }
+      input_buf.append(var_val);
+      var_index = var_end + 1;
+      // 重新开始找
+      var_start = StringUtils.indexOf((String)input, "${", var_index);
+      if (var_start < var_index) {
+        input_buf.append(StringUtils.substring((String)input, var_index));
+        break;
+      }
+      if (var_start > var_index) {
+        input_buf.append(StringUtils.substring((String)input, var_index, var_start));
+      }
+      var_end = StringUtils.indexOf((String)input, "}", var_start + 2);
+      if (var_end < var_index) {
+        input_buf.append(StringUtils.substring((String)input, var_index));
+        break;
+      }
+    } while(var_end < StringUtils.length((String)input));
+    return input_buf.toString();
+  }
+
   @Override
   public Object convertObject(Object input, JDBCType type) {
     if (input == null) return null;
+
+    if (input instanceof String) {
+      input = this.fetchBuildInVariable(input, type);
+      if (input == null) return null;
+    }
+
     for (JdbcTypeConverter converter : this.jdbcTypeConverters) {
       if (!converter.supportType(type)) continue;
       if (log.isDebugEnabled()) {

@@ -21,7 +21,7 @@
 | limit                | 数值     |  否     | 0          | QueryString | 最大返回数量值<br>不能超过1000   |
 | _select              | 字符串   |  否     |          | QueryString | 查询字段，格式为：<br>字段1,字段2,字段3,字段4<br>sum:字段1,avg:字段2,max:字段3,min:字段4->>别名1  |
 | _distinct              | 字符串   |  否     | true       | QueryString   | 为true时表示排除重行  |
-| _groupby              | 字符串   |  否     |         | QueryString  | 分组查询，格式为：<br>分组字段->>having:sum(test):$gt:12<br>分组字段  |
+| _groupby              | 字符串   |  否     |         | QueryString  | 分组查询，格式为：<br>分组字段->>having:sum:test:$gt:12$integer<br>分组字段  |
 | _join              | 字符串   |  否     |         | QueryString  | 关联表参数，格式为：<br>关联表名:字段名:主表字段  |
 | _order              | 字符串   |  否     |          | QueryString | 字段排序，格式为：<br>-字段1,字段2  |
 | _count              | 字符串   |  否     | *        | QueryString  | 统计数量，格式为：字段名  |

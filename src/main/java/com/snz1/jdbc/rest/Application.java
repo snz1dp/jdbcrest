@@ -27,7 +27,6 @@ import org.springframework.core.env.Environment;
 @com.snz1.annotation.EnableSecurity //启用用户权限配置
 @com.snz1.annotation.EnableWebSso // 启用单点登录配置
 @gateway.sc.v2.EnableSecurityClient //启用安全客户端配置
-// @com.snz1.annotation.EnableAutoScheme //启用自动构建数据库
 public class Application {
 
   public static void main(String[] args) {

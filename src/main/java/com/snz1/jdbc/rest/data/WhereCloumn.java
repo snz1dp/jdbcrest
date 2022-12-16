@@ -135,6 +135,9 @@ public class WhereCloumn implements Serializable, Cloneable {
         parameters.add(Array.get(data, 0));
         parameters.add(Array.get(data, 0));
       } else if (operation.parameter_count() == 3) {
+        if (condition.getArray() == null) {
+          condition.setArray(factory.convertArray(condition.getValue(), this.type));
+        }
         for (int i = 0; i < condition.getArray_length(); i++) {
           parameters.add(Array.get(condition.getArray(), i));
         }
@@ -149,6 +152,9 @@ public class WhereCloumn implements Serializable, Cloneable {
           parameters.add(Array.get(data, 0));
           parameters.add(Array.get(data, 0));
         } else if (operation.parameter_count() == 3) {
+          if (condition.getArray() == null) {
+            condition.setArray(factory.convertArray(condition.getValue(), this.type));
+          }
           for (int i = 0; i < condition.getArray_length(); i++) {
             parameters.add(Array.get(condition.getArray(), i));
           }
