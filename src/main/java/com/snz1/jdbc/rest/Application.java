@@ -49,7 +49,7 @@ public class Application {
 
     private static final String APP_BOOT = ":: Snz1DP :: ";
 
-    private static final int STRAP_LINE_SIZE = 16;
+    private static final int STRAP_LINE_SIZE = 18;
 
     @Override
     public void printBanner(Environment environment, Class<?> sourceClass, PrintStream printStream) {

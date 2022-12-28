@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -33,8 +34,15 @@ public class TestTableExistedHandler extends AbstractJdbcQueryRequestHandler<Boo
   @Override
   @Nullable
   public Boolean doInConnection(Connection conn) throws SQLException, DataAccessException {
+    String schemas_name = null;
+    String table_name = this.table_name;
+    if (StringUtils.contains(table_name, ".")) {
+      String string_array[] = StringUtils.split(table_name, ".");
+      schemas_name = string_array[0];
+      table_name = string_array[1];
+    }
     DatabaseMetaData table_meta = conn.getMetaData();
-    ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
+    ResultSet rs = table_meta.getTables(null, schemas_name, table_name, types != null && types.length > 0 ? types : null);
     try {
       JdbcQueryResponse<List<Object>> table_ret = doFetchResultSet(rs, null, null, null, null);
       return table_ret != null && table_ret.data.size() > 0;

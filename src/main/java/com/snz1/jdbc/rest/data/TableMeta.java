@@ -37,6 +37,11 @@ public class TableMeta implements Serializable {
   @Setter
   private String table_name;
 
+  // Schemas
+  @Getter
+  @Setter
+  private String schemas_name;
+
   // 字段统计
   @Getter
   @Setter
@@ -176,6 +181,10 @@ public class TableMeta implements Serializable {
         metadata.setTable_name(rs_meta.getTableName(i));
       }
 
+      if (metadata.getSchemas_name() == null) {
+        metadata.setSchemas_name(rs_meta.getSchemaName(i));
+      }
+
       String column_name = rs_meta.getColumnName(i);
       if (request != null &&
         !request.isAll_column() &&
@@ -212,6 +221,10 @@ public class TableMeta implements Serializable {
 
     if (StringUtils.isBlank(metadata.getTable_name())) {
       metadata.setTable_name(null);
+    }
+
+    if (StringUtils.isBlank(metadata.getSchemas_name())) {
+      metadata.setSchemas_name(null);
     }
 
     return metadata;
