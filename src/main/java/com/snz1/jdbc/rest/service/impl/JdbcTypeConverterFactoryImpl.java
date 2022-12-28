@@ -22,6 +22,7 @@ import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.utils.Configurer;
 import com.snz1.utils.JsonUtils;
+import com.snz1.utils.WebUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +82,13 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
         var_val = Configurer.getAppProperty(var_path[2], default_val);
         if (var_val == null) {
           var_val = "";
+        }
+      } else if (var_path.length == 2 && StringUtils.equals(var_path[0], "client")) {
+        String endpath = var_path[1];
+        if (StringUtils.equals(endpath, "ip")) {
+          var_val = WebUtils.getClientRealIp();
+        } else if (StringUtils.equals(endpath, "ua")) {
+          var_val = WebUtils.getClientUserAgent();
         }
       } else if (var_path.length == 2 && StringUtils.equals(var_path[0], "user")) {
         String endpath = var_path[1];

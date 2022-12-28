@@ -591,6 +591,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     input_wrap.put("req", request);
     request.put("time", sql_request.getRequest_time());
     request.put("client_ip", WebUtils.getClientRealIp());
+    request.put("user_agent", WebUtils.getClientUserAgent());
   }
 
   @Override

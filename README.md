@@ -538,7 +538,7 @@ select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
 
 > 使用与`MyBatis`一样传参定义方式，其中`input`表示请求传入的参数主体，`user`表示登录用户信息（需要开启前端扩展功能），`req`表示当前请求信息。
 
-- user
+- user 具体参见「com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo」类属性
   - user_id 用户ID
   - user_name 用户名
   - display_name 显示名称
@@ -546,6 +546,7 @@ select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
 - req
   - time 请求时间戳
   - client_ip 客户端IP
+  - user_agent 客户端UA
 
 **类型处理**
 
@@ -835,6 +836,25 @@ roles:
 }
 ```
 
+#### 7.3.4、内置的变量参数
+
+> 字符串请求参数可以携带以下相关的变量，最终通过类型转换成SQL参数：
+
+| 变量 | 说明 |
+| -------------------- | ---------------------------------------------------------------- |
+| ${system.now}        | 请求日期时间             |
+| ${system.timestamp}  | 请求的时间戳（长整形）     |
+| ${user.userid:缺省值} | 当前登录用户ID，如果无用户登录则使用缺省值 |
+| ${user.username:缺省值} | 当前登录用户名，如果无用户登录则使用缺省值 |
+| ${user.nickname:缺省值} | 当前登录用户姓名(昵称），如果无用户登录则使用缺省值 |
+| ${user.employeeid:缺省值} | 当前登录用户员工编号，如果无用户登录则使用缺省值 |
+| ${user.idcard:缺省值} | 当前登录用户身份证号，如果无用户登录则使用缺省值 |
+| ${user.mobile:缺省值} | 当前登录用户手机号码，如果无用户登录则使用缺省值 |
+| ${user.email:缺省值} | 当前登录用户电子邮箱，如果无用户登录则使用缺省值 |
+| ${user.code:缺省值} | 当前登录用户代码，如果无用户登录则使用缺省值 |
+| ${app.config.xxxx:缺省值}   | 从应用动态配置中获取配置值，如果找不到则使用冒号后的缺省值     |
+| ${client.ip}   | 获取当前用户的IP地址     |
+| ${client.ua}   | 获取当前用户的UserAgent     |
 
 ## 8、环境变量配置
 

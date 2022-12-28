@@ -27,7 +27,7 @@
         "CONFIG_TYPE": "cluster",
         "DATASCHEME_ENABLED": "true",
         "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/dmdbms/",
-        "CACHE_TYPE": "redis",
+        "CACHE_TYPE": "none",
         "REDIS_SERVER": "localhost:6379",
         "REDIS_PASSWORD": "snz1dp9527",
         "JDBC_DRIVER": "dm.jdbc.driver.DmDriver",
