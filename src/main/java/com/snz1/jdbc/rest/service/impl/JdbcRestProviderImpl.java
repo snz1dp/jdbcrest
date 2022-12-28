@@ -1,12 +1,6 @@
 package com.snz1.jdbc.rest.service.impl;
 
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Array;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,44 +12,32 @@ import java.util.Objects;
 
 import javax.annotation.Resource;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.Nullable;
-import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
-import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
-import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
-import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
-import com.snz1.jdbc.rest.utils.JdbcUtils;
-import com.snz1.utils.JsonUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -64,7 +46,6 @@ import gateway.api.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
 public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   private JdbcMetaData jdbcMetaData;
@@ -99,152 +80,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     this.sqlDialectProviders = new HashMap<>(map);
   }
 
-  // 执行获取结果集
-  @SuppressWarnings("null")
-  protected JdbcQueryResponse<List<Object>> doFetchResultSet(
-    ResultSet rs, ResultDefinition return_meta,
-    Object primary_key, List<TableIndex> unique_index,
-    TableDefinition table_definition
-  ) throws SQLException {
-    boolean onepack = true; 
-    boolean meta = false;
-    boolean objlist = false;
-
-    if (return_meta != null) {
-      meta = return_meta.isContain_meta();
-      onepack = return_meta.isColumn_compact();
-      objlist = ResultDefinition.ResultRowStruct.list.equals(return_meta.getRow_struct());
-    }
-
-    TableMeta result_meta = TableMeta.of(
-      rs.getMetaData(),
-      return_meta,
-      primary_key,
-      unique_index,
-      table_definition
-    );
-    List<Object> rows = new LinkedList<>();
-
-    while(rs.next()) {
-      List<Object> row_list = null;
-      Map<String, Object> row_map = null;
-      Object row_data = null;
-      if (onepack && result_meta.getColumn_count() == 1) {
-        row_data = null;
-      } else if (objlist) {
-        row_list = new LinkedList<>();
-      } else {
-        row_map = new LinkedHashMap<>();
-      }
-      for (TableColumn col_item : result_meta.getColumns()) {
-        String col_name = col_item.getName();
-        Object col_obj = JdbcUtils.getResultSetValue(rs, col_item.getIndex() + 1);
-        if (col_obj != null) {
-          ResultDefinition.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
-          if (coldef != null && !Objects.equals(coldef.getType(), ResultDefinition.ResultType.raw)) {
-            if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.list)) {
-              if (col_item.getJdbc_type() == JDBCType.BLOB) {
-                col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), List.class);
-              } else {
-                col_obj = JsonUtils.fromJson(col_obj.toString(), List.class);
-              }
-            } else if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.map)) {
-              if (col_item.getJdbc_type() == JDBCType.BLOB) {
-                col_obj = JsonUtils.fromJson(new ByteArrayInputStream((byte[])col_obj), Map.class);
-              } else {
-                col_obj = JsonUtils.fromJson(col_obj.toString(), Map.class);
-              }
-            } else {
-              if (col_item.getJdbc_type() == JDBCType.BLOB) {
-                col_obj = Base64.encodeBase64String((byte[])col_obj);
-              } else {
-                col_obj = Base64.encodeBase64String(col_obj.toString().getBytes());
-              }
-            }
-          } else if (col_item.getJdbc_type() == JDBCType.BLOB) {
-            col_obj = Base64.encodeBase64String((byte[])col_obj);
-          }
-        }
-        if (onepack && result_meta.getColumn_count() == 1) {
-          row_data = col_obj;
-        } else if (objlist) {
-          row_list.add(col_obj);
-        } else if (col_obj != null) {
-          row_map.put(col_name, col_obj);
-        }
-      }
-
-      if (onepack && result_meta.getColumn_count() == 1) {
-        rows.add(row_data);
-      } else if (objlist) {
-        rows.add(row_list);
-      } else {
-        rows.add(row_map);
-      }
-    }
-    JdbcQueryResponse<List<Object>> ret = new JdbcQueryResponse<>();
-    if (meta) {
-      ret.setMeta(result_meta);
-    }
-    ret.setData(rows);
-    return ret;
-  }
-
   // 获取Schemas
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-
-      @Override
-      @Nullable
-      public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-        DatabaseMetaData table_meta =  conn.getMetaData();
-        ResultSet rs = table_meta.getSchemas();
-        try {
-          return doFetchResultSet(rs, null, null, null, null);
-        } finally {
-          JdbcUtils.closeResultSet(rs);
-        }
-      }
-
-    });
+    return jdbcTemplate.execute(new GetSchemasHandler());
   }
 
   // 获取目录
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-      @Override
-      @Nullable
-      public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-        DatabaseMetaData table_meta =  conn.getMetaData();
-        ResultSet rs = table_meta.getCatalogs();
-        try {
-          return doFetchResultSet(rs, null, null, null, null);
-        } finally {
-          JdbcUtils.closeResultSet(rs);
-        }
-      }
-    });
+    return jdbcTemplate.execute(new GetCatalogsHandler());
   }
 
   // 获取数据库元信息
   @Override
   public JdbcMetaData getMetaData() throws SQLException {
     if (this.jdbcMetaData != null) return this.jdbcMetaData;
-    return this.jdbcMetaData = jdbcTemplate.execute(new ConnectionCallback<JdbcMetaData>() {
-
-      @Override
-      @Nullable
-      public JdbcMetaData doInConnection(Connection conn) throws SQLException, DataAccessException {
-        JdbcMetaData temp_meta = new JdbcMetaData();
-        DatabaseMetaData table_meta =  conn.getMetaData();
-        temp_meta.setProduct_name(table_meta.getDatabaseProductName());
-        temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
-        temp_meta.setDriver_name(table_meta.getDriverName());
-        temp_meta.setDriver_version(table_meta.getDriverVersion());
-        return temp_meta;
-      }
-
-    });
+    return this.jdbcMetaData = jdbcTemplate.execute(new GetJdbcMetaHandler());
   }
 
   // 获取表类表
@@ -254,139 +104,63 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     String catalog, String schema_pattern,
     String table_name_pattern, String...types
   ) throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-
-      @Override
-      @Nullable
-      public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-        DatabaseMetaData table_meta = conn.getMetaData();
-        ResultSet rs = table_meta.getTables(catalog, schema_pattern, table_name_pattern, types != null && types.length > 0 ? types : null);
-        try {
-          return doFetchResultSet(rs, return_meta, null, null, null);
-        } finally {
-          JdbcUtils.closeResultSet(rs);
-        }
+    if (log.isDebugEnabled()) {
+      log.debug("获取数据表列表(CATALOG={}, SCHEMA={}, TABLE={}, TYPES={})...",
+        catalog, schema_pattern, table_name_pattern, types);
+    }
+    long start_time = System.currentTimeMillis();
+    try {
+      return jdbcTemplate.execute(new GetTablesHandler(return_meta, catalog, schema_pattern, table_name_pattern, types));
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug("获取数据表列表(CATALOG={}, SCHEMA={}, TABLE={}, TYPES={}耗时{}毫秒",
+          catalog, schema_pattern, table_name_pattern, types, (System.currentTimeMillis() - start_time)
+        );
       }
-
-    });
+    }
   }
   
   // 测试表是否存在
   public boolean testTableExisted(String table_name, String ...types) {
+    if (log.isDebugEnabled()) {
+      log.debug("检查数据表{}是否存在...", table_name);
+    }
     long start_time = System.currentTimeMillis();
     try {
-      JdbcQueryResponse<List<Object>> table_ret = jdbcTemplate.execute(
-        new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-          @Override
-          @Nullable
-          public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-            DatabaseMetaData table_meta = conn.getMetaData();
-            ResultSet rs = table_meta.getTables(null, null, table_name, types != null && types.length > 0 ? types : null);
-            try {
-              return doFetchResultSet(rs, null, null, null, null);
-            } finally {
-              JdbcUtils.closeResultSet(rs);
-            }
-          }
-        }
-      );
-      return table_ret != null && table_ret.data.size() > 0;
+      return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(table_name, types)));
     } finally {
-      log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
   // 获取主键
   @Override
   public Object getTablePrimaryKey(String table_name) throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<Object>() {
-      @Override
-      @Nullable
-      public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
-        return doFetchTablePrimaryKey(conn, table_name);
-      }
-    });
-
-  }
-
-  // 执行获取主键
-  @SuppressWarnings("unchecked")
-  protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
-    Object primary_key = null;
-    ResultSet ks = conn.getMetaData().getPrimaryKeys(null, null, table_name);
-    try {
-      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
-      if (list.getData() != null && list.getData().size() > 0) {
-        List<Object> primary_key_lst = new LinkedList<>();
-        for (Object keycol : list.getData()) {
-          Map<String, Object> colobj = (Map<String, Object>)keycol;
-          primary_key_lst.add(colobj.get("column_name"));
-        }
-        if (primary_key_lst.size() > 0) {
-          primary_key = primary_key_lst.size() == 1 ? primary_key_lst.get(0) : primary_key_lst;
-        }
-      }
-    } finally {
-      JdbcUtils.closeResultSet(ks);
-    }
-    return primary_key;
-  }
-
-  // 执行获取唯一索引
-  @SuppressWarnings("unchecked")
-  protected List<TableIndex> doFetchTableUniqueIndex(Connection conn, String table_name) throws SQLException {
-    List<TableIndex> index_lst = new LinkedList<>();
-    ResultSet ks = conn.getMetaData().getIndexInfo(null, null, table_name, true, false);
-    try {
-      JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
-      if (list.getData() != null && list.getData().size() > 0) {
-        for (Object index_item : list.getData()) {
-          Map<String, Object> colobj = (Map<String, Object>)index_item;
-          TableIndex index = new TableIndex();
-          index.setName((String)colobj.get("index_name"));
-          index.setUnique(Objects.equals(colobj.get("non_unique"), Boolean.FALSE));
-          index.setOrder((String)colobj.get("asc_or_desc"));
-          index.setType((Integer)colobj.get("type"));
-          index_lst.add(index);
-        }
-      }
-    } finally {
-      JdbcUtils.closeResultSet(ks);
-    }
-    return index_lst;
+    return jdbcTemplate.execute(new GetPrimaryKeyHandler(table_name));
   }
 
   // 执行获取结果集元信息
   protected TableMeta doFetchResultSetMeta(final JdbcQueryRequest table_query, final SQLDialectProvider sql_dialect_provider) {
-    return jdbcTemplate.execute(new ConnectionCallback<TableMeta>() {
-      @Override
-      @Nullable
-      public TableMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
-        if (table_query.hasTable_meta()) {
-          return table_query.getTable_meta();
-        }
-        Object primary_key =  doFetchTablePrimaryKey(conn, table_query.getTable_name());
-        List<TableIndex> unique_index = doFetchTableUniqueIndex(conn, table_query.getTable_name());
-        PreparedStatement ps = sql_dialect_provider.prepareNoRowSelect(conn, table_query);
-        try {
-          ResultSet rs = ps.executeQuery();
-          try {
-            rs = ps.getResultSet();
-            return TableMeta.of(
-              rs.getMetaData(),
-              table_query.getResult(),
-              primary_key,
-              unique_index,
-              table_query.getDefinition()
-            );
-          } finally {
-            JdbcUtils.closeResultSet(rs);
-          }
-        } finally {
-          JdbcUtils.closeStatement(ps);
-        }
+    if (table_query.hasTable_meta()) {
+      return table_query.getTable_meta();
+    }
+    return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider));
+  }
+
+  protected TableDefinitionRegistry getTableDefinitionRegistry() {
+    return tableDefinitionRegistry;
+  }
+
+  protected String resolveRealTableName(String table_name) {
+    if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
+      TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_name);
+      if (definition.hasAlias_name()) {
+        table_name = definition.getAlias();
       }
-    });
+    }
+    return table_name;
   }
 
   // 元信息
@@ -413,16 +187,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   // 分页查询统计信息
   protected boolean doFetchQueryPageTotal(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
+    if (log.isDebugEnabled()) {
+      log.debug("执行表{}分页查询统计...", table_query.getTable_name());
+    }
     long start_time = System.currentTimeMillis();
     try {
       // 获取统计
-      JdbcQueryStatement count_query = sql_dialect_provider.prepareQueryCount(table_query);
-      Long query_count = 0l;
-      if (count_query.hasParameter()) {
-        query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class, count_query.getParameters().toArray(new Object[0]));
-      } else {
-        query_count = jdbcTemplate.queryForObject(count_query.getSql(), Long.class);
-      }
+      Long query_count = this.doQueryTotalResult(table_query, sql_dialect_provider);
+
+      // 设置配置
       pageret.getData().setTotal(query_count != null ? query_count : 0);
       pageret.getData().setOffset(table_query.getResult().getOffset());
 
@@ -446,53 +219,44 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       }
       return has_data;
     } finally {
-      log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+      }
+    }
+  }
+
+  protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
+    long start_time = System.currentTimeMillis();
+    if (log.isDebugEnabled()) {
+      log.debug("执行表{}数据行统计...", table_query.getTable_name());
+    }
+    try {
+      // 获取统计
+      Long query_count = new TotalQueryRequestHandler(table_query, this.jdbcTemplate, sql_dialect_provider).execute();
+      return query_count;
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug("执行表{}数据行统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
   // 查询列表结果
   protected JdbcQueryResponse<?> doQueryListResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
+    if (log.isDebugEnabled()) {
+      log.debug("执行表{}数据行查询...", table_query.getTable_name());
+    }
     try {
       // 获取列表数据
-      JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(
-        new ConnectionCallback<JdbcQueryResponse<List<Object>>>() {
-          @Override
-          @Nullable
-          public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
-            Object primary_key = null;
-            List<TableIndex> unique_index = null;
-            if (table_query.hasTable_meta()) {
-              primary_key = table_query.getTable_meta().getPrimary_key();
-              unique_index = table_query.getTable_meta().getUnique_indexs();
-            } else {
-              primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
-              unique_index = doFetchTableUniqueIndex(conn, table_query.getTable_name());
-            }
-            PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
-            try {
-              ResultSet rs = null;
-              try {
-                rs = ps.executeQuery();
-                return doFetchResultSet(
-                  rs, table_query.getResult(),
-                  primary_key, unique_index,
-                  table_query.getDefinition()
-                );
-              } finally {
-                if (rs != null) {
-                  JdbcUtils.closeResultSet(rs);
-                }
-              }
-            } finally {
-              JdbcUtils.closeStatement(ps);
-            }
-          }
-        }
-      );
+      JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(new ListQueryRequestHandler(
+        table_query, sql_dialect_provider
+      ));
       return datalist;
     } finally {
-      log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
@@ -586,152 +350,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     return ret;
   }
 
-  // 构建
-  private Map<String, Object> doBuildInsertRequestInputData(ManipulationRequest insert_request, Map<String, Object> input_data) {
-    TableDefinition definition = insert_request.getDefinition();
-    if (definition == null) {
-      return input_data;
-    }
-    input_data = new HashMap<>(input_data);
-    if (definition.hasCreated_time_column()) {
-      input_data.put(definition.getCreated_time_column(), insert_request.getRequest_time());
-    }
-    if (definition.hasUpdated_time_column()) {
-      input_data.put(definition.getUpdated_time_column(), insert_request.getRequest_time());
-    }
-
-    UserInfo logged_user = null;
-    if (loggedUserContext.isUserLogged()) {
-      logged_user = loggedUserContext.getLoginUserInfo();
-    }
-
-    if (definition.hasCreator_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
-    }
-
-    if (definition.hasCreator_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getCreator_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getCreator_name_column(), null);
-      }
-    }
-
-    if (definition.hasMender_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getMender_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
-    }
-
-    if (definition.hasMender_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getMender_name_column(), null);
-      }
-    }
-    return input_data;
-  }
-
-  // 构建
-  private Map<String, Object> doBuildUpdateRequestInputData(ManipulationRequest update_request, Map<String, Object> input_data) {
-    TableDefinition definition = update_request.getDefinition();
-    if (definition == null) return input_data;
-    input_data = new LinkedHashMap<>(input_data);
-
-    if (definition.hasUpdated_time_column()) {
-      input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
-    }
-
-    UserInfo logged_user = null;
-    if (loggedUserContext.isUserLogged()) {
-      logged_user = loggedUserContext.getLoginUserInfo();
-    }
-
-    if (definition.hasUpdated_time_column()) {
-      input_data.put(definition.getUpdated_time_column(), update_request.getRequest_time());
-    }
-
-    if (definition.hasMender_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getMender_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
-    }
-
-    if (definition.hasMender_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getMender_name_column(), null);
-      }
-    }
-
-    if (definition.hasOwner_id_column()) {
-      TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
-    }
-
-    return input_data;
-  }
-
   protected Object doInsertTableData(
     ManipulationRequest insert_request,
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<Object>() {
-      @Override
-      @Nullable
-      public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
-        PreparedStatement ps = sql_dialect_provider.prepareDataInsert(conn, insert_request);
-        try {
-          List<Map<String, Object>> input_datas = insert_request.getInput_list();
-          for (Map<String, Object> input_data : input_datas) {
-            input_data = doBuildInsertRequestInputData(insert_request, input_data);
-            int i = 1;
-            for (TableColumn v : insert_request.getColumns()) {
-              if (v.getRead_only() != null && v.getRead_only()) continue;
-              if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-              if (v.getWritable() != null && v.getWritable()) {
-                Object val = type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
-                ps.setObject(i, val);
-                i = i + 1;
-              }
-            }
-            ps.addBatch();
-          }
-          int inserted[] = ps.executeBatch();
-          if (!insert_request.hasAutoGenerated()) {
-            return inserted;
-          }
-          ResultSet auto_keys = ps.getGeneratedKeys();
-          List<Integer> key_list = new LinkedList<>();
-          while(auto_keys.next()) {
-            key_list.add(auto_keys.getInt(1));
-          }
-          return new Object[] {
-            inserted, key_list.toArray(new Integer[0])
-          };
-        } finally {
-          JdbcUtils.closeStatement(ps);
-        }
-      }
-    });
+    return jdbcTemplate.execute(new InsertRequestHandler(
+      insert_request, sql_dialect_provider,
+      type_converter_factory, this.loggedUserContext
+    ));
   }
 
   // 执行更新
@@ -740,230 +367,22 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<int[]>() {
-      @Override
-      @Nullable
-      public int[] doInConnection(Connection conn) throws SQLException, DataAccessException {
-        TableDefinition tdf = update_request.getDefinition();
-        PreparedStatement ps = sql_dialect_provider.prepareDataUpdate(conn, update_request);
-        try {
-          List<Map<String, Object>> input_datas = update_request.getInput_list();
-          for (Map<String, Object> input_data : input_datas) {
-            int i = 1;
-            input_data = doBuildUpdateRequestInputData(update_request, input_data);
-            if (update_request.hasWhere() || update_request.isPatch_update()) {
-              for (TableColumn v : update_request.getColumns()) {
-                if (!input_data.containsKey(v.getName())) continue;
-                if (v.getRead_only() != null && v.getRead_only()) continue;
-                if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-                if (tdf != null && tdf.inColumn(v.getName())) continue;
-                if (v.getWritable() != null && v.getWritable()) {
-                  if (log.isDebugEnabled()) {
-                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                  }
-                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                  i = i + 1;
-                }
-              }
-            } else {
-              for (TableColumn v : update_request.getColumns()) {
-                if (v.getRead_only() != null && v.getRead_only()) continue;
-                if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-                if (update_request.testRow_key(v.getName())) continue;
-                if (tdf != null && tdf.inColumn(v.getName())) continue;
-                if (v.getWritable() != null && v.getWritable()) {
-                  if (log.isDebugEnabled()) {
-                    log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                  }
-                  ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                  i = i + 1;
-                }
-              }
-            }
-
-            if (tdf != null) {
-              if (tdf.hasUpdated_time_column()) {
-                TableColumn v = update_request.findColumn(tdf.getUpdated_time_column());
-                if (log.isDebugEnabled()) {
-                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                }
-                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                i = i + 1;
-              }
-      
-              if (tdf.hasMender_id_column()) {
-                TableColumn v = update_request.findColumn(tdf.getMender_id_column().getName());
-                if (log.isDebugEnabled()) {
-                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                }
-                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                i = i + 1;
-              }
-      
-              if (tdf.hasMender_name_column()) {
-                TableColumn v = update_request.findColumn(tdf.getMender_name_column());
-                if (log.isDebugEnabled()) {
-                  log.debug("设置上下文更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-                }
-                ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-                i = i + 1;
-              }
-            }
-
-            if (update_request.hasWhere()) {
-              List<Object> where_conditions = new LinkedList<>();
-              for (WhereCloumn w : update_request.getWhere()) {
-                w.buildParameters(where_conditions, type_converter_factory);
-              }
-              for (Object where_object : where_conditions) {
-                ps.setObject(i, where_object);
-                if (log.isDebugEnabled()) {
-                  log.debug("设置更新条件参数: PI={}, WHERE={}", i, where_object);
-                }
-                i = i + 1;
-              }
-            } else {
-              Object keyvalue = update_request.getInput_key();
-              Object rowkey = update_request.getRow_key();
-              if (update_request.testComposite_key()) {
-                List<?> row_keys = (List<?>)rowkey;
-                List<?> key_values = (List<?>)keyvalue;
-                for (int j = 0; j < row_keys.size(); j++) {
-                  String keyname = (String)row_keys.get(j);
-                  Object keyval = key_values.get(j);
-                  TableColumn v = update_request.findColumn(keyname);
-                  if (log.isDebugEnabled()) {
-                    log.debug("设置多主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyval);
-                  }
-                  ps.setObject(i, type_converter_factory.convertObject(
-                    keyval, v != null ? v.getJdbc_type() : null
-                  ));
-                  i = i + 1;
-                }
-              } else {
-                TableColumn v = update_request.findColumn((String)rowkey);
-                if (log.isDebugEnabled()) {
-                  log.debug("设置单主键条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), keyvalue);
-                }
-                ps.setObject(i, type_converter_factory.convertObject(
-                  keyvalue, v != null ? v.getJdbc_type() : null
-                ));
-                i = i + 1;
-              }
-            }
-
-            if (tdf != null && tdf.hasOwner_id_column()) {
-              TableColumn v = update_request.findColumn(tdf.getOwner_id_column().getName());
-              if (log.isDebugEnabled()) {
-                log.debug("设置上下文条件参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-              }
-              ps.setObject(i, type_converter_factory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-              i = i + 1;
-            }
-
-            if (tdf != null && tdf.hasDefault_where()) {
-              List<Object> where_conditions = new LinkedList<>();
-              List<WhereCloumn> copied_where = tdf.copyDefault_where();
-              for (WhereCloumn w : copied_where) {
-                w.buildParameters(where_conditions, type_converter_factory);
-              }
-              for (Object where_object : where_conditions) {
-                ps.setObject(i, where_object);
-                if (log.isDebugEnabled()) {
-                  log.debug("设置缺省定义条件参数: PI={}, WHERE={}", i, where_object);
-                }
-                i = i + 1;
-              }
-            }
-
-            ps.addBatch();
-          }
-          return ps.executeBatch();
-        } finally {
-          JdbcUtils.closeStatement(ps);
-        }
-      }
-    });
+    return jdbcTemplate.execute(new UpdateRequestHandler(
+      update_request, sql_dialect_provider,
+      type_converter_factory, this.loggedUserContext
+    ));
   }
 
   // 执行更新
   protected Integer doDeleteTableData(
-    ManipulationRequest update_request,
+    ManipulationRequest delete_request,
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
-    return jdbcTemplate.execute(new ConnectionCallback<Integer>() {
-      @Override
-      @Nullable
-      public Integer doInConnection(Connection conn) throws SQLException, DataAccessException {
-        TableDefinition tdf = update_request.getDefinition();
-        PreparedStatement ps = sql_dialect_provider.prepareDataDelete(conn, update_request);
-        try {
-          int i = 1;
-          if (update_request.hasWhere()) {
-            List<Object> where_conditions = new LinkedList<>();
-            for (WhereCloumn w : update_request.getWhere()) {
-              w.buildParameters(where_conditions, type_converter_factory);
-            }
-            for (Object where_object : where_conditions) {
-              ps.setObject(i, where_object);
-              i = i + 1;
-            }
-          } else {
-            Object keyvalue = update_request.getInput_key();
-            Object rowkey = update_request.getRow_key();
-            if (update_request.testComposite_key()) {
-              List<?> row_keys = (List<?>)rowkey;
-              List<?> key_values = (List<?>)keyvalue;
-              for (int j = 0; j < row_keys.size(); j++) {
-                String keyname = (String)row_keys.get(j);
-                Object keyval = key_values.get(j);
-                TableColumn keycol = update_request.findColumn(keyname);
-                ps.setObject(i, type_converter_factory.convertObject(
-                  keyval, keycol != null ? keycol.getJdbc_type() : null
-                ));
-                i = i + 1;
-              }
-            } else {
-              TableColumn keycol = update_request.findColumn((String)rowkey);
-              ps.setObject(i, type_converter_factory.convertObject(
-                keyvalue, keycol != null ? keycol.getJdbc_type() : null
-              ));
-              i = i + 1;
-            }
-          }
-
-          if (tdf != null && tdf.hasOwner_id_column()) {
-            if (loggedUserContext.isUserLogged()) {
-              UserInfo logged_user = loggedUserContext.getLoginUserInfo();
-              ps.setObject(i, logged_user.getIdByType(tdf.getOwner_id_column().getIdtype()));
-            } else {
-              ps.setObject(i, null);
-            }
-            i = i + 1;
-          }
-
-          if (tdf != null && tdf.hasDefault_where()) {
-            List<Object> where_conditions = new LinkedList<>();
-            List<WhereCloumn> copied_where = tdf.copyDefault_where();
-            for (WhereCloumn w : copied_where) {
-              w.buildParameters(where_conditions, type_converter_factory);
-            }
-            for (Object where_object : where_conditions) {
-              ps.setObject(i, where_object);
-              if (log.isDebugEnabled()) {
-                log.debug("设置缺省定义条件参数: PI={}, WHERE={}", i, where_object);
-              }
-              i = i + 1;
-            }
-          }
-
-          return ps.executeUpdate();
-        } finally {
-          JdbcUtils.closeStatement(ps);
-        }
-      }
-    });
+    return jdbcTemplate.execute(new DeleteRequestHandler(
+      delete_request, sql_dialect_provider,
+      type_converter_factory, this.loggedUserContext
+    ));
   }
 
   // 插入表数据
@@ -1193,7 +612,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
           if (output_list.size() > 0) {
             input_wrap.put("output", output_list);
           }
-          last_output = doExecuteSQLService(session, sql_fragment, input_wrap);
+          last_output = doExecuteSQLService(session, sql_request, sql_fragment, input_wrap);
         }
         output_list.add(last_output);
       }
@@ -1213,6 +632,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   public Object doExecuteSQLService(
     SqlSession session,
+    SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
     Object input_data
   ) {
@@ -1225,13 +645,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     try {
       switch(sql_cmd_type) {
       case SELECT:
-        return doSQLServiceSelect(session, sql_fragment, input_data);
+        return doSQLServiceSelect(session, sql_request, sql_fragment, input_data);
       case INSERT:
-        return doSQLServiceInsert(session, sql_fragment, input_data);
+        return doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
       case UPDATE:
-        return doSQLServiceUpdate(session, sql_fragment, input_data);
+        return doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
       case DELETE:
-        return doSQLServiceDelete(session, sql_fragment, input_data);
+        return doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
       default:
         throw new IllegalStateException("无效SQL语句");
       }
@@ -1239,55 +659,77 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     }
   }
 
-  private Object doSQLServiceInsert(
+  protected Object doSQLServiceInsert(
     SqlSession session,
+    SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
     Object input_data
   ) {
     String mapped_id = sql_fragment.getMapped_id();
+    if (log.isDebugEnabled()) {
+      log.debug("执行{}插入请求...", mapped_id);
+    }
     long start_time = System.currentTimeMillis();
     try {
       return session.insert(mapped_id, input_data);
     } finally {
-      log.debug("执行{}插入耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行{}插入请求耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
-  private Object doSQLServiceUpdate(
+  protected Object doSQLServiceUpdate(
     SqlSession session,
+    SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
     Object input_data
   ) {
     String mapped_id = sql_fragment.getMapped_id();
-    long start_time = System.currentTimeMillis();
+    if (log.isDebugEnabled()) {
+      log.debug("执行{}更新请求...", mapped_id);
+    }
+  long start_time = System.currentTimeMillis();
     try {
       return session.update(mapped_id, input_data);
     } finally {
-      log.debug("执行{}更新耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行{}更新请求耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
-  private Object doSQLServiceDelete(
+  protected Object doSQLServiceDelete(
     SqlSession session,
+    SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
     Object input_data
   ) {
     String mapped_id = sql_fragment.getMapped_id();
+    if (log.isDebugEnabled()) {
+      log.debug("执行{}删除请求...", mapped_id);
+    }
     long start_time = System.currentTimeMillis();
     try {
       return session.delete(mapped_id, input_data);
     } finally {
-      log.debug("执行{}删除耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行{}删除请求耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
   @SuppressWarnings("unchecked")
-  private Object doSQLServiceSelect(
+  protected Object doSQLServiceSelect(
     SqlSession session,
+    SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
     Object input_data
   ) {
     String mapped_id = sql_fragment.getMapped_id();
+    if (log.isDebugEnabled()) {
+      log.debug("执行{}查询请求...", mapped_id);
+    }
     long start_time = System.currentTimeMillis();
     try {
       List<Object> result = session.selectList(mapped_id, input_data);
@@ -1305,13 +747,18 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
         return result;
       }
     } finally {
-      log.debug("执行{}查询耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      if (log.isDebugEnabled()) {
+        log.debug("执行{}查询请求耗时{}毫秒", mapped_id, (System.currentTimeMillis() - start_time));
+      }
     }
   }
 
   private String resolveMappedStatement(
     SQLServiceDefinition.SQLFragment sql_fragment
   ) {
+    if (log.isDebugEnabled()) {
+      log.debug("构建{}请求...", sql_fragment.getMapped_id());
+    }
     long start_time = System.currentTimeMillis();
     try {
       Configuration mybatis_config = this.sessionFactory.getConfiguration();
@@ -1322,9 +769,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       return sql_fragment.getMapped_id();
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("构建{}耗时{}毫秒", sql_fragment.getMapped_id(), (System.currentTimeMillis() - start_time));
+        log.debug("构建{}请求耗时{}毫秒", sql_fragment.getMapped_id(), (System.currentTimeMillis() - start_time));
       }
     }
+  }
+
+  @Override
+  public void clearTableCaches(String table_name) {
+  }
+
+  @Override
+  public void clearMetaCaches() {
+  }
+
+  @Override
+  public void clearServiceCaches(String service_path) {
   }
 
 }

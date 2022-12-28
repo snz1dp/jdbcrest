@@ -22,7 +22,6 @@ import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
-import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
@@ -37,9 +36,6 @@ public class DatabaseQueryApi {
 
   @Resource
   private JdbcRestProvider restProvider;
-
-  @Resource
-  private TableDefinitionRegistry definitionRegistry;
 
   @Operation(summary = "分页查询")
   @GetMapping(path = "/tables/{table:.*}")

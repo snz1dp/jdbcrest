@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.http.MediaType;
 import org.springframework.web.servlet.HttpServletBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,8 +25,8 @@ import gateway.api.Return;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@WebServlet(urlPatterns = SQLServiceServlet.PATH)
-public class SQLServiceServlet extends HttpServletBean {
+@WebServlet(urlPatterns = SQLServiceRequestExecuteServlet.PATH)
+public class SQLServiceRequestExecuteServlet extends HttpServletBean {
 
   public static final String PATH = "/services/*";
 
@@ -56,6 +57,7 @@ public class SQLServiceServlet extends HttpServletBean {
     SQLServiceRequest sql_request = SQLServiceRequest.of(sql_service);
     sql_request.setInput_data(RequestUtils.fetchManipulationRequestData(req, false));
     Object result = serviceProvider.executeSQLService(sql_request);
+    resp.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
     objectMapper.writeValue(resp.getOutputStream(), Return.wrap(result));
     resp.flushBuffer();
   }

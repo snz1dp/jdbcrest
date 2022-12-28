@@ -74,4 +74,25 @@ public abstract class Constants {
   // SQL参数结束
   public static final String SQL_PARAM_SUFFIX = "}";
 
+  // Schemas缓存
+  public static final String SCHEMAS_CACHE = "schemas";
+
+  // Metadata缓存
+  public static final String METADATA_CACHE = "metadata";
+
+  // Catalogs缓存
+  public static final String CATALOGS_CACHE = "catalogs";
+
+  // Table缓存
+  public static final String TABLES_CACHE = "tables";
+
+  // 是否存在缓存
+  public static final String EXISTED_CACHE = "existed";
+
+  // 主键缓存
+  public static final String PRIMARYKEY_CACHE = "primarykey";
+
+  // TableMeta缓存
+  public static final String TABLEMETA_CACHE = "tablemeta";
+
 }

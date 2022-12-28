@@ -20,7 +20,6 @@ import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
-import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
 import gateway.api.NotFoundException;
@@ -35,9 +34,6 @@ public class DatabaseUpdateApi {
 
   @Resource
   private JdbcRestProvider restProvider;
-
-  @Resource
-  private TableDefinitionRegistry definitionRegistry;
 
   @Operation(summary = "根据主键更新数据")
   @RequestMapping(path = "/tables/{table:.*}/{key:.*}", method = {

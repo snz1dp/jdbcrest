@@ -92,4 +92,13 @@ public interface JdbcRestProvider {
     SQLServiceRequest sql_request
   );
 
+  // 清理表数据缓存
+  void clearTableCaches(String table_name);
+
+  // 清理元信息缓存
+  void clearMetaCaches();
+
+  // 清理SQL服务缓存
+  void clearServiceCaches(String service_path);
+
 }

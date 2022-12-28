@@ -553,28 +553,17 @@ select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
 - com.snz1.jdbc.rest.dao.MapTypeHandler  对象参数转字段
 - com.snz1.jdbc.rest.dao.Base64TypeHandler  Base64参数转`Blob`、`CLOB`字段
 
-## 7、部署运行说明
-
-```bash
-docker run --rm -ti -p 7188:7188 \
-  -e JDBC_DRIVER=org.postgresql.Driver \
-  -e JDBC_URL=jdbc:postgresql://your-db-host:5432/dbname \
-  -e JDBC_USER=postgres \
-  -e JDBC_PASSWORD=yourpass \
-  snz1dp/jdbcrest:beta
-```
-
-## 8、高级扩展功能
+## 7、高级扩展功能
 
 扩展功能包括前端扩展功能及数据表接口扩展配置功能。
 
-### 8.1、前端扩展功能
+### 7.1、前端扩展功能
 
 > 设置`SSO_ENABLED`环境变量为`true`时表示启用前端单点登录扩展功能，此时可以启用权限定义及权限控制配置。
 
 启用前端单点登录后，默认只能通过用户身份访问`jdbcrest`数据服务接口，除非进行特别的权限配置。
 
-#### 8.1.1、配置数据接口访问权限
+#### 7.1.1、配置数据接口访问权限
 
 
 通过设置环境变量`SERVICE_AUTHORIZE`指定文件地址(如:`file://xxxx/service-authorize.yaml`)则可以为`jdbcrest`数据服务接口设置用户访问权限，配置文件示例如下所示：
@@ -615,7 +604,7 @@ docker run --rm -ti -p 7188:7188 \
 
 > 服务访问权限主要是通过配置文件中的`Spring`的`SPEL`表达式实现，具体参见`SpringSecurity`注解式安装拦截配置。
 
-#### 8.1.2、前端功能权限树定义
+#### 7.1.2、前端功能权限树定义
 
 > 通常为了实现一个前端应用我们需要配合前端输出用户可见权限的功能树，因此这个配置功能是为了实现前后端一致的功能权限控制。
 
@@ -697,7 +686,7 @@ roles:
 
 >前端功能权限树定义后可以通过`/jdbc/rest/api/functions`与`/jdbc/rest/api/groups`访问应用功能权限树与权限分组数据。
 
-### 8.2、数据表服务扩展配置
+### 7.2、数据表服务扩展配置
 
 通过设置环境变量`TABLE_DEFINITION`可以指定一个数据表服务扩展配置文件（如：`file://xxx/table-definition.yaml`，
 内容示例如下：
@@ -786,7 +775,68 @@ roles:
   mender_name_column: mender_name
 ```
 
-### 8.3、扩展的环境变量配置
+### 7.3、缓存扩展功能
+
+设置环境变量`CACHE_TYPE`为`redis`或`ehcache`则表示启用数据缓存，缓存包括：
+
+- 数据元信息缓存，永久缓存，数据结构改变后需手动清理缓存
+- 数据表查询缓存，永久缓存，当数据发生变化时缓存自动清理
+
+为了方便重新加载数据，另外还提供以下相关缓存清理接口：
+
+#### 7.3.1、数据表查询缓存清理
+
+- 请求方式：`DELETE`
+- 接口地址：`/jdbc/rest/api/cache/tables/&lt;表名&gt;`
+- 请求参数：
+
+| 参数名称              | 参数类型  | 是否必须 | 缺省值 | 传参方式 | 参数说明 |
+| -------------------- | ------- | ------- | ----------- | ----------- | ----------------------- |
+| 表名               | 字符串     |  是     |            | Path | 指定的数据表             |
+
+- 应答格式：`JSON`
+
+```json
+{
+  "code": 0,
+  "message": "调用成功!"
+}
+```
+
+#### 7.3.2、SQL查询服务缓存清理
+
+- 请求方式：`DELETE`
+- 接口地址：`/jdbc/rest/api/cache/services/&lt;xxx&gt;`
+- 请求参数：
+
+| 参数名称              | 参数类型  | 是否必须 | 缺省值 | 传参方式 | 参数说明 |
+| -------------------- | ------- | ------- | ----------- | ----------- | ----------------------- |
+| xxx表示SQL查询服务路径    | 字符串     |  是     |            | Path | 指定的数据表             |
+
+- 应答格式：`JSON`
+
+```json
+{
+  "code": 0,
+  "message": "调用成功!"
+}
+```
+
+#### 7.3.3、数据元信息缓存清理
+
+- 请求方式：`DELETE`
+- 接口地址：`/cache/meta`
+- 应答格式：`JSON`
+
+```json
+{
+  "code": 0,
+  "message": "调用成功!"
+}
+```
+
+
+## 8、环境变量配置
 
 - `DB_VALIDATION_QUERY` 配置连接池存活检查的`SQL`语句
 - `SERVICE_AUTHORIZE` 前端服务接口访问权限配置文件地址
@@ -807,11 +857,35 @@ roles:
 - `DB_VALIDATION_QUERY` 连接有效检测语句，默认：`select CURRENT_TIMESTAMP`
 - `CHECK_PROXY_SIGNATURE` 是否检查网关签名，默认：`false`
 - `PROXY_SIGNATURE_SALT` 网关签名
-- `CACHE_TYPE` 缓存策略，默认：`none`，可选值：`none`、`redis`、`ehcache`
+- `CACHE_TYPE` 缓存策略，默认：`none`，可选值：`none`、`redis`
 - `REDIS_SERVER` REDIS服务器地址与端口，`CACHE_TYPE`为`redis`时必须指定
-- `CONFIG_TYPE` 动态配置类型，默认：`cluster`，可选值：`none`、`cache`、`cluster`
-- `CONFIG_URL` 配置服务地址，`CONFIG_TYPE`为`cluster`时必须指定
+- `CONFIG_TYPE` 动态配置类型，默认：`none`，可选值：`none`、`cache`、`cluster`
+- `CONFSERV_URL` 配置服务地址，`CONFIG_TYPE`为`cluster`时必须指定
+- `REDIS_SERVER` Redis服务器地址及端口，如：`domain.of.redis:6379`
+- `REDIS_DB` Redis数据库索引号，默认：`2`
+- `REDIS_TIMEOUT` Redis访问超时时间
+- `REDIS_PASSWORD` Redis访问密码
 - `XEAI_URL` 认证服务地址，启用前端扩展功能功能时必须指定
 - `JAVA_OPTS` JAVA运行配置，默认：`-Xms128m -Xmx2g -XX:-UseGCOverheadLimit`
 - `JWT_TOKEN` 调用身份令牌，如果配置服务与认证服务需要后台身份认证时必须指定
 - `JWT_PRIVKEY` 调用身份私钥，如上
+- `PERMISSION_ENABLED` 是否启用权限控制，默认：`false`
+- `SSO_ENABLED` 是否启用单点登录，默认：`false`
+- `SSO_SIMULATE` 是否启用单点模拟，默认：`false`
+- `TEST_USER` 单点模拟用户名，默认：`root`，`SSO_SIMULATE`为`true`时生效
+- `DATASCHEME_ENABLED` 是否启用自动数据库脚本构建，默认：`false`
+- `DATASCHEME_URL` 数据库自动构建脚本位置。
+
+通过设置环境变量`TABLE_DEFINITION`可以指定一个数据表服务扩展配置文件（如：`file://xxx/table-definition.yaml`，
+内容示例如下：
+
+## 9、部署运行说明
+
+```bash
+docker run --rm -ti -p 7188:7188 \
+  -e JDBC_DRIVER=org.postgresql.Driver \
+  -e JDBC_URL=jdbc:postgresql://your-db-host:5432/dbname \
+  -e JDBC_USER=postgres \
+  -e JDBC_PASSWORD=yourpass \
+  gitlab.snz1.cn:9288/database/jdbcrest:1.0.0
+```
