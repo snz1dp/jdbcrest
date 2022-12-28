@@ -1,1 +1,0 @@
-delete from datameta where app = ?

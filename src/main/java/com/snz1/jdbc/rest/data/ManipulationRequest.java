@@ -153,7 +153,7 @@ public class ManipulationRequest extends JdbcRestfulRequest {
     if (this.getUnique_indexs().size() == 1) return this.getUnique_index().getColumn();
     List<String> keynames = new LinkedList<>();
     for (TableIndex keyindex : this.getUnique_indexs()) {
-      keynames.add(keyindex.getName());
+      keynames.add(keyindex.getColumn());
     }
     return keynames;
   }

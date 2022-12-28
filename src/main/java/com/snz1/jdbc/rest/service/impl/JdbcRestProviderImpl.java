@@ -268,7 +268,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
 
-    long start_time = System.currentTimeMillis();
     String table_name = table_query.getTable_name();
 
     if (!table_query.hasTable_meta()) { // 无表元信息则查询
@@ -294,7 +293,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
       pageret.getData().setOffset(table_query.getResult().getOffset());
       pageret.getData().setData((List)datalist.getData());
     }
-    log.debug("执行表{}分页查询总耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
     return pageret;
   }
 

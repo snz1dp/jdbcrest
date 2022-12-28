@@ -41,8 +41,6 @@ public class DatabaseCacheApi {
     org.springframework.web.bind.annotation.RequestMethod.DELETE
   })
   public Result deleteMetaCache(
-    @PathVariable("table")
-    String table_name,
     HttpServletRequest request
   ) {
     restProvider.clearMetaCaches();

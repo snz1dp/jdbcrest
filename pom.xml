@@ -178,6 +178,13 @@
 			<version>8.0.31</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/com.dameng/DmJdbcDriver18 -->
+		<dependency>
+			<groupId>com.dameng</groupId>
+			<artifactId>DmJdbcDriver18</artifactId>
+			<version>8.1.2.141</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.snz1</groupId>
 			<artifactId>utility</artifactId>

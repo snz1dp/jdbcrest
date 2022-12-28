@@ -68,6 +68,9 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     Cache cache = cacheManager.getCache(cache_name);
     if (cache == null) return;
     cache.clear();
+    if (log.isDebugEnabled()) {
+      log.debug("缓存(NAME={})已全部清理", cache_name);
+    }
   }
 
   @Override

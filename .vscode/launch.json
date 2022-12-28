@@ -26,10 +26,14 @@
         "SSO_SIMULATE": "true",
         "CONFIG_TYPE": "cluster",
         "DATASCHEME_ENABLED": "true",
-        "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/",
+        "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/dmdbms/",
         "CACHE_TYPE": "redis",
         "REDIS_SERVER": "localhost:6379",
-        "REDIS_PASSWORD": "snz1dp9527"
+        "REDIS_PASSWORD": "snz1dp9527",
+        "JDBC_DRIVER": "dm.jdbc.driver.DmDriver",
+        "JDBC_URL": "jdbc:dm://localhost:5236",
+        "JDBC_USER": "TEST",
+        "JDBC_PASSWORD": "snz1dp9527"
       }
     }
   ]

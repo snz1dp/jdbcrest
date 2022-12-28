@@ -1,0 +1,1 @@
+SELECT ver FROM datameta WHERE app = ?

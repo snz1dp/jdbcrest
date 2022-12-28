@@ -1,0 +1,1 @@
+UPDATE datameta SET ver = ? WHERE app = ?

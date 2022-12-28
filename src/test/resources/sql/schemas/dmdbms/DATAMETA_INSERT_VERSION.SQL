@@ -1,0 +1,1 @@
+INSERT INTO datameta(app, ver) VALUES(?, ?)

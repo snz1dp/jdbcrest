@@ -140,7 +140,11 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         List<Object> primary_key_lst = new LinkedList<>();
         for (Object keycol : list.getData()) {
           Map<String, Object> colobj = (Map<String, Object>)keycol;
-          primary_key_lst.add(colobj.get("column_name"));
+          if (colobj.containsKey("column_name")) {
+            primary_key_lst.add(colobj.get("column_name"));
+          } else {
+            primary_key_lst.add(colobj.get("COLUMN_NAME"));
+          }
         }
         if (primary_key_lst.size() > 0) {
           primary_key = primary_key_lst.size() == 1 ? primary_key_lst.get(0) : primary_key_lst;
@@ -164,10 +168,38 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         for (Object index_item : list.getData()) {
           Map<String, Object> colobj = (Map<String, Object>)index_item;
           TableIndex index = new TableIndex();
-          index.setName((String)colobj.get("index_name"));
-          index.setUnique(Objects.equals(colobj.get("non_unique"), Boolean.FALSE));
-          index.setOrder((String)colobj.get("asc_or_desc"));
-          index.setType((Integer)colobj.get("type"));
+          if (colobj.containsKey("index_name")) {
+            index.setName((String)colobj.get("index_name"));
+          } else {
+            index.setName((String)colobj.get("INDEX_NAME"));
+          }
+          if (colobj.containsKey("column_name")) {
+            index.setColumn((String)colobj.get("column_name"));
+          } else {
+            index.setColumn((String)colobj.get("COLUMN_NAME"));
+          }
+          if (colobj.containsKey("non_unique")) {
+            if (colobj.get("non_unique") instanceof Boolean) {
+              index.setUnique(Objects.equals(colobj.get("non_unique"), Boolean.FALSE));
+            } else {
+              index.setUnique(Objects.equals(colobj.get("non_unique"), 0));
+            }
+          } else if (colobj.get("NON_UNIQUE") instanceof Boolean) {
+            index.setUnique(Objects.equals(colobj.get("NON_UNIQUE"), Boolean.FALSE));
+          } else {
+            index.setUnique(Objects.equals(colobj.get("NON_UNIQUE"), 0));
+          }
+          
+          if (colobj.containsKey("asc_or_desc")) {
+            index.setOrder((String)colobj.get("asc_or_desc"));
+          } else {
+            index.setOrder((String)colobj.get("ASC_OR_DESC"));
+          }
+          if (colobj.containsKey("type")) {
+            index.setType((Integer)colobj.get("type"));
+          } else {
+            index.setType((Integer)colobj.get("type"));
+          }
           index_lst.add(index);
         }
       }
