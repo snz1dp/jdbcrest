@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
   @Value("${app.table.definition:}")
   private String tableDefinitionFile;
 
-  private Map<String, TableDefinition> tableDefinitionMap;
+  private Map<String, TableDefinition> tableDefinitionMap = Collections.emptyMap();
 
   // 加载表定义配置
   @PostConstruct
