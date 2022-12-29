@@ -67,8 +67,8 @@ public class AppPublishApi {
     HttpServletResponse response
   ) {
     ModelAndView mav = new ModelAndView();
-    String dash_url = WebUtils.getPublishURLViaGateway(request, runConfig.getDefaultTargetUrl());
-    mav.setView(new RedirectView(dash_url));
+    String root_url = WebUtils.getPublishURLViaGateway(request, runConfig.getDefaultTargetUrl());
+    mav.setView(new RedirectView(root_url));
     return mav;
   }
 

@@ -95,10 +95,16 @@ public interface JdbcRestProvider {
   // 清理表数据缓存
   void clearTableCaches(String table_name);
 
+  // 清理表数据缓存
+  void clearTableCaches();
+
   // 清理元信息缓存
   void clearMetaCaches();
 
   // 清理SQL服务缓存
   void clearServiceCaches(String service_path);
+
+  // 清理全部SQL服务缓存
+  void clearServiceCaches();
 
 }

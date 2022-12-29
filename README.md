@@ -292,6 +292,8 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 }
 ```
 
+> 接口`/jdbc/rest/api/uuid`可以获取唯一`UUID`作为数据主键。
+
 ## 3、修改数据
 
 ## 3.1、根据主键更新数据

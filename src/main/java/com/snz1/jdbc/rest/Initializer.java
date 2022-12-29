@@ -16,12 +16,19 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
+import com.snz1.scheme.FileConfigDataSchemaManager;
+import com.snz1.utils.Configurer;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Initializer implements SpringApplicationRunListener {
+
+  private boolean cacheAble;
+  
+  private boolean dataSchemeEnabled;
 
   public Initializer(SpringApplication app, String ...args) {
   }
@@ -106,6 +113,10 @@ public class Initializer implements SpringApplicationRunListener {
   @Override
   public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext, ConfigurableEnvironment environment) {
     createDatabase(environment);
+    String cache_type = environment.getProperty("spring.cache.type", "none");
+    this.cacheAble = !StringUtils.equals(cache_type, "none");
+    String datascheme_enabled = environment.getProperty("spring.datascheme.enabled", "false");
+    this.dataSchemeEnabled = StringUtils.equalsIgnoreCase(datascheme_enabled, "true");
   }
 
   @Override
@@ -118,6 +129,41 @@ public class Initializer implements SpringApplicationRunListener {
 
   @Override
   public void started(ConfigurableApplicationContext context) {
+    if (!this.cacheAble) {
+      log.warn("未启用高速缓存功能，忽略缓存清理!!");
+      return;
+    }
+
+    if (!this.dataSchemeEnabled) {
+      log.warn("未启用数据结构自动构建，忽略缓存清理!!");
+    }
+
+    FileConfigDataSchemaManager schema_mgr = context.getBean(FileConfigDataSchemaManager.class);
+    String configed_version = Configurer.getAppProperty("data.scheme.version", "-1");
+    Integer inconfig_version = -1;
+
+    try {
+      inconfig_version = Integer.parseInt(configed_version);
+    } catch(Throwable e) {}
+    if (inconfig_version == schema_mgr.getVersion()) {
+      log.warn("配置中的数据结构版本{}等于当前数据结构版本，忽略缓存清理!", inconfig_version);
+      return;
+    }
+
+    long start_time = System.currentTimeMillis();
+    if (log.isDebugEnabled()) {
+      log.debug("开始清理高速缓存...");
+    }
+
+    context.getBeansOfType(CacheClear.class).forEach((k, v) -> {
+      v.clearCaches();
+    });
+
+    Configurer.setAppProperty("data.scheme.version", schema_mgr.getVersion() + "");
+
+    if (log.isDebugEnabled()) {
+      log.debug("清理高速缓存耗时{}毫秒...", (System.currentTimeMillis() - start_time));
+    }
   }
 
   @Override

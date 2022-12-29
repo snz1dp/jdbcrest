@@ -60,10 +60,13 @@ public class SQLServiceCacheDeleteServlet extends HttpServletBean {
       service_path = service_path.substring(0, service_path.length() - 1);
     }
 
-    SQLServiceDefinition sql_service = serviceRegistry.getService(service_path);
-    Validate.notNull(sql_service, "SQL服务不存在");
-
-    serviceProvider.clearServiceCaches(sql_service.getService_path());
+    if (StringUtils.equals(service_path, "/services")) {
+      serviceProvider.clearServiceCaches();
+    } else {
+      SQLServiceDefinition sql_service = serviceRegistry.getService(service_path);
+      Validate.notNull(sql_service, "SQL服务不存在");
+      serviceProvider.clearServiceCaches(sql_service.getService_path());
+    }
     resp.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
     objectMapper.writeValue(resp.getOutputStream(), Return.success());
     resp.flushBuffer();

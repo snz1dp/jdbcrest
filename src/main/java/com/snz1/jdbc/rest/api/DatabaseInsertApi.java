@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.api;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -47,6 +48,15 @@ public class DatabaseInsertApi {
 
     Object result = restProvider.insertTableData(insert_request);
     return Return.wrap(result);
+  }
+
+  @Operation(summary = "获取对象UUID")
+  @RequestMapping(path = "/uuid", method = {
+    org.springframework.web.bind.annotation.RequestMethod.POST,
+    org.springframework.web.bind.annotation.RequestMethod.GET
+  })
+  public Return<String> createObjectId() {
+    return Return.wrap(UUID.randomUUID().toString());
   }
 
 }

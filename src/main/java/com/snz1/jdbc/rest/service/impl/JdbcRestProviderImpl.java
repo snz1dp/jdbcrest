@@ -785,4 +785,12 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
   public void clearServiceCaches(String service_path) {
   }
 
+  @Override
+  public void clearServiceCaches() {
+  }
+
+  @Override
+  public void clearTableCaches() {
+  }
+
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.JDBCType;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -188,6 +189,11 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
   @Override
   public SQLServiceDefinition getService(String service_path) {
     return this.sqlServiceDefinitions.get(service_path);
+  }
+
+  @Override
+  public Collection<SQLServiceDefinition> getServices() {
+    return this.sqlServiceDefinitions.values();
   }
 
 }

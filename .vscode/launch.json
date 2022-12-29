@@ -12,10 +12,10 @@
     },
     {
       "type": "java",
-      "name": "Launch Application",
+      "name": "Launch Application(DM)",
       "request": "launch",
       "mainClass": "com.snz1.jdbc.rest.Application",
-      "projectName": "dashboard",
+      "projectName": "jdbc2rest",
       "env": {
         "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
         "TABLE_DEFINITION": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
@@ -33,6 +33,32 @@
         "JDBC_DRIVER": "dm.jdbc.driver.DmDriver",
         "JDBC_URL": "jdbc:dm://localhost:5236",
         "JDBC_USER": "TEST",
+        "JDBC_PASSWORD": "snz1dp9527"
+      }
+    },
+    {
+      "type": "java",
+      "name": "Launch Application(PG)",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.Application",
+      "projectName": "jdbc2rest",
+      "env": {
+        "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
+        "TABLE_DEFINITION": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
+        "PERMISSION_DEFINITION": "file://${workspaceFolder}/src/test/resources/permission-definition.yaml",
+        "SQL_LOCATION": "file://${workspaceFolder}/src/test/resources/sql/services",
+        "PERMISSION_ENABLED": "true",
+        "SSO_ENABLED": "true",
+        "SSO_SIMULATE": "true",
+        "CONFIG_TYPE": "cluster",
+        "DATASCHEME_ENABLED": "true",
+        "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/dmdbms/",
+        "CACHE_TYPE": "redis",
+        "REDIS_SERVER": "localhost:6379",
+        "REDIS_PASSWORD": "snz1dp9527",
+        "JDBC_DRIVER": "org.postgresql.Driver",
+        "JDBC_URL": "jdbc:postgresql://localhost:5432/demo",
+        "JDBC_USER": "postgres",
         "JDBC_PASSWORD": "snz1dp9527"
       }
     }

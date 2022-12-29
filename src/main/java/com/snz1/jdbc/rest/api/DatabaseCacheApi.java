@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 
 import gateway.api.Result;
@@ -22,6 +23,9 @@ public class DatabaseCacheApi {
   @Resource
   private JdbcRestProvider restProvider;
 
+  @Resource
+  private CacheClear cacheClear;
+
   @Operation(summary = "数据表查询缓存清理")
   @RequestMapping(path = "/cache/tables/{table:.*}", method = {
     org.springframework.web.bind.annotation.RequestMethod.DELETE
@@ -35,6 +39,16 @@ public class DatabaseCacheApi {
     return Return.success();
   }
 
+  @Operation(summary = "所有表查询缓存清理")
+  @RequestMapping(path = "/cache/tables", method = {
+    org.springframework.web.bind.annotation.RequestMethod.DELETE
+  })
+  public Result deleteTableCache(
+    HttpServletRequest request
+  ) {
+    restProvider.clearTableCaches();
+    return Return.success();
+  }
 
   @Operation(summary = "数据元信息缓存清理")
   @RequestMapping(path = "/cache/meta", method = {
@@ -44,6 +58,17 @@ public class DatabaseCacheApi {
     HttpServletRequest request
   ) {
     restProvider.clearMetaCaches();
+    return Return.success();
+  }
+
+  @Operation(summary = "所有缓存信息清理")
+  @RequestMapping(path = "/cache", method = {
+    org.springframework.web.bind.annotation.RequestMethod.DELETE
+  })
+  public Result deleteAllCache(
+    HttpServletRequest request
+  ) {
+    cacheClear.clearCaches();
     return Return.success();
   }
 

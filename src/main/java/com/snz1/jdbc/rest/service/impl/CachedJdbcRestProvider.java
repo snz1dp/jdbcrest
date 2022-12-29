@@ -2,10 +2,12 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -21,20 +23,25 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition.SQLFragment;
+import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
+import com.snz1.jdbc.rest.service.SQLServiceRegistry;
 import com.snz1.utils.JsonUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
+public class CachedJdbcRestProvider extends JdbcRestProviderImpl implements CacheClear {
   
   @Resource
   private CacheManager cacheManager;
 
   @Resource
   private RunConfig runConfig;
+
+  @Resource
+  private SQLServiceRegistry serviceRegistry;
 
   public CachedJdbcRestProvider() {
   }
@@ -310,6 +317,45 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   public void clearServiceCaches(String service_path) {
     this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), service_path));
+  }
+
+  @Override
+  public void clearServiceCaches() {
+    serviceRegistry.getServices().forEach(s -> {
+      this.clearServiceCaches(s.getService_path());
+    });
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void clearTableCaches() {
+    List<Object> datalist = null;
+    try {
+      datalist = this.getTables(null, null, null, null).getData();      
+    } catch (SQLException e) {
+      log.warn("清理缓存发生错误: {}", e.getMessage(), e);
+    }
+    if (datalist == null) return;
+    for (Object objdata : datalist) {
+      Map<String, Object> objmap = (Map<String, Object>)objdata;
+      String type_val = (String)objmap.get("TABLE_TYPE");
+      if (StringUtils.containsIgnoreCase(type_val, "TABLE")) {
+        String table_name = (String)objmap.get("TABLE_NAME");
+        String schema_name = (String)objmap.get("TABLE_SCHEM");
+        this.clearTableCaches(table_name);
+        this.clearTableCaches(String.format("%s.%s", schema_name, table_name));
+      }
+    }
+  }
+
+  @Override
+  public void clearCaches() {
+    try {
+      this.clearTableCaches();
+    } finally {
+      this.clearServiceCaches();
+      this.clearMetaCaches();
+    }
   }
 
   @FunctionalInterface
