@@ -23,7 +23,6 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition.SQLFragment;
-import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.SQLServiceRegistry;
@@ -32,7 +31,7 @@ import com.snz1.utils.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CachedJdbcRestProvider extends JdbcRestProviderImpl implements CacheClear {
+public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   
   @Resource
   private CacheManager cacheManager;
@@ -345,16 +344,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl implements Cach
         this.clearTableCaches(table_name);
         this.clearTableCaches(String.format("%s.%s", schema_name, table_name));
       }
-    }
-  }
-
-  @Override
-  public void clearCaches() {
-    try {
-      this.clearTableCaches();
-    } finally {
-      this.clearServiceCaches();
-      this.clearMetaCaches();
     }
   }
 

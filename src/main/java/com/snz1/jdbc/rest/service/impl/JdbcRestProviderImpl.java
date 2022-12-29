@@ -33,6 +33,7 @@ import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
@@ -46,7 +47,7 @@ import gateway.api.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class JdbcRestProviderImpl implements JdbcRestProvider {
+public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   private JdbcMetaData jdbcMetaData;
 
@@ -791,6 +792,16 @@ public class JdbcRestProviderImpl implements JdbcRestProvider {
 
   @Override
   public void clearTableCaches() {
+  }
+
+  @Override
+  public void clearCaches() {
+    try {
+      this.clearTableCaches();
+    } finally {
+      this.clearServiceCaches();
+      this.clearMetaCaches();
+    }
   }
 
 }
