@@ -62,4 +62,24 @@ public class SQLServiceRequestExecuteServlet extends HttpServletBean {
     resp.flushBuffer();
   }
 
+  @Override
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    String service_path = req.getRequestURI().substring(runConfig.getWebroot().length());
+    if (log.isDebugEnabled()) {
+      log.debug("SQL服务请求地址={}", service_path);
+    }
+    if (StringUtils.endsWith(service_path, "/")) {
+      service_path = service_path.substring(0, service_path.length() - 1);
+    }
+    resp.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+    if (StringUtils.equals(service_path, "/services")) {
+      objectMapper.writeValue(resp.getOutputStream(), Return.wrap(serviceRegistry.getServices()));
+    } else {
+      SQLServiceDefinition sql_service = serviceRegistry.getService(service_path);
+      Validate.notNull(sql_service, "SQL服务不存在");
+      objectMapper.writeValue(resp.getOutputStream(), Return.wrap(sql_service));
+    }
+    resp.flushBuffer();
+  }
+
 }

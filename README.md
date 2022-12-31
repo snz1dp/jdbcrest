@@ -6,6 +6,14 @@
 
 > 本工具旨在利用JDBC通用数据库的能力完成不同数据库转`RestFul`服务，确保高性能、规范化、安全可靠的原型接口低代码实现。
 
+目前支持的数据库列表：
+
+- MySQL5.7/8.0
+- PostgresQL9.6～14.4
+- 达梦8
+
+> 其他数据库的JDBC连接需要适配方言。
+
 ## 1、数据查询
 
 ## 1.1、从数据分页查询开始
@@ -232,7 +240,7 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 
 ## 2、数据插入
 
-- 请求方式：`POST`活`PUT`
+- 请求方式：`POST`或`PUT`
 - 接口地址：/jdbc/rest/api/tables/&lt;表名&gt;
 - 请求参数：`JSON`、`FormData`
 
@@ -860,7 +868,7 @@ roles:
 
 ## 8、环境变量配置
 
-- `DB_VALIDATION_QUERY` 配置连接池存活检查的`SQL`语句
+- `DB_VALIDATION_QUERY` 配置连接池存或检查的`SQL`语句
 - `SERVICE_AUTHORIZE` 前端服务接口访问权限配置文件地址
 - `PERMISSION_DEFINITION` 前端功能权限树配置文件地址
 - `TABLE_DEFINITION` 数据表服务扩展配置文件地址
@@ -896,10 +904,8 @@ roles:
 - `SSO_SIMULATE` 是否启用单点模拟，默认：`false`
 - `TEST_USER` 单点模拟用户名，默认：`root`，`SSO_SIMULATE`为`true`时生效
 - `DATASCHEME_ENABLED` 是否启用自动数据库脚本构建，默认：`false`
-- `DATASCHEME_URL` 数据库自动构建脚本位置。
-
-通过设置环境变量`TABLE_DEFINITION`可以指定一个数据表服务扩展配置文件（如：`file://xxx/table-definition.yaml`，
-内容示例如下：
+- `DATASCHEME_URL` 数据库自动构建脚本位置，如果是文件位置请在目录后加“/”，如：`file://sql/`。
+- `JDBC_DMDB` 达梦一主多备主机IP地址及端口配置参数，逗号分隔，如：`192.168.1.2:5236,192.168.1.3:5236`
 
 ## 9、部署运行说明
 

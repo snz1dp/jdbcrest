@@ -7,6 +7,8 @@ import java.util.List;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 // SQL转服务定义
@@ -17,6 +19,7 @@ public class SQLServiceDefinition implements Serializable {
   private String service_path;
 
   // 文件位置
+  @JsonIgnore
   private String file_location;
 
   // SQL片段列表
@@ -47,6 +50,7 @@ public class SQLServiceDefinition implements Serializable {
     }
 
     // SQL
+    @JsonIgnore
     private MappedStatement mapped_statement;
 
     public SqlCommandType getCommand_type() {

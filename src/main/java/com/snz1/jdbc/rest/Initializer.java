@@ -146,13 +146,13 @@ public class Initializer implements SpringApplicationRunListener {
       inconfig_version = Integer.parseInt(configed_version);
     } catch(Throwable e) {}
     if (inconfig_version == schema_mgr.getVersion()) {
-      log.warn("配置中的数据结构版本{}等于当前数据结构版本，忽略缓存清理!", inconfig_version);
+      log.warn("配置中的数据结构版本等于当前数据结构版本V{}，忽略缓存清理!", inconfig_version);
       return;
     }
 
     long start_time = System.currentTimeMillis();
-    if (log.isDebugEnabled()) {
-      log.debug("开始清理高速缓存...");
+    if (log.isInfoEnabled()) {
+      log.info("开始清理高速缓存(O=V{}, N=V{})...", inconfig_version, schema_mgr.getVersion());
     }
 
     context.getBeansOfType(CacheClear.class).forEach((k, v) -> {
@@ -161,8 +161,13 @@ public class Initializer implements SpringApplicationRunListener {
 
     Configurer.setAppProperty("data.scheme.version", schema_mgr.getVersion() + "");
 
-    if (log.isDebugEnabled()) {
-      log.debug("清理高速缓存耗时{}毫秒...", (System.currentTimeMillis() - start_time));
+    if (log.isInfoEnabled()) {
+      log.info(
+        "清理高速缓存(O=V{}, N=V{})耗时{}毫秒",
+        inconfig_version,
+        schema_mgr.getVersion(),
+        (System.currentTimeMillis() - start_time)
+      );
     }
   }
 
