@@ -23,6 +23,9 @@ public class RunConfig {
   @Value("${app.sql.location:}")
   private String sql_location;
 
+  @Value("${app.license.code:${LICENSE_CODE:<NOT SUPPORT>}}")
+  private String license_code;
+
   @Autowired(required = false)
   private PermissionDefinition permissionDefinition;
 
@@ -55,6 +58,10 @@ public class RunConfig {
 
   public String getSql_location() {
     return sql_location;
+  }
+
+  public String getLicense_code() {
+    return license_code;
   }
 
 }

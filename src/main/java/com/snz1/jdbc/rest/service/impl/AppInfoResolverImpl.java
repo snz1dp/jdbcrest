@@ -29,7 +29,6 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   private LicenseSupport licenseSupport;
 
-
   @Override
   public String getAppId() {
     return runConfig.getApplicationCode();
@@ -46,7 +45,7 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public LicenseSupport getLicense() {
-    String lic = Configurer.getAppProperty("license.code", "<NOT SUPPORT>");
+    String lic = Configurer.getAppProperty("license.code", runConfig.getLicense_code());
     if (StringUtils.equals(lic, this.lastLicense)) {
       return this.licenseSupport;
     }
