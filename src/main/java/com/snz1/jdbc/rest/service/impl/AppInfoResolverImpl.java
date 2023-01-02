@@ -1,15 +1,22 @@
 package com.snz1.jdbc.rest.service.impl;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
+import com.snz1.jdbc.rest.data.LicenseMeta;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
+import com.snz1.utils.CalendarUtils;
 import com.snz1.utils.Configurer;
+import com.snz1.utils.TimeZoneUtils;
 
 import gateway.api.NotExceptException;
 import gateway.sc.v2.ToolProvider;
@@ -41,11 +48,11 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   }
 
   public boolean hasLicense() {
-    return this.getLicense() != null;
+    return this.getLicenseSupport() != null;
   }
 
   @Override
-  public LicenseSupport getLicense() {
+  public LicenseSupport getLicenseSupport() {
     String lic = null;
     if (runConfig.isPersistenceConfig()) {
       lic = Configurer.getAppProperty(Constants.LICENSE_CODE_ARG, runConfig.getLicense_code());
@@ -63,6 +70,33 @@ public class AppInfoResolverImpl implements AppInfoResolver {
       log.info("授权失败：" + e.getMessage(), e);
     }
     return null;
+  }
+
+  @Override
+  public LicenseMeta getLicenseMeta() {
+    Date first_run_time  = runConfig.getFirstRunTime();
+    LicenseSupport license_support = this.getLicenseSupport();
+    LicenseMeta ret = null;
+    if (license_support != null) {
+      if (license_support.getPrebationary() != null) {
+        Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.DATE, license_support.getPrebationary());
+        ret = new LicenseMeta(end_time, "企业订阅版");
+      } else {
+        Date end_time = null;
+        ret = new LicenseMeta(end_time, "高级企业版");
+      }
+    } else {
+      Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
+      ret = new LicenseMeta(end_time, "临时体验版");
+    }
+    if (ret != null && ret.getEnd() != null) {
+      Validate.isTrue(
+        new Date().before(ret.getEnd()),
+        "%s授权已到期, 请购买授权后重试。",
+        ret.getHint()
+      );
+    }
+    return ret;
   }
 
 }

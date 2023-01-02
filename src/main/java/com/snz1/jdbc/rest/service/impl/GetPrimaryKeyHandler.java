@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
+import com.snz1.jdbc.rest.service.AppInfoResolver;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -17,8 +19,8 @@ public class GetPrimaryKeyHandler extends AbstractJdbcQueryRequestHandler<Object
 
   private String table_name;
 
-  public GetPrimaryKeyHandler(String table_name) {
-    super(null, null, null, null);
+  public GetPrimaryKeyHandler(String table_name, AppInfoResolver appInfoResolver) {
+    super(null, null, null, null, appInfoResolver);
     this.table_name = table_name;
   }
 

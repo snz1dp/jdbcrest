@@ -20,6 +20,7 @@ import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
@@ -36,7 +37,6 @@ import lombok.ToString;
 public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequestHandler<T> {
 
   private JdbcQueryRequest request;
-
 
   // 执行获取结果集
   @SuppressWarnings("null")
@@ -125,6 +125,8 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
     if (meta) {
       ret.setMeta(result_meta);
     }
+    // 校验授权
+    ret.setLic(this.getAppInfoResolver().getLicenseMeta());
     ret.setData(rows);
     return ret;
   }
@@ -210,10 +212,13 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   }
 
   public AbstractJdbcQueryRequestHandler(
-    JdbcQueryRequest request, SQLDialectProvider sql_dialect_provider,
-    JdbcTypeConverterFactory type_converter_factory, LoggedUserContext loggedUserContext
+    JdbcQueryRequest request,
+    SQLDialectProvider sql_dialect_provider,
+    JdbcTypeConverterFactory type_converter_factory,
+    LoggedUserContext loggedUserContext,
+    AppInfoResolver appInfoResolver
   ) {
-    super(sql_dialect_provider, type_converter_factory, loggedUserContext);
+    super(sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
     this.request = request;
   }
 

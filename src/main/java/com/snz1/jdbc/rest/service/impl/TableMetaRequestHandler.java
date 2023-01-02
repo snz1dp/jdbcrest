@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
@@ -24,8 +25,12 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class TableMetaRequestHandler extends AbstractJdbcQueryRequestHandler<TableMeta> {
 
-  public TableMetaRequestHandler(JdbcQueryRequest request, SQLDialectProvider sql_dialect_provider) {
-    super(request, sql_dialect_provider, null, null);
+  public TableMetaRequestHandler(
+    JdbcQueryRequest request,
+    SQLDialectProvider sql_dialect_provider,
+    AppInfoResolver appInfoResolver
+  ) {
+    super(request, sql_dialect_provider, null, null, appInfoResolver);
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.snz1.jdbc.rest.service;
 
 import com.snz1.jdbc.rest.Version;
+import com.snz1.jdbc.rest.data.LicenseMeta;
 
 import gateway.sc.v2.config.LicenseSupport;
 
@@ -14,7 +15,10 @@ public interface AppInfoResolver {
   Version getVersion();
 
   // 获取授权
-  LicenseSupport getLicense();
+  LicenseSupport getLicenseSupport();
+
+  // 授权细节
+  LicenseMeta getLicenseMeta();
 
   // 是否有授权
   boolean hasLicense();

@@ -13,6 +13,7 @@ import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.WhereCloumn;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
@@ -31,10 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 public class DeleteRequestHandler extends AbstractManipulationRequestHandler<Integer> {
 
   public DeleteRequestHandler(
-    ManipulationRequest update_request, SQLDialectProvider sql_dialect_provider,
-    JdbcTypeConverterFactory type_converter_factory, LoggedUserContext loggedUserContext
+    ManipulationRequest update_request,
+    SQLDialectProvider sql_dialect_provider,
+    JdbcTypeConverterFactory type_converter_factory,
+    LoggedUserContext loggedUserContext,
+    AppInfoResolver appInfoResolver
   ) {
-    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext);
+    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
   }
 
   @Override

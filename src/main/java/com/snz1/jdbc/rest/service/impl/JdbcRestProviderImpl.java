@@ -33,6 +33,7 @@ import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
@@ -66,10 +67,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @Resource
   private JdbcTypeConverterFactory typeConverterFactory;
 
+  @Resource
+  private AppInfoResolver appInfoResolver;
+
   private Map<String, SQLDialectProvider> sqlDialectProviders;
 
   public JdbcTypeConverterFactory getTypeConverterFactory() {
     return this.typeConverterFactory;
+  }
+
+  protected AppInfoResolver getAppInfoResolver() {
+    return appInfoResolver;
+  }
+
+  protected LoggedUserContext getLoggedUserContext() {
+    return loggedUserContext;
   }
 
   @EventListener(ContextRefreshedEvent.class)
@@ -83,19 +95,19 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   // 获取Schemas
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
-    return jdbcTemplate.execute(new GetSchemasHandler());
+    return jdbcTemplate.execute(new GetSchemasHandler(this.appInfoResolver));
   }
 
   // 获取目录
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
-    return jdbcTemplate.execute(new GetCatalogsHandler());
+    return jdbcTemplate.execute(new GetCatalogsHandler(this.appInfoResolver));
   }
 
   // 获取数据库元信息
   @Override
   public JdbcMetaData getMetaData() throws SQLException {
     if (this.jdbcMetaData != null) return this.jdbcMetaData;
-    return this.jdbcMetaData = jdbcTemplate.execute(new GetJdbcMetaHandler());
+    return this.jdbcMetaData = jdbcTemplate.execute(new GetJdbcMetaHandler(this.appInfoResolver));
   }
 
   // 获取表类表
@@ -111,7 +123,10 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     }
     long start_time = System.currentTimeMillis();
     try {
-      return jdbcTemplate.execute(new GetTablesHandler(return_meta, catalog, schema_pattern, table_name_pattern, types));
+      return jdbcTemplate.execute(new GetTablesHandler(
+        this.appInfoResolver, return_meta, catalog,
+        schema_pattern, table_name_pattern, types
+      ));
     } finally {
       if (log.isDebugEnabled()) {
         log.debug("获取数据表列表(CATALOG={}, SCHEMA={}, TABLE={}, TYPES={}耗时{}毫秒",
@@ -128,7 +143,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     }
     long start_time = System.currentTimeMillis();
     try {
-      return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(table_name, types)));
+      return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(
+        this.appInfoResolver, table_name, types
+      )));
     } finally {
       if (log.isDebugEnabled()) {
         log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
@@ -139,7 +156,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   // 获取主键
   @Override
   public Object getTablePrimaryKey(String table_name) throws SQLException {
-    return jdbcTemplate.execute(new GetPrimaryKeyHandler(table_name));
+    return jdbcTemplate.execute(new GetPrimaryKeyHandler(table_name, this.appInfoResolver));
   }
 
   // 执行获取结果集元信息
@@ -147,7 +164,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     if (table_query.hasTable_meta()) {
       return table_query.getTable_meta();
     }
-    return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider));
+    return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider, this.appInfoResolver));
   }
 
   protected TableDefinitionRegistry getTableDefinitionRegistry() {
@@ -251,7 +268,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     try {
       // 获取列表数据
       JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(new ListQueryRequestHandler(
-        table_query, sql_dialect_provider
+        table_query, sql_dialect_provider, this.appInfoResolver
       ));
       return datalist;
     } finally {
@@ -291,6 +308,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     // 返回数据
     if (datalist != null && datalist.getData() instanceof List) {
       pageret.setMeta(datalist.getMeta());
+      pageret.setLic(datalist.getLic());
       pageret.getData().setOffset(table_query.getResult().getOffset());
       pageret.getData().setData((List)datalist.getData());
     }
@@ -356,7 +374,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   ) throws SQLException {
     return jdbcTemplate.execute(new InsertRequestHandler(
       insert_request, sql_dialect_provider,
-      type_converter_factory, this.loggedUserContext
+      type_converter_factory, this.loggedUserContext,
+      this.appInfoResolver
     ));
   }
 
@@ -368,7 +387,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   ) throws SQLException {
     return jdbcTemplate.execute(new UpdateRequestHandler(
       update_request, sql_dialect_provider,
-      type_converter_factory, this.loggedUserContext
+      type_converter_factory, this.loggedUserContext,
+      this.appInfoResolver
     ));
   }
 
@@ -380,7 +400,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   ) throws SQLException {
     return jdbcTemplate.execute(new DeleteRequestHandler(
       delete_request, sql_dialect_provider,
-      type_converter_factory, this.loggedUserContext
+      type_converter_factory, this.loggedUserContext,
+      this.appInfoResolver
     ));
   }
 
@@ -588,11 +609,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     if (loggedUserContext.isUserLogged()) {
       input_wrap.put("user", loggedUserContext.getLoginUserInfo());
     }
-    Map<String, Object> request = new HashMap<>(2);
-    input_wrap.put("req", request);
+    Map<String, Object> request = new HashMap<>(3);
     request.put("time", sql_request.getRequest_time());
     request.put("client_ip", WebUtils.getClientRealIp());
     request.put("user_agent", WebUtils.getClientUserAgent());
+    input_wrap.put("req", request);
   }
 
   @Override

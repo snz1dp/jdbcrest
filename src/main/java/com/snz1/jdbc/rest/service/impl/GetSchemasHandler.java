@@ -10,6 +10,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -21,8 +22,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class GetSchemasHandler extends AbstractJdbcQueryRequestHandler<JdbcQueryResponse<List<Object>>> {
 
-  public GetSchemasHandler() {
-    super(null, null, null, null);
+  public GetSchemasHandler(AppInfoResolver appInfoResolver) {
+    super(null, null, null, null, appInfoResolver);
   }
 
   @Override

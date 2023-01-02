@@ -92,7 +92,6 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
   // 复制表元信息
   public void copyTableMeta(TableMeta table_meta) {
     this.setTable_meta(table_meta);
-    this.setTable_name(table_meta.getTable_name());
     this.setDefinition(table_meta.getDefinition());
   }
 

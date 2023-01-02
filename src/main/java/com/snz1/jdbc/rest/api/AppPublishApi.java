@@ -84,7 +84,7 @@ public class AppPublishApi {
     Map<String, Object> ret = new HashMap<>(2);
     Version appVersion = appInfoResolver.getVersion();
     ret.put("app", appVersion);
-    LicenseSupport license_support = appInfoResolver.getLicense();
+    LicenseSupport license_support = appInfoResolver.getLicenseSupport();
     Date first_run_time  = runConfig.getFirstRunTime();
     if (license_support != null) {
       ret.put("license", license_support);

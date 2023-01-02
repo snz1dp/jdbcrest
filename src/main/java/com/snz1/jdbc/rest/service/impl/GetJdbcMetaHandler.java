@@ -8,6 +8,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,8 +19,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMetaData> {
 
-  public GetJdbcMetaHandler() {
-    super(null, null, null, null);
+  public GetJdbcMetaHandler(AppInfoResolver appInfoResolver) {
+    super(null, null, null, null, appInfoResolver);
   }
 
   @Override

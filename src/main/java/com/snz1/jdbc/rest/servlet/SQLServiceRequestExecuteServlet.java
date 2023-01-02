@@ -15,13 +15,14 @@ import org.springframework.web.servlet.HttpServletBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.snz1.jdbc.rest.RunConfig;
+import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLServiceRegistry;
 import com.snz1.jdbc.rest.utils.RequestUtils;
 
-import gateway.api.Return;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -42,6 +43,9 @@ public class SQLServiceRequestExecuteServlet extends HttpServletBean {
   @Resource
   private ObjectMapper objectMapper;
 
+  @Resource
+  private AppInfoResolver appInfoResolver;
+
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     String service_path = req.getRequestURI().substring(runConfig.getWebroot().length());
@@ -56,9 +60,14 @@ public class SQLServiceRequestExecuteServlet extends HttpServletBean {
     Validate.notNull(sql_service, "SQL服务不存在");
     SQLServiceRequest sql_request = SQLServiceRequest.of(sql_service);
     sql_request.setInput_data(RequestUtils.fetchManipulationRequestData(req, false));
+
     Object result = serviceProvider.executeSQLService(sql_request);
+    JdbcQueryResponse<Object> resposne = new JdbcQueryResponse<>();
+    resposne.setData(result);
+    resposne.setLic(appInfoResolver.getLicenseMeta());
+    
     resp.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-    objectMapper.writeValue(resp.getOutputStream(), Return.wrap(result));
+    objectMapper.writeValue(resp.getOutputStream(), resposne);
     resp.flushBuffer();
   }
 
@@ -72,12 +81,18 @@ public class SQLServiceRequestExecuteServlet extends HttpServletBean {
       service_path = service_path.substring(0, service_path.length() - 1);
     }
     resp.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+
+    JdbcQueryResponse<Object> resposne = new JdbcQueryResponse<>();
+    resposne.setLic(appInfoResolver.getLicenseMeta());
+
     if (StringUtils.equals(service_path, "/services")) {
-      objectMapper.writeValue(resp.getOutputStream(), Return.wrap(serviceRegistry.getServices()));
+      resposne.setData(serviceRegistry.getServices());
+      objectMapper.writeValue(resp.getOutputStream(), resposne);
     } else {
       SQLServiceDefinition sql_service = serviceRegistry.getService(service_path);
       Validate.notNull(sql_service, "SQL服务不存在");
-      objectMapper.writeValue(resp.getOutputStream(), Return.wrap(sql_service));
+      resposne.setData(sql_service);
+      objectMapper.writeValue(resp.getOutputStream(), resposne);
     }
     resp.flushBuffer();
   }

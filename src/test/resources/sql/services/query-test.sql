@@ -19,4 +19,4 @@ column_compact: false
 
 ################################################
 */
-select * from score offset #{input.offset, jdbcType=INTEGER} limit 100;
+select * from course offset #{input.offset, jdbcType=INTEGER} limit 100;

@@ -11,6 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -25,8 +26,11 @@ public class TestTableExistedHandler extends AbstractJdbcQueryRequestHandler<Boo
   private String table_name;
   private String types[];
 
-  public TestTableExistedHandler(String table_name, String ...types) {
-    super(null, null, null, null);
+  public TestTableExistedHandler(
+    AppInfoResolver appInfoResolver,
+    String table_name, String ...types
+  ) {
+    super(null, null, null, null, appInfoResolver);
     this.table_name = table_name;
     this.types = types;
   }

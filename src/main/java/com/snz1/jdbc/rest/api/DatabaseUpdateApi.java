@@ -76,11 +76,16 @@ public class DatabaseUpdateApi {
   ) throws IOException, SQLException {
     // 获取表元信息
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    if (StringUtils.contains(table_name, ".")) {
+      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
+    } else {
+      table_name = result_meta.getTable_name();
+    }
 
     // 构建操作请求
     ManipulationRequest update_request = new ManipulationRequest();
     update_request.setTable_name(table_name);
+
     // 获取表元信息
     update_request.copyTableMeta(result_meta);
 
@@ -121,7 +126,11 @@ public class DatabaseUpdateApi {
   ) throws IOException, SQLException {
     // 获取表元信息
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    if (StringUtils.contains(table_name, ".")) {
+      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
+    } else {
+      table_name = result_meta.getTable_name();
+    }
 
     // 构建操作请求
     ManipulationRequest batch_patch_request = new ManipulationRequest();

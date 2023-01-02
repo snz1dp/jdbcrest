@@ -11,6 +11,7 @@ import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -33,11 +34,12 @@ public class GetTablesHandler extends AbstractJdbcQueryRequestHandler<JdbcQueryR
   private String types[];
 
   public GetTablesHandler(
+    AppInfoResolver appInfoResolver,
     ResultDefinition return_meta,
     String catalog, String schema_pattern,
     String table_name_pattern, String...types
   ) {
-    super(null, null, null, null);
+    super(null, null, null, null, appInfoResolver);
     this.catalog = catalog;
     this.return_meta = return_meta;
     this.catalog = catalog;

@@ -1,6 +1,7 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -81,20 +82,26 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
-    return this.resolveCached(
+    JdbcQueryResponse<List<Object>> ret = this.resolveCached(
       String.format("%s:meta", runConfig.getApplicationCode()),
       Constants.SCHEMAS_CACHE,
       () -> super.getSchemas()
     );
+    // 校验授权
+    ret.setLic(this.getAppInfoResolver().getLicenseMeta());
+    return ret;
   }
 
   @Override
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
-    return this.resolveCached(
+    JdbcQueryResponse<List<Object>> ret = this.resolveCached(
       String.format("%s:meta", runConfig.getApplicationCode()),
       Constants.CATALOGS_CACHE,
       () -> super.getCatalogs()
     );
+    // 校验授权
+    ret.setLic(this.getAppInfoResolver().getLicenseMeta());
+    return ret;
   }
 
   @Override
@@ -109,11 +116,14 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
         cbuf.append(":").append(type_name);
       }
     }
-    return this.resolveCached(
+    JdbcQueryResponse<List<Object>> ret = this.resolveCached(
       String.format("%s:meta", runConfig.getApplicationCode()),
       cbuf.toString(),
       () -> super.getTables(return_meta, catalog, schema_pattern, table_name_pattern, types)
     );
+    // 校验授权
+    ret.setLic(this.getAppInfoResolver().getLicenseMeta());
+    return ret;
   }
 
   @Override
@@ -197,6 +207,14 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     if (log.isDebugEnabled()) {
       log.debug("查询请求内容:\n{}", table_query.toString());
     }
+
+    if (table_query.hasDefinition() &&
+      table_query.getDefinition().hasOwner_id_column() && 
+      this.getLoggedUserContext().isUserLogged()
+    ) {
+      dbuf.append(this.getLoggedUserContext().getLoggedUser().getUserid());
+    }
+
     cbuf.append(DigestUtils.sha256Hex(dbuf.toString()));
     String ret = cbuf.toString();
     if (log.isDebugEnabled()) {
@@ -211,11 +229,14 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     SQLDialectProvider sql_dialect_provider
   ) {
     try {
-      return this.resolveCached(
+      JdbcQueryResponse<?> ret = this.resolveCached(
         String.format("%s:%s", runConfig.getApplicationCode(), table_query.getTable_name()),
         this.buildJdbcQueryRequestCacheKey(table_query, "list:"),
         () -> super.doQueryListResult(table_query, sql_dialect_provider)
       );
+      // 校验授权
+      ret.setLic(getAppInfoResolver().getLicenseMeta());
+      return ret;
     } catch (SQLException e) {
       throw new IllegalStateException(e.getMessage(), e);
     }
@@ -236,7 +257,8 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   protected Object doInsertTableData(
-    ManipulationRequest insert_request, SQLDialectProvider sql_dialect_provider,
+    ManipulationRequest insert_request,
+    SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
@@ -246,7 +268,8 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   protected int[] doUpdateTableData(
-    ManipulationRequest update_request, SQLDialectProvider sql_dialect_provider,
+    ManipulationRequest update_request,
+    SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
@@ -256,7 +279,8 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   protected Integer doDeleteTableData(
-    ManipulationRequest delete_request, SQLDialectProvider sql_dialect_provider,
+    ManipulationRequest delete_request,
+    SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
@@ -264,8 +288,21 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     return ret;
   }
 
+  @SuppressWarnings("unchecked")
   private String buildSQLServiceCacheKey(SQLFragment sql_fragment, Object input_data) {
-    return DigestUtils.sha256Hex(JsonUtils.toJson(input_data));
+    if (input_data instanceof Map) { // 去掉上下文相关的
+      Map<String, Object> wrap_input = new HashMap<>((Map<String, Object>)input_data);
+      if (wrap_input.containsKey("user")) {
+        wrap_input.remove("user");
+        wrap_input.put("user", this.getLoggedUserContext().getLoggedUser().getUserid());
+      }
+      wrap_input.remove("req");
+      wrap_input.remove("lastout");
+      wrap_input.remove("output");
+      return DigestUtils.sha256Hex(JsonUtils.toJson(wrap_input));
+    } else {
+      return DigestUtils.sha256Hex(JsonUtils.toJson(input_data));
+    }
   }
 
   @Override

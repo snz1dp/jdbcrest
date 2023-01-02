@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,10 +41,19 @@ public class DatabaseInsertApi {
     HttpServletRequest request
   ) throws SQLException, IOException {
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    if (StringUtils.contains(table_name, ".")) {
+      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
+    } else {
+      table_name = result_meta.getTable_name();
+    }
 
     ManipulationRequest insert_request = new ManipulationRequest();
+    insert_request.setTable_name(table_name);
+
+    // 获取表元信息
     insert_request.copyTableMeta(result_meta);
+
+    // 提取插入输入
     insert_request.setInput_data(RequestUtils.fetchManipulationRequestData(request));
 
     Object result = restProvider.insertTableData(insert_request);
