@@ -16,4 +16,10 @@ public class LicenseMeta implements Serializable {
 
   private String hint;
 
+  private String consumer;
+
+  private String provider;
+
+  private String signature;
+
 }

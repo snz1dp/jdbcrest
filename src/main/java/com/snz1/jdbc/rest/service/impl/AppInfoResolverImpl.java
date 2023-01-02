@@ -80,14 +80,14 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     if (license_support != null) {
       if (license_support.getPrebationary() != null) {
         Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.DATE, license_support.getPrebationary());
-        ret = new LicenseMeta(end_time, "企业订阅版");
+        ret = new LicenseMeta(end_time, "企业订阅版", license_support.getCustomer(), license_support.getProvider(), license_support.getSignature());
       } else {
         Date end_time = null;
-        ret = new LicenseMeta(end_time, "高级企业版");
+        ret = new LicenseMeta(end_time, "高级企业版", license_support.getCustomer(), license_support.getProvider(), license_support.getSignature());
       }
     } else {
       Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
-      ret = new LicenseMeta(end_time, "临时体验版");
+      ret = new LicenseMeta(end_time, "临时体验版", null, null, null);
     }
     if (ret != null && ret.getEnd() != null) {
       Validate.isTrue(
