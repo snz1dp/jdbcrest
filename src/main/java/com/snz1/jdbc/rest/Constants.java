@@ -95,4 +95,6 @@ public abstract class Constants {
   // TableMeta缓存
   public static final String TABLEMETA_CACHE = "tablemeta";
 
+  public static final String LICENSE_CODE_ARG = "license.code";
+
 }

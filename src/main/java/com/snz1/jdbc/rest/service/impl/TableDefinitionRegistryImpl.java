@@ -1,9 +1,9 @@
 package com.snz1.jdbc.rest.service.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,16 +12,13 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 
@@ -30,41 +27,33 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
-  
-  @Value("${app.table.definition:}")
-  private String tableDefinitionFile;
+
+  @Autowired
+  private RunConfig runConfig;
 
   private Map<String, TableDefinition> tableDefinitionMap = Collections.emptyMap();
 
   // 加载表定义配置
   @PostConstruct
   public void loadTableDefinitions() {
-    if (StringUtils.isBlank(this.tableDefinitionFile)) {
-      log.info("未设置数据表配置文件参数");
+    File deffile = runConfig.getTable_definition_file();
+    if (deffile == null) {
+      if (log.isDebugEnabled()) {
+        log.debug("未设置数据表配置文件参数, 忽略数据表配置加载");
+      }
       return;
     }
 
     if (log.isInfoEnabled()) {
-      log.info("加载数据表配置文件{} ...", this.tableDefinitionFile);
-    }
-
-    Resource tdf_resource;
-    try {
-      tdf_resource = new UrlResource(this.tableDefinitionFile);
-    } catch (IOException e) {
-      if (e instanceof MalformedURLException) {
-        tdf_resource = new ClassPathResource(this.tableDefinitionFile);
-      } else {
-        throw new IllegalArgumentException(String.format("错误的数据表配置文件路径: %s", this.tableDefinitionFile));
-      }
+      log.info("加载数据表配置文件{} ...", deffile);
     }
 
     // 加载资源
-    InputStream tdf_ism = null;
+    FileInputStream tdf_ism;
 		try {
-			tdf_ism = tdf_resource.getInputStream();
+			tdf_ism = new FileInputStream(deffile);
 		} catch (IOException e) {
-			throw new IllegalStateException(String.format("无法读取数据表配置文件: %s", this.tableDefinitionFile), e);
+			throw new IllegalStateException(String.format("无法读取数据表配置文件: %s", deffile), e);
 		}
 
     // 读取配置
@@ -73,11 +62,11 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     try {
       table_definitions = yamlReader.read(TableDefinition[].class);
     } catch (YamlException e) {
-			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", this.tableDefinitionFile, e.getMessage()), e);
+			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", deffile, e.getMessage()), e);
     }
 
     if (table_definitions == null || table_definitions.length == 0) {
-      log.warn("数据表配置文件 {} 中无任何配置内容", this.tableDefinitionFile);
+      log.warn("数据表配置文件 {} 中无任何配置内容", deffile);
       return;
     }
 

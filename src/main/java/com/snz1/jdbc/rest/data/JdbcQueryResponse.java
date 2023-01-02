@@ -12,6 +12,8 @@ public class JdbcQueryResponse<T> extends Return<T> {
 
   private TableMeta meta;
 
+  // TODO: 准备添加授权提示
+
   public void setData(T d) {
     this.data = d;
   }

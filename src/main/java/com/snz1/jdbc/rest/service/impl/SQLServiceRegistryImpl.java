@@ -1,8 +1,6 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.sql.JDBCType;
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,8 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
@@ -47,25 +43,14 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
 
   @PostConstruct
   public void loadSQLServiceDefinitions() {
-    String sql_location = runConfig.getSql_location();
-    if (StringUtils.isBlank(sql_location)) return;
-    File sql_directory;
-    try {
-      sql_directory = new UrlResource(sql_location).getFile();
-    } catch (IOException e) {
-      if (e instanceof MalformedURLException) {
-          try {
-            sql_directory = new ClassPathResource(sql_location).getFile();
-          } catch (IOException ex) {
-            log.warn("无法获取SQL服务目录信息信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
-            return;
-          }
-      } else {
-        log.warn("无法获取SQL服务目录信息信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
-        return;
+    File sql_directory = runConfig.getSql_location_dir();
+    if (sql_directory == null) {
+      if (log.isDebugEnabled()) {
+        log.debug("未设置SQL服务目录配置参数, 忽略SQL服务加载!");
       }
+      return;
     }
-    Validate.isTrue(sql_directory.isDirectory(), "%s不是一个有效的目录", sql_location);
+    Validate.isTrue(sql_directory.exists() && sql_directory.isDirectory(), "%s不是一个有效的目录", sql_directory);
     try {
       this.doLoadSQLServiceDefinitions("/services", sql_directory);
     } catch (Exception e) {

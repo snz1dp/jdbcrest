@@ -139,8 +139,8 @@ public class Initializer implements SpringApplicationRunListener {
     }
 
     FileConfigDataSchemaManager schema_mgr = context.getBean(FileConfigDataSchemaManager.class);
-    String configed_version = Configurer.getAppProperty("data.scheme.version", "-1");
-    Integer inconfig_version = -1;
+    String configed_version = Configurer.getAppProperty("data.scheme.version", "0");
+    Integer inconfig_version = 0;
 
     try {
       inconfig_version = Integer.parseInt(configed_version);

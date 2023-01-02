@@ -46,17 +46,10 @@ public class Version implements Serializable {
   public static final String DESCRIPTION = "Jdbc转Rest服务";
 
   // 版权
-  public static final String LEGAL_COPYRIGHT = "2022©慧码至一";
+  public static final String LEGAL_COPYRIGHT = "2023©慧码至一";
 
   // 版权声明
   public static final String PRODUCT_LICENSE = "长沙慧码至一信息科技有限公司";
-
-  // 服务版本
-  private String server_version;
-
-  private String server_tag_line;
-
-  private String server_lua_version;
 
   public String getProduct_code() {
     return PRODUCT_CODE;
@@ -100,30 +93,6 @@ public class Version implements Serializable {
 
   public String getProduct_version() {
     return VERSION;
-  }
-
-  public String getServer_version() {
-    return server_version;
-  }
-
-  public void setServer_version(String server_version) {
-    this.server_version = server_version;
-  }
-
-  public String getServer_tag_line() {
-    return server_tag_line;
-  }
-
-  public String getServer_lua_version() {
-    return server_lua_version;
-  }
-
-  public void setServer_lua_version(String server_lua_version) {
-    this.server_lua_version = server_lua_version;
-  }
-
-  public void setServer_tag_line(String server_tag_line) {
-    this.server_tag_line = server_tag_line;
   }
 
 }

@@ -1,5 +1,7 @@
 package com.snz1.jdbc.rest.api;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,9 +13,12 @@ import javax.servlet.http.HttpServletResponse;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
+import com.snz1.utils.CalendarUtils;
 import com.snz1.utils.ContextUtils;
+import com.snz1.utils.TimeZoneUtils;
 import com.snz1.utils.WebUtils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
@@ -27,6 +32,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import gateway.api.Return;
 import gateway.sc.v2.FunctionTreeNode;
 import gateway.sc.v2.RoleGroup;
+import gateway.sc.v2.config.LicenseSupport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -74,9 +80,28 @@ public class AppPublishApi {
 
   @Operation(summary = "应用版本信息")
   @GetMapping(path = "/version")
-  public Return<Version> getAppVersion() {
+  public Return<Map<String, Object>> getAppVersion() {
+    Map<String, Object> ret = new HashMap<>(2);
     Version appVersion = appInfoResolver.getVersion();
-    return Return.wrap(appVersion);
+    ret.put("app", appVersion);
+    LicenseSupport license_support = appInfoResolver.getLicense();
+    Date first_run_time  = runConfig.getFirstRunTime();
+    if (license_support != null) {
+      ret.put("license", license_support);
+      if (license_support.getPrebationary() != null) {
+        Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.DATE, license_support.getPrebationary());
+        ret.put("end", end_time);
+      } else if (StringUtils.isBlank(license_support.getProduct_name())) {
+        Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
+        ret.put("end", end_time);
+      } else {
+        appVersion.setProduct_name(license_support.getProduct_name());
+      }
+    } else {
+      Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
+      ret.put("end", end_time);
+    }
+    return Return.wrap(ret);
   }
 
   @Operation(summary = "获取请求头信息")

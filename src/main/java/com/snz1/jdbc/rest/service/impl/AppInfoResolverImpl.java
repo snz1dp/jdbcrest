@@ -5,6 +5,7 @@ import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
@@ -45,7 +46,12 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public LicenseSupport getLicense() {
-    String lic = Configurer.getAppProperty("license.code", runConfig.getLicense_code());
+    String lic = null;
+    if (runConfig.isPersistenceConfig()) {
+      lic = Configurer.getAppProperty(Constants.LICENSE_CODE_ARG, runConfig.getLicense_code());
+    } else {
+      lic = runConfig.getLicense_code();
+    }
     if (StringUtils.equals(lic, this.lastLicense)) {
       return this.licenseSupport;
     }
