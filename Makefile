@@ -26,7 +26,7 @@ docker: clean
 
 # 打包组件
 package: clean
-	snz1dpctl make package && ./mvnw package -Pdepends
+	snz1dpctl make package
 
 # 发布组件
 publish: clean
@@ -58,10 +58,14 @@ clean-all: clean
 	- snz1dpctl make standalone clean
 	- snz1dpctl standalone clean all --really
 
+# 本地编译
+component: clean
+	./mvnw package -Pdepends
+
 # 安装本地
-install:
-	./mvnw clean install -Pdepends
+install: component
+	./mvnw install -Pdepends
 
 # 部署远程
-deploy:
+deploy: component
 	./mvnw clean deploy -Pdepends

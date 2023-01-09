@@ -255,12 +255,34 @@
 			</activation>
 
 			<build>
-				<finalName>${project.artifactId}-depends</finalName>
+				<finalName>${project.artifactId}</finalName>
 				<plugins>
 					<plugin>
 						<!-- http://maven.apache.org/plugins/maven-compiler-plugin -->
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<skipTests>true</skipTests>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<classifier>depends</classifier>
+							<excludes>
+								<exclude>/com/snz1/jdbc/rest/Application*.class</exclude>
+								<exclude>/*.properties</exclude>
+							</excludes>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>
