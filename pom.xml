@@ -2,7 +2,7 @@
 <project>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.snz1</groupId>
-	<artifactId>jdbc2rest</artifactId>
+	<artifactId>jdbcrest</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0.0-SNAPSHOT</version>
 	<url>http://maven.apache.org</url>

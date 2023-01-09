@@ -15,7 +15,7 @@
       "name": "Launch Application(DM)",
       "request": "launch",
       "mainClass": "com.snz1.jdbc.rest.Application",
-      "projectName": "jdbc2rest",
+      "projectName": "jdbcrest",
       "env": {
         "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
         "TABLE_DEFINITION": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
@@ -41,7 +41,7 @@
       "name": "Launch Application(PG)",
       "request": "launch",
       "mainClass": "com.snz1.jdbc.rest.Application",
-      "projectName": "jdbc2rest",
+      "projectName": "jdbcrest",
       "env": {
         "SERVICE_AUTHORIZE": "file://${workspaceFolder}/src/test/resources/service-authorize.yaml",
         "TABLE_DEFINITION": "file://${workspaceFolder}/src/test/resources/table-definition.yaml",
