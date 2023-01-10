@@ -184,6 +184,13 @@
 			<artifactId>DmJdbcDriver18</artifactId>
 			<version>8.1.2.141</version>
 		</dependency>
+		
+		<!-- gBase9.5 -->
+		<dependency>
+			<groupId>gbase</groupId>
+			<artifactId>gbase-connector</artifactId>
+			<version>9.5.0.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.snz1</groupId>

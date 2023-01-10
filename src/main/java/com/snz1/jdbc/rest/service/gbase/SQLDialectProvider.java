@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service.postgresql;
+package com.snz1.jdbc.rest.service.gbase;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,10 +22,10 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("postgresqlSQLDialectProvider")
+@Component("gbaseSQLDialectProvider")
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
-  public static final String NAME = "postgresql";
+  public static final String NAME = "gbase";
 
   @Override
   public String getName() {
@@ -68,7 +67,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public PreparedStatement prepareNoRowSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
-    sqlbuf.append(base_query.getSql()).append(" LIMIT 0");
+    sqlbuf.append(base_query.getSql()).append(" limit 0");
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
       for (int i = 0; i < base_query.getParameters().size(); i++) {
@@ -84,9 +83,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
-          .append(" OFFSET ")
+          .append(" limit ")
           .append(table_query.getResult().getOffset())
-          .append(" LIMIT ")
+          .append(",")
           .append(table_query.getResult().getLimit());
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
@@ -99,26 +98,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
-    StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
-    if (insert_request.hasPrimary_key()) { // 添加冲突处理
-      sqlbuf.append(" on conflict(");
-      if (insert_request.testComposite_key()) {
-        boolean append = false;
-        List<?> keydata = (List<?>)insert_request.getPrimary_key();
-        for (int i = 0; i < keydata.size(); i++) {
-          if (append) {
-            sqlbuf.append(", ");
-          } else {
-            append = true;
-          }
-          sqlbuf.append(keydata.get(i));
-        }
-      } else {
-        sqlbuf.append(insert_request.getPrimary_key());
-      }
-      sqlbuf.append(") do nothing");
-    }
-    return conn.prepareStatement(sqlbuf.toString());
+    String insert_sql = this.createInsertRequestBaseSQL(insert_request);
+    return conn.prepareStatement(insert_sql);
   }
 
 }

@@ -38,8 +38,13 @@ public class Initializer implements SpringApplicationRunListener {
   }
 
   private void createDatabase(ConfigurableEnvironment environment) {
-    String databaseUsername = environment.getProperty("spring.datasource.admin.username", "postgres");
-    String databasePassword = environment.getProperty("spring.datasource.admin.password", "123456");
+    String databaseUsername = environment.getProperty("spring.datasource.admin.username");
+    String databasePassword = environment.getProperty("spring.datasource.admin.password");
+    if (StringUtils.isBlank(databaseUsername)) {
+      databaseUsername = environment.getProperty("spring.datasource.username");
+      databasePassword = environment.getProperty("spring.datasource.password");
+    }
+
     String databaseJdbcURL = environment.getProperty("spring.datasource.url", "");
 
     String databaseName = environment.getProperty("spring.datasource.create.database", "");
