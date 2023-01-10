@@ -11,6 +11,7 @@
 - MySQL5.7/8.0
 - PostgresQL9.6～14.4
 - 达梦8
+- 南大通用分布式数据库8a
 
 > 其他数据库的JDBC连接需要适配方言。
 
@@ -907,6 +908,17 @@ roles:
 - `DATASCHEME_URL` 数据库自动构建脚本位置，如果是文件位置请在目录后加“/”，如：`file://sql/`。
 - `JDBC_DMDB` 达梦一主多备主机IP地址及端口配置参数，逗号分隔，如：`192.168.1.2:5236,192.168.1.3:5236`
 - `LICENSE_CODE` 授权代码
+- `JDBC_DRIVER` 数据库JDBC驱动名
+  - `org.postgresql.Driver`表示使用`PostgreSQL`
+  - `dm.jdbc.driver.DmDriver`表示使用达梦数据库
+  - `com.mysql.jdbc.Driver`表示使用`MySQL`
+  - `com.gbase.jdbc.Driver`表示使用南大通用分布式数据库
+- `JDBC_URL` JDBC连接URL
+- `JDBC_USER` JDBC连接用户
+- `JDBC_PASSWORD` JDBC用户密码
+- `JDBC_ADMIN_USER` 数据管理用户
+- `JDBC_ADMIN_PASSWORD` 管理用户密码
+- `DATABASE_NAME` 待建数据库，如果配置了此参数则会判定数据库是否存在，不存在则自动创建。
 
 ## 9、部署运行说明
 
