@@ -72,7 +72,6 @@
         "CONFIG_TYPE": "none",
         "CACHE_TYPE": "none",
         "JDBC_DRIVER": "com.gbase.jdbc.Driver",
-        // "JDBC_URL": "jdbc:gbase://192.168.7.89/test?user=gbase&password=gbase20110531&failoverEnable=true&hostList=",
         "JDBC_URL": "jdbc:gbase://192.168.7.89:5258/gbase?failoverEnable=true&hostList=",
         "JDBC_USER": "gbase",
         "JDBC_PASSWORD": "gbase20110531"
