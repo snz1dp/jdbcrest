@@ -43,7 +43,7 @@ public interface JdbcRestProvider {
   ) throws SQLException;
 
   // 查询统计信息
-  public long queryAllCountResult(
+  public JdbcQueryResponse<Long> queryAllCountResult(
     JdbcQueryRequest table_query
   ) throws SQLException;
 

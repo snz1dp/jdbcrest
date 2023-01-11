@@ -88,7 +88,7 @@ public class DatabaseQueryApi {
       if (table_query.hasGroup_by()) {
         return restProvider.queryGroupCountResult(table_query);
       } else {
-        return Return.wrap(restProvider.queryAllCountResult(table_query));
+        return restProvider.queryAllCountResult(table_query);
       }
     } else if (table_query.hasGroup_by()) { 
       return restProvider.queryGroupResult(table_query);

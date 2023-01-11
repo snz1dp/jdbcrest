@@ -304,11 +304,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
     // 获取分页数据
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
+    pageret.setLic(datalist.getLic());
 
     // 返回数据
     if (datalist != null && datalist.getData() instanceof List) {
       pageret.setMeta(datalist.getMeta());
-      pageret.setLic(datalist.getLic());
       pageret.getData().setOffset(table_query.getResult().getOffset());
       pageret.getData().setData((List)datalist.getData());
     }
@@ -322,13 +322,17 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   @Override
   @SuppressWarnings("unchecked")
-  public long queryAllCountResult(JdbcQueryRequest table_query) throws SQLException {
+  public JdbcQueryResponse<Long> queryAllCountResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
     table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
-    return (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
+    Long total_val = (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
+    JdbcQueryResponse<Long> ret = new JdbcQueryResponse<>();
+    ret.setData(total_val);
+    ret.setLic(datalist.getLic());
+    return ret;
   }
 
   @Override
@@ -364,6 +368,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     JdbcQueryResponse<Object> ret = new JdbcQueryResponse<>();
     ret.setData(data);
     ret.setMeta(datalist.getMeta());
+    ret.setLic(datalist.getLic());
     return ret;
   }
 
