@@ -3,6 +3,7 @@ package com.snz1.jdbc.rest;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
 
@@ -56,6 +57,9 @@ public class RunConfig {
   @Value("${app.table.definition:${TABLE_DEFINITION:}}")
   private String table_definition;
 
+  @Value("${app.version:${SERVICE_VERSION:1.0.0}}")
+  private String service_version;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
@@ -103,7 +107,7 @@ public class RunConfig {
     if (StringUtils.isBlank(sql_location)) return null;
     File sql_directory;
     try {
-      sql_directory = new UrlResource(sql_location).getFile();
+      sql_directory = new UrlResource(new URL(sql_location)).getFile();
     } catch (IOException e) {
       if (e instanceof MalformedURLException) {
           try {
@@ -127,7 +131,7 @@ public class RunConfig {
     }
     File tdf_resource;
     try {
-      tdf_resource = new UrlResource(file_location).getFile();
+      tdf_resource = new UrlResource(new URL(file_location)).getFile();
     } catch (IOException e) {
       if (e instanceof MalformedURLException) {
         try {
@@ -174,6 +178,10 @@ public class RunConfig {
       }
     }
     return this.firstRunTime;
+  }
+
+  public String getService_version() {
+    return service_version;
   }
 
 }

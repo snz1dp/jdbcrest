@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -83,7 +84,18 @@ public class AppPublishApi {
   public Return<Map<String, Object>> getAppVersion() {
     Map<String, Object> ret = new HashMap<>(2);
     Version appVersion = appInfoResolver.getVersion();
-    ret.put("app", appVersion);
+    Map<String, Object> version_data = new LinkedHashMap<>();
+    ret.put("app", version_data);
+
+    version_data.put("product_code", appVersion.getProduct_code());
+    version_data.put("product_name", appVersion.getProduct_name());
+    version_data.put("company_name", appVersion.getCompany_name());
+    version_data.put("company_url", appVersion.getCompany_url());
+    version_data.put("contact_email", appVersion.getContact_email());
+    version_data.put("legal_copyright", appVersion.getLegal_copyright());
+    version_data.put("product_version", appVersion.getProduct_version());
+    version_data.put("service_version", runConfig.getService_version());
+
     LicenseSupport license_support = appInfoResolver.getLicenseSupport();
     Date first_run_time  = runConfig.getFirstRunTime();
     if (license_support != null) {
@@ -95,7 +107,7 @@ public class AppPublishApi {
         Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
         ret.put("end", end_time);
       } else {
-        appVersion.setProduct_name(license_support.getProduct_name());
+        version_data.put("product_name", license_support.getProduct_name());
       }
     } else {
       Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
