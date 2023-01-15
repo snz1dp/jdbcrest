@@ -291,6 +291,42 @@
 							</excludes>
 						</configuration>
 					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- 在生成JavaDoc时禁用告警错误 -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<configuration>
+							<doclint>none</doclint>
+							<additionalOptions>-Xdoclint:none</additionalOptions>
+							<sourceFileExcludes>
+								<exclude>**/impl/**</exclude>
+								<exclude>**/proxy/**</exclude>
+								<exclude>gateway/sc/v2/config/**</exclude>
+								<exclude>gateway/sc/v2/oauth/**</exclude>
+								<exclude>gateway/sc/v2/ToolProvider.*</exclude>
+							</sourceFileExcludes>
+							<executions>
+								<execution>
+									<id>attach-javadocs</id>
+									<goals>
+										<goal>jar</goal>
+									</goals>
+									<phase>package</phase>
+								</execution>
+							</executions>
+						</configuration>
+					</plugin>					
 				</plugins>
 			</build>
 		</profile>
