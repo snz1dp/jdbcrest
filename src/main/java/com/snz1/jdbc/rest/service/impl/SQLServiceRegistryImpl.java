@@ -55,9 +55,9 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       this.doLoadSQLServiceDefinitions("/services", sql_directory);
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
-        log.debug("加载SQL服务失败: {}", e.getMessage(), e);
+        log.debug("{}", e.getMessage(), e);
       }
-      throw new IllegalStateException("加载SQL服务失败: " + e.getMessage(), e);
+      throw new IllegalStateException(e.getMessage(), e);
     }
   }
 

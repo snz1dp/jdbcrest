@@ -2,8 +2,6 @@ package com.snz1.jdbc.rest;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Date;
 import java.util.Objects;
 
@@ -107,16 +105,14 @@ public class RunConfig {
     if (StringUtils.isBlank(sql_location)) return null;
     File sql_directory;
     try {
-      sql_directory = new UrlResource(new URL(sql_location)).getFile();
+      sql_directory = new UrlResource(sql_location).getFile();
     } catch (IOException e) {
-      if (e instanceof MalformedURLException) {
-          try {
-            sql_directory = new ClassPathResource(sql_location).getFile();
-          } catch (IOException ex) {
-            log.warn("无法获取SQL服务目录信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
-            return null;
-          }
-      } else {
+      if (StringUtils.startsWith(sql_location, "classpath:")) {
+        sql_location = StringUtils.substring(sql_location, 10);
+      }
+      try {
+        sql_directory = new ClassPathResource(sql_location).getFile();
+      } catch (IOException ex) {
         log.warn("无法获取SQL服务目录信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
         return null;
       }
@@ -131,16 +127,14 @@ public class RunConfig {
     }
     File tdf_resource;
     try {
-      tdf_resource = new UrlResource(new URL(file_location)).getFile();
+      tdf_resource = new UrlResource(file_location).getFile();
     } catch (IOException e) {
-      if (e instanceof MalformedURLException) {
-        try {
-          tdf_resource = new ClassPathResource(file_location).getFile();
-        } catch (IOException ex) {
-          log.warn("获取数据表配置文件信息失败, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
-          return null;
-        }
-      } else {
+      if (StringUtils.startsWith(file_location, "classpath:")) {
+        file_location = StringUtils.substring(file_location, 10);
+      }
+      try {
+        tdf_resource = new ClassPathResource(file_location).getFile();
+      } catch (IOException ex) {
         log.warn("获取数据表配置文件信息失败, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
         return null;
       }
