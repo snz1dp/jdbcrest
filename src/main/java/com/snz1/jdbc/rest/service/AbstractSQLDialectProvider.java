@@ -204,11 +204,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     try {
       sql.INSERT_INTO(insert_request.getTable_name());
       insert_request.getColumns().forEach(v -> {
-        if (v.getRead_only() != null && v.getRead_only()) return;
         if (v.getAuto_increment() != null && v.getAuto_increment()) return;
-        if (v.getWritable() != null && v.getWritable()) {
-          sql.VALUES(v.getName(), "?");
-        }
+        sql.VALUES(v.getName(), "?");
       });
       return sql.toString();
     } finally {
@@ -234,22 +231,16 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           String k = v.getName();
           Map<String, Object> input_map = update_request.getInput_map();
           if (!input_map.containsKey(k)) continue;
-          if (v.getRead_only() != null && v.getRead_only()) continue;
           if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
           if (table_definition != null && table_definition.inColumn(v.getName())) continue;
-          if (v.getWritable() != null && v.getWritable()) {
-            sql.SET(String.format("%s = ?", v.getName()));
-          }
+          sql.SET(String.format("%s = ?", v.getName()));
         }
       } else { // 主键更新
         update_request.getColumns().forEach(v -> {
-          if (v.getRead_only() != null && v.getRead_only()) return;
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
           if (update_request.testRow_key(v.getName())) return;
           if (table_definition != null && table_definition.inColumn(v.getName())) return;
-          if (v.getWritable() != null && v.getWritable()) {
-            sql.SET(String.format("%s = ?", v.getName()));
-          }
+          sql.SET(String.format("%s = ?", v.getName()));
         });
       }
 

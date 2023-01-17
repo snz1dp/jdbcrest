@@ -113,30 +113,24 @@ public class UpdateRequestHandler extends AbstractManipulationRequestHandler<int
         if (updateRequest.hasWhere() || updateRequest.isPatch_update()) {
           for (TableColumn v : updateRequest.getColumns()) {
             if (!input_data.containsKey(v.getName())) continue;
-            if (v.getRead_only() != null && v.getRead_only()) continue;
             if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
             if (tdf != null && tdf.inColumn(v.getName())) continue;
-            if (v.getWritable() != null && v.getWritable()) {
-              if (log.isDebugEnabled()) {
-                log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-              }
-              ps.setObject(i, converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-              i = i + 1;
+            if (log.isDebugEnabled()) {
+              log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
             }
+            ps.setObject(i, converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
+            i = i + 1;
           }
         } else {
           for (TableColumn v : updateRequest.getColumns()) {
-            if (v.getRead_only() != null && v.getRead_only()) continue;
             if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
             if (updateRequest.testRow_key(v.getName())) continue;
             if (tdf != null && tdf.inColumn(v.getName())) continue;
-            if (v.getWritable() != null && v.getWritable()) {
-              if (log.isDebugEnabled()) {
-                log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
-              }
-              ps.setObject(i, converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
-              i = i + 1;
+            if (log.isDebugEnabled()) {
+              log.debug("设置更新参数: PI={}, COLUMN={}, VALUE={}", i, v.getName(), input_data.get(v.getName()));
             }
+            ps.setObject(i, converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type()));
+            i = i + 1;
           }
         }
 

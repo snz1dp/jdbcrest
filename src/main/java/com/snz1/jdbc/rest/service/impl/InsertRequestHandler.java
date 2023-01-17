@@ -115,13 +115,10 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
         input_data = doBuildInsertRequestInputData(input_data);
         int i = 1;
         for (TableColumn v : insertRequest.getColumns()) {
-          if (v.getRead_only() != null && v.getRead_only()) continue;
           if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-          if (v.getWritable() != null && v.getWritable()) {
-            Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
-            ps.setObject(i, val);
-            i = i + 1;
-          }
+          Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
+          ps.setObject(i, val);
+          i = i + 1;
         }
         ps.addBatch();
       }

@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
 import java.sql.JDBCType;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -46,6 +47,10 @@ public class TableMeta implements Serializable {
   @Getter
   @Setter
   private Integer column_count;
+
+  @Getter
+  @Setter
+  private List<TableIndex> normal_indexs;
 
   // 唯一索引
   @JsonIgnore
@@ -166,15 +171,18 @@ public class TableMeta implements Serializable {
     ResultSetMetaData rs_meta,
     ResultDefinition request,
     Object primary_key,
-    List<TableIndex> unique_index,
+    TableIndexs table_index,
     TableDefinition definition
   ) throws SQLException {
     TableMeta metadata = new TableMeta();
     metadata.setPrimary_key(primary_key);
     int col_count = rs_meta.getColumnCount();
     metadata.setColumn_count(col_count);
-    metadata.setUnique_indexs(unique_index);
     metadata.setDefinition(definition);
+    if (table_index != null) {
+      metadata.setUnique_indexs(table_index.getUnique_indexs());
+      metadata.setNormal_indexs(table_index.getNormal_indexs());
+    }
 
     for (int i = 1; i <= col_count; i++) {
       if (metadata.getTable_name() == null) {
@@ -201,22 +209,97 @@ public class TableMeta implements Serializable {
       col.setIndex(i - 1);
       col.setName(column_name);
       col.setLabel(rs_meta.getColumnLabel(i));
-      col.setCurrency(rs_meta.isCurrency(i));
-      col.setSearchable(rs_meta.isSearchable(i));
       col.setSql_type(rs_meta.getColumnTypeName(i));
       col.setJdbc_type(JDBCType.valueOf(rs_meta.getColumnType(i)));
       col.setAuto_increment(rs_meta.isAutoIncrement(i));
       col.setNullable(rs_meta.isNullable(i) == ResultSetMetaData.columnNullable);
-      col.setRead_only(rs_meta.isReadOnly(i));
-      col.setWritable(rs_meta.isWritable(i));
       col.setScale(rs_meta.getScale(i));
       col.setPrecision(rs_meta.getPrecision(i));
+      col.setColumn_size(rs_meta.getPrecision(i));
       col.setDisplay_size(rs_meta.getColumnDisplaySize(i));
-      col.setCase_sensitive(rs_meta.isCaseSensitive(i));
       if (StringUtils.isNotBlank(rs_meta.getTableName(i))) {
         col.setTable_name(rs_meta.getTableName(i));
       }
       metadata.getColumns().add(col);
+    }
+
+    if (StringUtils.isBlank(metadata.getTable_name())) {
+      metadata.setTable_name(null);
+    }
+
+    if (StringUtils.isBlank(metadata.getSchemas_name())) {
+      metadata.setSchemas_name(null);
+    }
+
+    return metadata;
+  }
+
+
+  public static TableMeta of(
+    ResultSet rs_meta,
+    ResultDefinition request,
+    Object primary_key,
+    TableIndexs table_index,
+    TableDefinition definition
+  ) throws SQLException {
+    TableMeta metadata = new TableMeta();
+    metadata.setPrimary_key(primary_key);
+    int col_count = 0;
+
+    while (rs_meta.next()) {
+      if (metadata.getTable_name() == null) {
+        metadata.setTable_name(rs_meta.getString("TABLE_NAME"));
+      }
+
+      if (metadata.getSchemas_name() == null) {
+        metadata.setSchemas_name(rs_meta.getString("TABLE_SCHEM"));
+      }
+
+      String column_name = rs_meta.getString("COLUMN_NAME");
+      if (request != null &&
+        !request.isAll_column() &&
+        request.getColumns().size() > 0 &&
+        !request.getColumns().containsKey(column_name)
+      ) {
+        continue;
+      }
+
+      if (request != null && request.getColumns().containsKey(column_name) && request.getColumns().get(column_name).hasAlias()) {
+        column_name = request.getColumns().get(column_name).getAlias();
+      }
+
+      TableColumn col = new TableColumn();
+      col.setIndex(col_count);
+      col.setName(column_name);
+      col.setLabel(rs_meta.getString("REMARKS"));
+      if (StringUtils.isBlank(col.getLabel())) {
+        col.setLabel(col.getName());
+      }
+
+      col.setSql_type(rs_meta.getString("TYPE_NAME"));
+      col.setJdbc_type(JDBCType.valueOf(rs_meta.getInt("DATA_TYPE")));
+      col.setAuto_increment(StringUtils.equals("YES", rs_meta.getString("IS_AUTOINCREMENT")));
+      col.setNullable(StringUtils.equals("YES", rs_meta.getString("IS_NULLABLE")));
+      col.setScale(rs_meta.getInt("NUM_PREC_RADIX"));
+      col.setPrecision(rs_meta.getInt("DECIMAL_DIGITS"));
+      col.setColumn_size(rs_meta.getInt("COLUMN_SIZE"));
+      col.setDisplay_size(rs_meta.getInt("CHAR_OCTET_LENGTH"));
+
+      String table_name = rs_meta.getString("TABLE_NAME");
+      if (StringUtils.isNotBlank(table_name)) {
+        col.setTable_name(table_name);
+      }
+
+      metadata.getColumns().add(col);
+      col_count++;
+    }
+
+    metadata.setColumn_count(col_count);
+    metadata.setDefinition(definition);
+
+    if (table_index != null) {
+      metadata.setUnique_indexs(table_index.getUnique_indexs());
+      metadata.setNormal_indexs(table_index.getNormal_indexs());
     }
 
     if (StringUtils.isBlank(metadata.getTable_name())) {

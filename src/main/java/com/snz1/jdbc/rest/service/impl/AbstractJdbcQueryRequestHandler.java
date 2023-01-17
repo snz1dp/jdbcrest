@@ -19,6 +19,7 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.TableIndex;
+import com.snz1.jdbc.rest.data.TableIndexs;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
@@ -41,8 +42,10 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   // 执行获取结果集
   @SuppressWarnings("null")
   protected JdbcQueryResponse<List<Object>> doFetchResultSet(
-    ResultSet rs, ResultDefinition return_meta,
-    Object primary_key, List<TableIndex> unique_index,
+    ResultSet rs,
+    ResultDefinition return_meta,
+    Object primary_key,
+    TableIndexs table_index,
     TableDefinition table_definition
   ) throws SQLException {
     boolean onepack = true; 
@@ -59,7 +62,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
       rs.getMetaData(),
       return_meta,
       primary_key,
-      unique_index,
+      table_index,
       table_definition
     );
     List<Object> rows = new LinkedList<>();
@@ -135,7 +138,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   @SuppressWarnings("unchecked")
   protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
     Object primary_key = null;
-    ResultSet ks = conn.getMetaData().getPrimaryKeys(null, null, table_name);
+    ResultSet ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), table_name);
     try {
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
@@ -161,9 +164,9 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
 
   // 执行获取唯一索引
   @SuppressWarnings("unchecked")
-  protected List<TableIndex> doFetchTableUniqueIndex(Connection conn, String table_name) throws SQLException {
-    List<TableIndex> index_lst = new LinkedList<>();
-    ResultSet ks = conn.getMetaData().getIndexInfo(null, null, table_name, true, false);
+  protected TableIndexs doFetchTableIndexs(Connection conn, String table_name) throws SQLException {
+    TableIndexs index_lst = new TableIndexs();
+    ResultSet ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), table_name, false, false);
     try {
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
@@ -202,7 +205,11 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
           } else {
             index.setType((Integer)colobj.get("type"));
           }
-          index_lst.add(index);
+          if (index.isUnique()) {
+            index_lst.addUnique_index(index);
+          } else {
+            index_lst.addNormal_index(index);
+          }
         }
       }
     } finally {

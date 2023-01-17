@@ -11,7 +11,7 @@ import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
-import com.snz1.jdbc.rest.data.TableIndex;
+import com.snz1.jdbc.rest.data.TableIndexs;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
@@ -38,13 +38,13 @@ public class ListQueryRequestHandler extends AbstractJdbcQueryRequestHandler<Jdb
   public JdbcQueryResponse<List<Object>> doInConnection(Connection conn) throws SQLException, DataAccessException {
     JdbcQueryRequest table_query = this.getRequest();
     Object primary_key = null;
-    List<TableIndex> unique_index = null;
+    TableIndexs table_index = null;
     if (table_query.hasTable_meta()) {
       primary_key = table_query.getTable_meta().getPrimary_key();
-      unique_index = table_query.getTable_meta().getUnique_indexs();
+      table_index = new TableIndexs(table_query.getTable_meta().getUnique_indexs(), table_query.getTable_meta().getNormal_indexs());
     } else {
       primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
-      unique_index = doFetchTableUniqueIndex(conn, table_query.getTable_name());
+      table_index = doFetchTableIndexs(conn, table_query.getTable_name());
     }
     SQLDialectProvider sql_dialect_provider = this.getSqlDialectProvider();
     PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
@@ -54,7 +54,7 @@ public class ListQueryRequestHandler extends AbstractJdbcQueryRequestHandler<Jdb
         rs = ps.executeQuery();
         return doFetchResultSet(
           rs, table_query.getResult(),
-          primary_key, unique_index,
+          primary_key, table_index,
           table_query.getDefinition()
         );
       } finally {
