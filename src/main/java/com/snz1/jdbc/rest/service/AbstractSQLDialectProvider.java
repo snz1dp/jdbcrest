@@ -39,6 +39,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
   // 获取查询的合计
   @Override
+  @Deprecated
   public JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query) {
     long start_time = System.currentTimeMillis();
     JdbcQueryStatement base_query = null;

@@ -18,6 +18,7 @@ public interface SQLDialectProvider {
   JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);
 
   // 准备无行查询
+  @Deprecated
   PreparedStatement prepareNoRowSelect(
     Connection conn,
     JdbcQueryRequest table_query
