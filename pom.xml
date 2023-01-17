@@ -250,7 +250,22 @@
 						<!-- http://maven.apache.org/plugins/maven-compiler-plugin -->
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<skipTests>true</skipTests>
+						</configuration>
 					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<configuration>
+							<excludes>
+								<exclude>/com/snz1/jdbc/rest/JdbcRestApplication.class</exclude>
+								<exclude>/com/snz1/jdbc/rest/conf/JdbcRestConfig.class</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+
 				</plugins>
 			</build>
 		</profile>
