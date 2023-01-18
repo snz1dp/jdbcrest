@@ -137,13 +137,15 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
         log.warn("SQL文件{}第[{}]段SQL有问题, SQL:\n{}", sql_file.toString(), i, sql_frag.getFrangment_sql());
       } else {
         if (log.isDebugEnabled()) {
-
+          log.warn("SQL文件{}第[{}]段SQL:\n{}", sql_file.toString(), i, sql_frag.getFrangment_sql());
         }
-        
         // 分析返回类型
         SQLServiceDefinition.ResultDefinitionYamlWrapper result_wrapper = YamlUtils.fromYaml(
           sql_note, SQLServiceDefinition.ResultDefinitionYamlWrapper.class
         );
+        if (result_wrapper == null) {
+          result_wrapper = new SQLServiceDefinition.ResultDefinitionYamlWrapper();
+        }
         if (result_wrapper.getColumns() != null && result_wrapper.getColumns().length > 0) {
           for (ResultDefinition.ResultColumn cl : result_wrapper.getColumns()) {
             Validate.notBlank(cl.getName(), "字段名不能为空");
