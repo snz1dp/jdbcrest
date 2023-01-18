@@ -153,6 +153,8 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
             sql_frag.getResult().getColumns().put(cl.getName(), cl);
           }
         }
+        sql_frag.getResult().setSignleton(result_wrapper.isSignleton());
+        sql_frag.getResult().setColumn_compact(result_wrapper.isColumn_compact());
       }
 
       // 构建MyBatis解析段
