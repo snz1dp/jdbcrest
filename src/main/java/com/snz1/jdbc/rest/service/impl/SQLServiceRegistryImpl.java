@@ -52,7 +52,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     }
     Validate.isTrue(sql_directory.exists() && sql_directory.isDirectory(), "%s不是一个有效的目录", sql_directory);
     try {
-      this.doLoadSQLServiceDefinitions("/services", sql_directory);
+      this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("/services", sql_directory));
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
         log.debug("{}", e.getMessage(), e);
@@ -61,7 +61,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     }
   }
 
-  protected void doLoadSQLServiceDefinitions(String relative_path, File sql_dir) throws Exception {
+  protected Map<String, SQLServiceDefinition> doLoadSQLServiceDefinitions(String relative_path, File sql_dir) throws Exception {
     if (log.isDebugEnabled()) {
       log.debug("加载目录 {} 下的SQL文件...", sql_dir);
     }
@@ -69,7 +69,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     Map<String, SQLServiceDefinition> defintions = new LinkedHashMap<>();
     for (File file : sql_dir.listFiles()) {
       if (file.isDirectory()) {
-        this.doLoadSQLServiceDefinitions(String.format("%s/%s", relative_path, file.getName()), file);
+        defintions.putAll(this.doLoadSQLServiceDefinitions(String.format("%s/%s", relative_path, file.getName()), file));
       }
       if (!StringUtils.endsWith(StringUtils.lowerCase(file.getName()), ".sql")) continue;
       if (log.isDebugEnabled()) {
@@ -86,7 +86,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
         throw new IllegalStateException(String.format("加载SQL文件%s失败: %s", file.toString(), e.getMessage()), e);
       }
     }
-    this.sqlServiceDefinitions = new HashMap<>(defintions);
+    return defintions;
   }
 
   protected SQLServiceDefinition doSQLServiceDefinition(String service_path, File sql_file) throws Exception {
