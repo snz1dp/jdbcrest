@@ -116,7 +116,7 @@ public class AppPublishApi {
         Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
         ret.put("end", end_time);
       } else {
-        version_data.put("product_name", license_support.getProduct_name());
+        version_data.put("service_name", license_support.getProduct_name());
       }
     } else {
       Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
