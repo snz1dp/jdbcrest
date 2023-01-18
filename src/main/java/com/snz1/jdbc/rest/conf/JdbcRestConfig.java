@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan({
   "com.snz1.jdbc.rest.service",
   "com.snz1.jdbc.rest.servlet",
+  "com.snz1.jdbc.rest.stats",
   "com.snz1.jdbc.rest.conf",
   "com.snz1.jdbc.rest.api",
 })

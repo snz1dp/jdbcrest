@@ -14,13 +14,13 @@ import javax.servlet.http.HttpServletResponse;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
+import com.snz1.jdbc.rest.stats.CacheStatisticsCollector;
 import com.snz1.utils.CalendarUtils;
 import com.snz1.utils.ContextUtils;
 import com.snz1.utils.TimeZoneUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +33,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import gateway.api.Return;
 import gateway.sc.v2.FunctionTreeNode;
 import gateway.sc.v2.RoleGroup;
+import gateway.sc.v2.config.CacheStatistics;
 import gateway.sc.v2.config.LicenseSupport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,11 +46,14 @@ public class AppPublishApi {
   private FunctionTreeNode[] EMPTY_TREENODES = new FunctionTreeNode[0];
   private RoleGroup[] EMPTY_GROUPS = new RoleGroup[0];
 
-  @Autowired
+  @Resource
   private RunConfig runConfig;
 
   @Resource
   private AppInfoResolver appInfoResolver;
+
+  @Resource
+  private CacheStatisticsCollector cacheStatisticsCollector;
 
 	@Operation(summary = "目录默认跳转", hidden = true)
 	@GetMapping(path = "index", produces = MediaType.TEXT_HTML_VALUE)
@@ -158,6 +162,14 @@ public class AppPublishApi {
     } else {
       return Return.wrap(EMPTY_GROUPS);
     }
+  }
+
+  @GetMapping(path = "/cache/statistics")
+  @Operation(summary = "缓存统计数据")
+  @PreAuthorize("isAuthenticated")
+  @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
+  public Return<CacheStatistics> cacheStatistics() {
+    return Return.wrap(cacheStatisticsCollector.getCacheStatistics());
   }
 
 }
