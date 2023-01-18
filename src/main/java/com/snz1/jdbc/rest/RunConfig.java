@@ -55,6 +55,9 @@ public class RunConfig {
   @Value("${app.table.definition:${TABLE_DEFINITION:}}")
   private String table_definition;
 
+  @Value("${app.name:${SERVICE_NAME:}}")
+  private String service_name;
+
   @Value("${app.version:${SERVICE_VERSION:1.0.0}}")
   private String service_version;
 
@@ -176,6 +179,10 @@ public class RunConfig {
 
   public String getService_version() {
     return service_version;
+  }
+
+  public String getService_name() {
+    return service_name;
   }
 
 }

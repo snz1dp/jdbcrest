@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "9、系统配置")
+@Tag(name = "系统配置")
 @RequestMapping
 public class ConfigSetupApi {
 

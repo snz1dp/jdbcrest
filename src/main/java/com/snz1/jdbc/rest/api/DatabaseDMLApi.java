@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "6、高级功能")
+@Tag(name = "高级功能")
 @RequestMapping
 public class DatabaseDMLApi {
 

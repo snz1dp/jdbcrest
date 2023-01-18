@@ -39,7 +39,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "0、应用信息")
+@Tag(name = "应用信息")
 @RequestMapping
 public class AppPublishApi {
 
@@ -83,7 +83,7 @@ public class AppPublishApi {
     return mav;
   }
 
-  @Operation(summary = "应用版本信息")
+  @Operation(summary = "服务版本信息")
   @GetMapping(path = "/version")
   public Return<Map<String, Object>> getAppVersion() {
     Map<String, Object> ret = new HashMap<>(2);
@@ -98,6 +98,11 @@ public class AppPublishApi {
     version_data.put("contact_email", appVersion.getContact_email());
     version_data.put("legal_copyright", appVersion.getLegal_copyright());
     version_data.put("product_version", appVersion.getProduct_version());
+    if (StringUtils.isNotBlank(runConfig.getService_name())) {
+      version_data.put("service_name", runConfig.getService_name());
+    } else {
+      version_data.put("service_name", appVersion.getProduct_name());
+    }
     version_data.put("service_version", runConfig.getService_version());
 
     LicenseSupport license_support = appInfoResolver.getLicenseSupport();

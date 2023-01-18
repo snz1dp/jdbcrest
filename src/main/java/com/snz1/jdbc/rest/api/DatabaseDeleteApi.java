@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "5、数据删除")
+@Tag(name = "数据删除")
 @RequestMapping
 public class DatabaseDeleteApi {
 

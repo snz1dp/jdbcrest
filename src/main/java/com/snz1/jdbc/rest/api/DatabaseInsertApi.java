@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "3、数据插入")
+@Tag(name = "数据插入")
 @RequestMapping
 public class DatabaseInsertApi {
 

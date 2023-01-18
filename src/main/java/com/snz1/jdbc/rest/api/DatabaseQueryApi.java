@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "2、数据查询")
+@Tag(name = "数据查询")
 @RequestMapping
 public class DatabaseQueryApi {
 

@@ -37,7 +37,7 @@ import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 
-@Tag(name = "7、用户帐户")
+@Tag(name = "用户帐户")
 @RestController
 @Slf4j
 @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)

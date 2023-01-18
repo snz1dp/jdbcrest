@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "4、数据更新")
+@Tag(name = "数据更新")
 @RequestMapping
 public class DatabaseUpdateApi {
 
