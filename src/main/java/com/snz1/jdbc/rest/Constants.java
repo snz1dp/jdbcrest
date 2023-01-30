@@ -2,6 +2,9 @@ package com.snz1.jdbc.rest;
 
 public abstract class Constants {
 
+  // 无应用权代码
+  public static final String [] NO_APP_CODES = new String[] {""};
+
   // SELECT参数
   public static final String SELECT_ARG = "_select";
 
@@ -95,6 +98,7 @@ public abstract class Constants {
   // TableMeta缓存
   public static final String TABLEMETA_CACHE = "tablemeta";
 
+  // 授权代码
   public static final String LICENSE_CODE_ARG = "license.code";
 
 }

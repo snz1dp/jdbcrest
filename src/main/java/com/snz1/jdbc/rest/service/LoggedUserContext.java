@@ -38,6 +38,12 @@ public interface LoggedUserContext {
   // 是否有任何权限
   boolean hasAnyRole(String ...roles);
 
+  // 获取用户所属的应用代码
+  String[] getUserOwnerAppcodes(String appcode);
+
+  // 是否应用所属用户
+  boolean testAppOwnerUser(String appcode);
+
   public class UserInfo implements User, Serializable {
 
     private static final long serialVersionUID = 6161077033448193041L;

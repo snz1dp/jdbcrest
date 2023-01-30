@@ -1,10 +1,13 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Resource;
 
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.utils.ContextUtils;
@@ -12,14 +15,16 @@ import com.snz1.web.security.User;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
-import org.springframework.stereotype.Component;
 
+import gateway.api.Page;
 import gateway.sc.v2.FunctionManager;
+import gateway.sc.v2.FunctionNode;
 import gateway.sc.v2.UserManager;
+import gateway.sc.v2.User.IdType;
 
-@Component
 public class LoggedUserContextImpl implements LoggedUserContext {
 
   @Resource
@@ -30,6 +35,13 @@ public class LoggedUserContextImpl implements LoggedUserContext {
 
   @Resource
   private RunConfig runConfig;
+
+  @Value("${app.allapp.role:}")
+  private String allAppRoleCode;
+
+  protected boolean hasAllAppRoleCode() {
+    return StringUtils.isNotBlank(this.allAppRoleCode);
+  }
 
   @Override
   public User getLoggedUser() {
@@ -102,6 +114,65 @@ public class LoggedUserContextImpl implements LoggedUserContext {
       if (hasRole(role)) return true;
     }
     return false;
+  }
+
+
+  @Override
+  public String[] getUserOwnerAppcodes(String appcode) {
+    User logged_user = getLoggedUser();
+    if (logged_user == null) return Constants.NO_APP_CODES;
+    if (hasAllAppRoleCode() && hasRole(this.allAppRoleCode)) {
+      if (StringUtils.isBlank(appcode)) return null;
+      return new String[] {appcode};
+    };
+
+    if (StringUtils.isNotBlank(appcode)) {
+      FunctionNode fnode = functionManager.getFunctionNode(appcode);
+      if (fnode == null) return Constants.NO_APP_CODES;
+      return (StringUtils.equals(logged_user.getUserid(), fnode.getManager()) ||
+        StringUtils.equals(logged_user.getUserid(), fnode.getLeader()) ||
+        StringUtils.equals(logged_user.getUserid(), fnode.getMaintenancer())
+      ) ? new String[]{ appcode } : Constants.NO_APP_CODES;
+    }
+
+    int start = 0;
+    Page<FunctionNode> app_page = null;
+    Set<String> app_codes = new LinkedHashSet<>();
+    do {
+      app_page = functionManager.getFunctionNodes(
+        null, null,
+        FunctionNode.Type.app,
+        false, false,
+        logged_user.getUserid(),
+        IdType.id, false,
+        start, 100
+      );
+      if (app_page.data == null || app_page.data.size() == 0) {
+        break;
+      }
+
+      app_page.data.forEach(app -> {
+        app_codes.add(app.getCode());
+      });
+
+      start += 100;
+    } while(start >= (int)app_page.total);
+
+    if (app_codes.size() == 0) return Constants.NO_APP_CODES;
+
+    return app_codes.toArray(new String[0]);
+  }
+
+  @Override
+  public boolean testAppOwnerUser(String appcode) {
+    User logged_user = getLoggedUser();
+    if (logged_user == null || StringUtils.isBlank(appcode)) return false;
+
+    FunctionNode funcnode = functionManager.getFunctionNode(appcode);
+    if (funcnode == null) return false;
+    return StringUtils.equals(funcnode.getManager(), logged_user.getUserid()) ||
+      StringUtils.equals(funcnode.getLeader(), logged_user.getUserid()) ||
+      StringUtils.equals(funcnode.getMaintenancer(), logged_user.getUserid());
   }
 
 }
