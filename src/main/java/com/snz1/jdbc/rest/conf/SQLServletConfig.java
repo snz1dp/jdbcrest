@@ -1,14 +1,22 @@
 package com.snz1.jdbc.rest.conf;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.servlet.SQLServiceCacheDeleteServlet;
 import com.snz1.jdbc.rest.servlet.SQLServiceRequestExecuteServlet;
 
 @Configuration
 public class SQLServletConfig {
+
+  @Bean
+  @ConditionalOnMissingBean(RunConfig.class)
+  public RunConfig runConfig() {
+    return new RunConfig();
+  }
 
   @Bean
   public SQLServiceRequestExecuteServlet sqlServiceRequestExecuteServlet() {

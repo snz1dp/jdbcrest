@@ -15,14 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.utils.FileUtils;
 import com.snz1.utils.Configurer;
 import com.snz1.utils.JsonUtils;
 
 @Slf4j
-@Component
 public class RunConfig {
 
   @Autowired(required = false)
