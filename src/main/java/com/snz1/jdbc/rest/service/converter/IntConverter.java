@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class IntConverter extends AbstractConverter {
 
   public IntConverter() {
-    super(JDBCType.BIT, JDBCType.TINYINT, JDBCType.SMALLINT, JDBCType.INTEGER);
+    super(JDBCType.TINYINT, JDBCType.SMALLINT, JDBCType.INTEGER);
   }
 
   @Override
