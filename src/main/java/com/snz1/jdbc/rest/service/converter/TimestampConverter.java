@@ -4,6 +4,7 @@ import java.sql.JDBCType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ public class TimestampConverter extends AbstractConverter {
           return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse((String)input);
         } catch(ParseException e2) {
           try {
-            return new SimpleDateFormat().parse((String)input);
+            return new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyy", Locale.US).parse((String)input);
           } catch(ParseException e3) {
             throw new IllegalArgumentException(e2.getMessage(), e2);
           }
