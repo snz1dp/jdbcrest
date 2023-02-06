@@ -122,7 +122,15 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
             log.debug("字段名 = {}", v.getName());
           }
           Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
-          ps.setObject(i, val);
+          try {
+            ps.setObject(i, val);
+          } catch(SQLException e) {
+            String error_message = String.format(
+              "参数%d, 字段名 = %s, 参数类 = %s",
+              i, v.getName(), val == null ? "null" : val.getClass().getName()
+            );
+            throw new IllegalStateException(error_message, e);
+          }
           i = i + 1;
         }
         ps.addBatch();

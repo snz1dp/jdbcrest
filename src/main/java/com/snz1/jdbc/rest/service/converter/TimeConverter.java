@@ -19,10 +19,10 @@ public class TimeConverter extends AbstractConverter {
   public Object convertObject(Object input) {
     if (input instanceof String) {
       try {
-        return new SimpleDateFormat("HH:mm:ss").parse((String)input);
+        return new java.sql.Time(new SimpleDateFormat("HH:mm:ss").parse((String)input).getTime());
       } catch(ParseException e1) {
         try {
-          return new SimpleDateFormat("HH:mm").parse((String)input);
+          return new java.sql.Time(new SimpleDateFormat("HH:mm").parse((String)input).getTime());
         } catch(ParseException e2) {
           throw new IllegalArgumentException(e2.getMessage(), e2);
         }

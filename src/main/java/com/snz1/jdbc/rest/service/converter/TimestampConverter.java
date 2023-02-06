@@ -21,13 +21,13 @@ public class TimestampConverter extends AbstractConverter {
   public Object convertObject(Object input) {
     if (input instanceof String) {
       try {
-        return new SimpleDateFormat(JsonUtils.JsonDateFormat).parse((String)input);
+        return new java.sql.Timestamp(new SimpleDateFormat(JsonUtils.JsonDateFormat).parse((String)input).getTime());
       } catch(ParseException e1) {
         try {
-          return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse((String)input);
+          return new java.sql.Timestamp(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse((String)input).getTime());
         } catch(ParseException e2) {
           try {
-            return new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyy", Locale.US).parse((String)input);
+            return new java.sql.Timestamp(new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyy", Locale.US).parse((String)input).getTime());
           } catch(ParseException e3) {
             throw new IllegalArgumentException(e2.getMessage(), e2);
           }
