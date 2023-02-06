@@ -25,7 +25,9 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -116,6 +118,9 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
         int i = 1;
         for (TableColumn v : insertRequest.getColumns()) {
           if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+          if (log.isDebugEnabled()) {
+            log.debug("字段名 = {}", v.getName());
+          }
           Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
           ps.setObject(i, val);
           i = i + 1;
