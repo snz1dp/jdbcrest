@@ -25,7 +25,11 @@ public class TimestampConverter extends AbstractConverter {
         try {
           return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse((String)input);
         } catch(ParseException e2) {
-          throw new IllegalArgumentException(e2.getMessage(), e2);
+          try {
+            return new SimpleDateFormat().parse((String)input);
+          } catch(ParseException e3) {
+            throw new IllegalArgumentException(e2.getMessage(), e2);
+          }
         }
       }
     } else if (input instanceof Date) {
