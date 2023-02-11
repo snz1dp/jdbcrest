@@ -163,7 +163,7 @@ public class WhereCloumn implements Serializable, Cloneable {
     if (this.condition != null) {
       ConditionOperation operation = condition.getOperation();
       if (operation.parameter_count() == 1) {
-        parameters.add(factory.convertObject(this.condition.getValue(), this.type));
+        parameters.add(factory.convertObject(condition.getValue(), this.type));
       } else if (operation.parameter_count() == 2) {
         Object data = factory.convertArray(condition.getValue(), this.type);
         parameters.add(Array.get(data, 0));
@@ -180,7 +180,7 @@ public class WhereCloumn implements Serializable, Cloneable {
       for (WhereCloumn.Condition condition : this.conditions) {
         ConditionOperation operation = condition.getOperation();
         if (operation.parameter_count() == 1) {
-          parameters.add(factory.convertObject(this.condition.getValue(), this.type));
+          parameters.add(factory.convertObject(condition.getValue(), this.type));
         } else if (operation.parameter_count() == 2) {
           Object data = factory.convertArray(condition.getValue(), this.type);
           parameters.add(Array.get(data, 0));
