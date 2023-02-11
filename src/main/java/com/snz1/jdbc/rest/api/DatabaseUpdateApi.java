@@ -48,7 +48,7 @@ public class DatabaseUpdateApi {
     HttpServletRequest request
   ) throws IOException, SQLException {
     ManipulationRequest update_request = createManipulationRequest(table_name, key, request);
-    update_request.setPatch_update(RequestUtils.testRequestUpdateIsPatchMode(request));
+    update_request.setPatch_update(false);
     Object result = restProvider.updateTableData(update_request);
     return Return.wrap(result);
   }
