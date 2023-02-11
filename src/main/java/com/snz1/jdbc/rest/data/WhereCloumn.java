@@ -51,7 +51,7 @@ public class WhereCloumn implements Serializable, Cloneable {
     }
   }
 
-  public void addCondition(ConditionOperation operation, Object val) {
+  public WhereCloumn.Condition addCondition(ConditionOperation operation, Object val) {
     WhereCloumn.Condition temp_condition = new Condition();
     temp_condition.setOperation(operation);
     temp_condition.setValue(val);
@@ -65,6 +65,25 @@ public class WhereCloumn implements Serializable, Cloneable {
       this.condition = null;
       this.conditions.add(temp_condition);
     }
+    return temp_condition;
+  }
+
+  public WhereCloumn.Condition addCondition(String column, ConditionOperation operation, Object val) {
+    WhereCloumn.Condition temp_condition = new Condition();
+    temp_condition.setOperation(operation);
+    temp_condition.setValue(val);
+    temp_condition.setColumn(column);
+    if (this.condition == null && this.conditions == null) {
+      this.condition = temp_condition;
+    } else {
+      if (this.conditions == null) {
+        this.conditions = new LinkedList<>();
+        this.conditions.add(this.condition);
+      }
+      this.condition = null;
+      this.conditions.add(temp_condition);
+    }
+    return temp_condition;
   }
 
   private boolean testOr() {
