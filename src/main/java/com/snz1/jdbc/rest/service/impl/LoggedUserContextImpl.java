@@ -116,7 +116,6 @@ public class LoggedUserContextImpl implements LoggedUserContext {
     return false;
   }
 
-
   @Override
   public String[] getUserOwnerAppcodes(String appcode) {
     User logged_user = getLoggedUser();
@@ -131,7 +130,11 @@ public class LoggedUserContextImpl implements LoggedUserContext {
       if (fnode == null) return Constants.NO_APP_CODES;
       return (StringUtils.equals(logged_user.getUserid(), fnode.getManager()) ||
         StringUtils.equals(logged_user.getUserid(), fnode.getLeader()) ||
-        StringUtils.equals(logged_user.getUserid(), fnode.getMaintenancer())
+        StringUtils.equals(logged_user.getUserid(), fnode.getMaintenancer()) ||
+        (
+          fnode.getMaintenancers() != null &&
+          new LinkedHashSet<String>(fnode.getMaintenancers()).contains(logged_user.getUserid())
+        )
       ) ? new String[]{ appcode } : Constants.NO_APP_CODES;
     }
 
@@ -172,7 +175,11 @@ public class LoggedUserContextImpl implements LoggedUserContext {
     if (funcnode == null) return false;
     return StringUtils.equals(funcnode.getManager(), logged_user.getUserid()) ||
       StringUtils.equals(funcnode.getLeader(), logged_user.getUserid()) ||
-      StringUtils.equals(funcnode.getMaintenancer(), logged_user.getUserid());
+      StringUtils.equals(funcnode.getMaintenancer(), logged_user.getUserid()) ||
+      (
+        funcnode.getMaintenancers() != null &&
+        new LinkedHashSet<String>(funcnode.getMaintenancers()).contains(logged_user.getUserid())
+      );
   }
 
 }

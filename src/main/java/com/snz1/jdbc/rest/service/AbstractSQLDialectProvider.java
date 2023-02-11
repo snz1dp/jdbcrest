@@ -12,6 +12,7 @@ import javax.annotation.Resource;
 import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
+import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
@@ -172,6 +173,18 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
           w.buildParameters(parameters, this.getTypeConverterFactory());
         };
+      }
+
+      if (table_definition != null && table_definition.hasOwner_app_column() && loggedUserContext.isUserLogged() && (
+        !table_definition.hasAll_data_role() || !loggedUserContext.hasRole(table_definition.getAll_data_role()) 
+      )) {
+        WhereCloumn w = WhereCloumn.of(table_definition.getOwner_app_column());
+        w.setOr(true);
+        for (String appcode : loggedUserContext.getUserOwnerAppcodes(null)) {
+          w.addCondition(table_definition.getOwner_app_column(), ConditionOperation.$eq, appcode);
+        }
+        sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+        w.buildParameters(parameters, this.getTypeConverterFactory());
       }
 
       if (!docount && table_query.hasOrder_by()) {

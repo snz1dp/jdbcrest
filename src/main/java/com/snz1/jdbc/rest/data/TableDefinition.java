@@ -97,6 +97,22 @@ public class TableDefinition implements Serializable {
     return StringUtils.isNotBlank(this.mender_name_column);
   }
 
+  // 所需应用代码字段
+  private String owner_app_column;
+
+  // 所有数据权限代码
+  private String all_data_role;
+
+  // 是否有所属应用字段
+  public boolean hasOwner_app_column() {
+    return StringUtils.isNotBlank(this.owner_app_column);
+  }
+
+  // 所有数据权限代码
+  public boolean hasAll_data_role() {
+    return StringUtils.isNotBlank(this.all_data_role);
+  }
+
   public boolean inColumn(String name) {
     if (this.hasCreated_time_column() &&
       StringUtils.equalsIgnoreCase(name, this.getCreated_time_column())
