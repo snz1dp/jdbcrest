@@ -62,8 +62,7 @@ public abstract class RequestUtils {
   }
 
   // 从请求中获取排序
-  public static List<JdbcQueryRequest.OrderBy> fetchQueryRequestOrderBy(HttpServletRequest request, List<JdbcQueryRequest.OrderBy> order_by) {
-    String[] orderby_vals = request.getParameterValues(Constants.ORDERBY_ARG);
+  public static List<JdbcQueryRequest.OrderBy> fetchQueryRequestOrderBy(String[] orderby_vals, List<JdbcQueryRequest.OrderBy> order_by) {
     if (orderby_vals == null || orderby_vals.length == 0) {
       return order_by;
     }
@@ -89,9 +88,17 @@ public abstract class RequestUtils {
     return order_by;
   }
 
+  // 从请求中获取排序
+  public static List<JdbcQueryRequest.OrderBy> fetchQueryRequestOrderBy(HttpServletRequest request, List<JdbcQueryRequest.OrderBy> order_by) {
+    String[] orderby_vals = request.getParameterValues(Constants.ORDERBY_ARG);
+    if (orderby_vals == null || orderby_vals.length == 0) {
+      return order_by;
+    }
+    return fetchQueryRequestOrderBy(orderby_vals, order_by);
+  }
+
   // 从请求中获取分组
-  public static List<JdbcQueryRequest.GroupBy> fetchQueryRequestGroupBy(HttpServletRequest request, List<JdbcQueryRequest.GroupBy> group_by) {
-    String[] groupby_vals = request.getParameterValues(Constants.GROUPBY_ARG);
+  public static List<JdbcQueryRequest.GroupBy> fetchQueryRequestGroupBy(String[] groupby_vals, List<JdbcQueryRequest.GroupBy> group_by) {
     if (groupby_vals == null || groupby_vals.length == 0) {
       return group_by;
     }
@@ -130,6 +137,16 @@ public abstract class RequestUtils {
     }
 
     return group_by;
+  }
+
+  // 从请求中获取分组
+  public static List<JdbcQueryRequest.GroupBy> fetchQueryRequestGroupBy(HttpServletRequest request, List<JdbcQueryRequest.GroupBy> group_by) {
+    String[] groupby_vals = request.getParameterValues(Constants.GROUPBY_ARG);
+    if (groupby_vals == null || groupby_vals.length == 0) {
+      return group_by;
+    }
+
+    return fetchQueryRequestGroupBy(groupby_vals, group_by);
   }
 
   // 从请求中获取查询字段描述
