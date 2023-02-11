@@ -114,7 +114,7 @@ public class WhereCloumn implements Serializable, Cloneable {
         return String.format("%s %s (%s)", this.column, operation.operator(), parambuf.toString());
       }
     } else {
-      StringBuffer sqlbuf = new StringBuffer("(");
+      StringBuffer sqlbuf = new StringBuffer("");
       boolean where_append = false;
       for (WhereCloumn.Condition condition : this.conditions) {
         if (where_append) {
@@ -154,7 +154,7 @@ public class WhereCloumn implements Serializable, Cloneable {
           sqlbuf.append(String.format("%s %s (%s)", column_name, operation.operator(), parambuf.toString()));
         }
       }
-      sqlbuf.append(")");
+      sqlbuf.append("");
       return sqlbuf.toString();
     }
   }
