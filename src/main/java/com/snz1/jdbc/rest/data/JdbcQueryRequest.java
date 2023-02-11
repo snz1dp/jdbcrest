@@ -6,8 +6,6 @@ import java.sql.JDBCType;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
 import lombok.Data;
@@ -212,101 +210,6 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
           parameters.add(Array.get(this.getArray(), i));
         }
       }
-    }
-
-  }
-
-  public static enum ConditionOperation {
-
-    $eq("=", 1),
-    $gt(">", 1),
-    $gte(">=", 1),
-    $lt("<", 1),
-    $lte("<=", 1),
-    $ne("<>", 1),
-    $in("in", 3),
-    $nin("not in", 3),
-    $isnull("is null", 0),
-    $notnull("is not null", 0),
-    $istrue("is true", 0),
-    $nottrue("is not true", 0),
-    $isfalse("is false", 0),
-    $notfalse("is not false", 0),
-    $like("like", 1),
-    $ilike("ilike", 1),
-    $nlike("not like", 1),
-    $nilike("not ilike", 1),
-    $between("between", 2),
-
-    ;
-
-    private String operator;
-
-    private int parameter_count = 1;
-
-    private ConditionOperation(String operator, int parameter_count) {
-      this.operator = operator;
-      this.parameter_count = parameter_count;
-    }
-
-    public String operator() {
-      return this.operator;
-    }
-
-    public int parameter_count() {
-      return this.parameter_count;
-    }
-
-  }
-  
-  @Data
-  public static class SelectMeta implements Serializable {
-
-    // 是否去除重复
-    private boolean distinct;
-
-    // 统计
-    private String count;
-
-    // 查询字段
-    private List<SelectColumn> columns = new LinkedList<>();
-
-    // 是否有总计
-    public boolean hasCount() {
-      return StringUtils.isNotBlank(this.count);
-    }
-
-    public boolean hasColumns() {
-      return this.columns.size() > 0;
-    }
-
-    // 列
-    @Data
-    public static class SelectColumn implements Serializable {
-
-      // 字段名
-      private String column;
-
-      // 函数
-      private String function;
-
-      // 定义AS
-      private String as;
-
-      public static SelectColumn of(String name) {
-        SelectColumn ret = new SelectColumn();
-        ret.setColumn(name);
-        return ret;
-      }
-
-      public boolean hasAs() {
-        return as != null;
-      }
-
-      public boolean hasFunction() {
-        return function != null;
-      }
-
     }
 
   }

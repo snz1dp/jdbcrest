@@ -19,10 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.reflect.TypeToken;
 import com.snz1.jdbc.rest.Constants;
+import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SelectMeta;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import gateway.api.JsonUtils;
@@ -124,7 +126,7 @@ public abstract class RequestUtils {
             throw new IllegalArgumentException(String.format("分组字段%s的条件参数错误：%s", groupby_field, having_val));
           }
 
-          JdbcQueryRequest.ConditionOperation hop = JdbcQueryRequest.ConditionOperation.valueOf(parsed_vals[2]);
+          ConditionOperation hop = ConditionOperation.valueOf(parsed_vals[2]);
           groupby_col.setHaving(JdbcQueryRequest.Having.of(
             parsed_vals[0], parsed_vals[1], hop, parsed_vals[3]
           ));
@@ -150,7 +152,7 @@ public abstract class RequestUtils {
   }
 
   // 从请求中获取查询字段描述
-  public static JdbcQueryRequest.SelectMeta fetchQueryRequestSelect(HttpServletRequest request, JdbcQueryRequest.SelectMeta select_meta) {
+  public static SelectMeta fetchQueryRequestSelect(HttpServletRequest request, SelectMeta select_meta) {
     // 获取是否去除重行
     String distinct_val = request.getParameter(Constants.DISTINCT_ARG);
     if (distinct_val != null) {
@@ -177,7 +179,7 @@ public abstract class RequestUtils {
         String select_fields[] = StringUtils.split(select_val, ',');
         if (select_fields == null || select_fields.length == 0) continue;
         for (String select_field : select_fields) {
-          JdbcQueryRequest.SelectMeta.SelectColumn select_column;
+          SelectMeta.SelectColumn select_column;
           int function_start = StringUtils.indexOf(select_field, ':', 1);
           if (function_start > 0) {
             String function_name = select_field.substring(0, function_start);
@@ -188,11 +190,11 @@ public abstract class RequestUtils {
               as_name = select_field.substring(as_start + 3);
               select_field = select_field.substring(0, as_start);
             }
-            select_column = JdbcQueryRequest.SelectMeta.SelectColumn.of(select_field);
+            select_column = SelectMeta.SelectColumn.of(select_field);
             select_column.setFunction(function_name);
             select_column.setAs(as_name);
           } else {
-            select_column = JdbcQueryRequest.SelectMeta.SelectColumn.of(select_field);
+            select_column = SelectMeta.SelectColumn.of(select_field);
           }
           select_meta.getColumns().add(select_column);
         }
@@ -288,24 +290,30 @@ public abstract class RequestUtils {
       WhereCloumn where_column = WhereCloumn.of(param_name);
       where_column.setType(column_type);
 
+      String logic_type = request.getParameter(String.format("_where.%s.type", param_name));
+      if (param_values.length > 0 && StringUtils.isNotBlank(logic_type) && StringUtils.equalsIgnoreCase("or", logic_type)) {
+        where_column.setOr(Boolean.TRUE);
+      }
+
       for (String param_value : param_values) {
         if (StringUtils.startsWith(param_value, "$")) {
           int operation_end = param_value.indexOf('.', 1);
           if (operation_end < 0) {
-            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value);
+            ConditionOperation op = ConditionOperation.valueOf(param_value);
             if (op.parameter_count() > 0) {
               throw new IllegalArgumentException(String.format("查询条件参数语法不正确: %s=%s", param_name, param_value));
             }
             where_column.addCondition(op, null);
           } else {
-            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value.substring(0, operation_end));
+            ConditionOperation op = ConditionOperation.valueOf(param_value.substring(0, operation_end));
             String opval = param_value.substring(operation_end + 1);
             where_column.addCondition(op, opval);
           }
         } else {
-          where_column.addCondition(JdbcQueryRequest.ConditionOperation.$eq, param_value);
+          where_column.addCondition(ConditionOperation.$eq, param_value);
         }
       }
+
       where_condition.add(where_column);
     }
     return where_condition;
@@ -445,18 +453,18 @@ public abstract class RequestUtils {
         if (StringUtils.startsWith(param_value, "$")) {
           int operation_end = param_value.indexOf('.', 1);
           if (operation_end < 0) {
-            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value);
+            ConditionOperation op = ConditionOperation.valueOf(param_value);
             if (op.parameter_count() > 0) {
               throw new IllegalArgumentException(String.format("查询条件参数语法不正确: %s=%s", param_name, param_value));
             }
             where_column.addCondition(op, null);
           } else {
-            JdbcQueryRequest.ConditionOperation op = JdbcQueryRequest.ConditionOperation.valueOf(param_value.substring(0, operation_end));
+            ConditionOperation op = ConditionOperation.valueOf(param_value.substring(0, operation_end));
             String opval = param_value.substring(operation_end + 1);
             where_column.addCondition(op, opval);
           }
         } else {
-          where_column.addCondition(JdbcQueryRequest.ConditionOperation.$eq, param_value);
+          where_column.addCondition(ConditionOperation.$eq, param_value);
         }
       }
       where_condition.add(where_column);

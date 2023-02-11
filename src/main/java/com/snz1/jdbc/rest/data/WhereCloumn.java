@@ -6,8 +6,9 @@ import java.sql.JDBCType;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.snz1.jdbc.rest.data.JdbcQueryRequest.ConditionOperation;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
 import lombok.Data;
@@ -20,6 +21,8 @@ public class WhereCloumn implements Serializable, Cloneable {
   private WhereCloumn.Condition condition;
 
   private JDBCType type;
+
+  private Boolean or;
 
   private List<WhereCloumn.Condition> conditions;
 
@@ -64,6 +67,10 @@ public class WhereCloumn implements Serializable, Cloneable {
     }
   }
 
+  private boolean testOr() {
+    return this.getOr() != null && this.getOr();
+  }
+
   public String toWhereSQL(JdbcTypeConverterFactory factory) {
     if (this.condition != null) {
       ConditionOperation operation = this.condition.getOperation();
@@ -92,17 +99,25 @@ public class WhereCloumn implements Serializable, Cloneable {
       boolean where_append = false;
       for (WhereCloumn.Condition condition : this.conditions) {
         if (where_append) {
-          sqlbuf.append(" and ");
+          if (this.testOr()) {
+            sqlbuf.append(" or ");
+          } else {
+            sqlbuf.append(" and ");
+          }
         } else {
           where_append = true;
         }
         ConditionOperation operation = condition.getOperation();
+        String column_name = this.column;
+        if (condition.hasColumn()) {
+          column_name = condition.getColumn();
+        }
         if (operation.parameter_count() == 0) {
-          sqlbuf.append(String.format("%s %s", this.column, operation.operator()));
+          sqlbuf.append(String.format("%s %s", column_name, operation.operator()));
         } else if (operation.parameter_count() == 1) {
-          sqlbuf.append(String.format("%s %s ?", this.column, operation.operator()));
+          sqlbuf.append(String.format("%s %s ?", column_name, operation.operator()));
         } else if (operation.parameter_count() == 2) {
-          sqlbuf.append(String.format("%s %s ? and ?", this.column, operation.operator()));
+          sqlbuf.append(String.format("%s %s ? and ?", column_name, operation.operator()));
         } else {
           if (condition.getArray() == null) {
             condition.setArray(factory.convertArray(condition.getValue(), this.type));
@@ -117,7 +132,7 @@ public class WhereCloumn implements Serializable, Cloneable {
             }
             parambuf.append("?");
           }
-          sqlbuf.append(String.format("%s %s (%s)", this.column, operation.operator(), parambuf.toString()));
+          sqlbuf.append(String.format("%s %s (%s)", column_name, operation.operator(), parambuf.toString()));
         }
       }
       sqlbuf.append(")");
@@ -166,12 +181,24 @@ public class WhereCloumn implements Serializable, Cloneable {
   @Data
   public static class Condition implements Serializable {
 
+    private String column;
+
     private ConditionOperation operation;
 
     private Object value;
 
     @JsonIgnore
     private Object array;
+
+    public static Condition of(String column) {
+      Condition cod = new Condition();
+      cod.setColumn(column);
+      return cod;
+    }
+
+    public boolean hasColumn() {
+      return StringUtils.isNotBlank(this.column);
+    }
 
     @JsonIgnore
     public int getArray_length() {

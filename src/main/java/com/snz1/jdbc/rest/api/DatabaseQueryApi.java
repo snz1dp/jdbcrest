@@ -19,6 +19,7 @@ import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
@@ -142,7 +143,7 @@ public class DatabaseQueryApi {
         if (col != null) {
           where_col.setType(col.getJdbc_type());
         }
-        where_col.addCondition(JdbcQueryRequest.ConditionOperation.$eq, key_values[i]);
+        where_col.addCondition(ConditionOperation.$eq, key_values[i]);
         table_query.getWhere().add(where_col);
       } 
     } else {
@@ -151,7 +152,7 @@ public class DatabaseQueryApi {
       if (col != null) {
         where_col.setType(col.getJdbc_type());
       }
-      where_col.addCondition(JdbcQueryRequest.ConditionOperation.$eq, key);
+      where_col.addCondition(ConditionOperation.$eq, key);
       table_query.getWhere().add(where_col);
     }
 

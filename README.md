@@ -194,6 +194,7 @@ curl "http://localhost:7188/jdbc/rest/api/tables/mytable"
 | _result.column.&lt;field&gt;.alais | 字符串  |  否     |      | QueryString  | 设置指定的字段返回为其他名称          |
 | jdbcrest-primary-key | 字符串  | 否 |       | Header | 请求头参数，自定义主键字段         |
 | jdbcrest-key-splitter | 字符串  | 否 |       | Header | 请求头参数，自定义主键分割符，默认为`\|`         |
+| _where.&lt;field&gt;.type | 字符串  | 否 |       | Header | 请求头参数，字段多值条件逻辑可选值：`and`、`or` |
 
 - 应答格式：
 
