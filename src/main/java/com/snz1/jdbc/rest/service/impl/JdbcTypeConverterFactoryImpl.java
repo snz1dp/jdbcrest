@@ -217,7 +217,7 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
       return this.convertList(new LinkedList<>((Set<?>)input), type);
     } else if (input instanceof List) {
       return this.convertList((List<?>)input, type);
-    } else if (input instanceof Array) {
+    } else if (input.getClass().isArray()) {
       return this.convertList(Arrays.asList((Array)input), type);
     } else {
       return this.convertList(Arrays.asList(input), type);
