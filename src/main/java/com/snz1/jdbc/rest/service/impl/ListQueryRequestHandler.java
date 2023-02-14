@@ -46,6 +46,15 @@ public class ListQueryRequestHandler extends AbstractJdbcQueryRequestHandler<Jdb
       primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
       table_index = doFetchTableIndexs(conn, table_query.getTable_name());
     }
+
+    // 如果有默认配置字段则设置到请求对象中
+    if (table_query.hasDefinition() && table_query.getDefinition().hasDefault_columns()) {
+      table_query.getDefinition().getDefault_columns().forEach((k, v) -> {
+        if (table_query.getResult().getColumns().containsKey(k)) return;
+        table_query.getResult().getColumns().put(k, v.clone());
+      });
+    }
+
     SQLDialectProvider sql_dialect_provider = this.getSqlDialectProvider();
     PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
     try {

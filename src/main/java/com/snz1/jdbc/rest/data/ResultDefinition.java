@@ -43,7 +43,7 @@ public class ResultDefinition implements Serializable {
 
   // 列
   @Data
-  public static class ResultColumn implements Serializable {
+  public static class ResultColumn implements Serializable, Cloneable {
 
     // 字段名
     private String name;
@@ -61,6 +61,14 @@ public class ResultDefinition implements Serializable {
 
     public boolean hasAlias() {
       return alias != null;
+    }
+
+    public ResultColumn clone() {
+      try {
+        return (ResultColumn)super.clone();
+      } catch(CloneNotSupportedException e) {
+        throw new IllegalStateException(e.getMessage(), e);
+      }
     }
 
   }

@@ -3,6 +3,8 @@ package com.snz1.jdbc.rest.data;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -47,6 +49,7 @@ public class TableDefinition implements Serializable {
     return this.default_where != null && this.default_where.size() > 0;
   }
 
+  // 复制缺省条件
   public List<WhereCloumn> copyDefault_where() {
     final List<WhereCloumn> ret = new LinkedList<>();
     this.default_where.forEach(w -> {
@@ -102,6 +105,23 @@ public class TableDefinition implements Serializable {
 
   // 所有数据权限代码
   private String all_data_role;
+
+  // 字段
+  private Map<String, ResultDefinition.ResultColumn> default_columns = new HashMap<String, ResultDefinition.ResultColumn>();
+
+  // 复制缺省的字段
+  public Map<String, ResultDefinition.ResultColumn> copyDefault_columns() {
+    final Map<String, ResultDefinition.ResultColumn> ret = new HashMap<>();
+    this.default_columns.forEach((k, v) -> {
+      ret.put(k, v.clone());
+    });
+    return ret;
+  }
+
+  // 是否有字段定义
+  public boolean hasDefault_columns() {
+    return this.default_columns != null && this.default_columns.size() > 0;
+  }
 
   // 是否有所属应用字段
   public boolean hasOwner_app_column() {
