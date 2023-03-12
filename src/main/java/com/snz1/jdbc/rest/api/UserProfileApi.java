@@ -1,18 +1,25 @@
 package com.snz1.jdbc.rest.api;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.binary.Base64;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,14 +41,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
-import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "用户帐户")
 @RestController
-@Slf4j
 @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
 public class UserProfileApi {
+
+  private static final String HEAD_IMAGE_ARG = "head_img";
 
   @Autowired
   private LoggedUserContext loggedUserContext;
@@ -58,66 +64,57 @@ public class UserProfileApi {
   @Autowired
   private RunConfig runConfig;
 
-  private byte[] defaultUserHeadImage;
-
-  private void loadDefaultUserImage() {
-    ClassPathResource resource = new ClassPathResource("data/user.png");
-    try {
-      this.defaultUserHeadImage = IOUtils.toByteArray(resource.getInputStream());
-    } catch (IOException e) {
-      throw new IllegalStateException("无法加载用户缺省头像", e);
-    }
-  }
-
   public UserProfileApi () {
-    this.loadDefaultUserImage();
   }
 
+  @Operation(summary = "获得当前登录用户头像")
   @GetMapping(path = "/user/headimg")
-  @Operation(summary = "当前用户头像")
-  @PreAuthorize("isAuthenticated()")
-  public byte[] user_headimg() {
-    UserInfo user = loggedUserContext.getLoginUserInfo();
-    if (user.getExtends_properties() == null || !user.getExtends_properties().containsKey("head_img")) {
-      return this.defaultUserHeadImage;
-    }
-    String head_img_datauri = null;
-    try {
-      head_img_datauri = (String)user.getExtends_properties().get("head_img");
-      if (head_img_datauri.startsWith("data:image/jpeg")) {
-        head_img_datauri = head_img_datauri.substring("data:image/jpeg;base64,".length());
-      } else if (head_img_datauri.startsWith("data:image/png")) {
-        head_img_datauri = head_img_datauri.substring("data:image/png;base64,".length());
-      } else if (head_img_datauri.startsWith("data:image/gif")) {
-        head_img_datauri = head_img_datauri.substring("data:image/gif;base64,".length());
-      } else {
-        throw new IllegalStateException("用户头像图片格式错误");
+  public void userHeadimg(HttpServletResponse response) throws IOException {
+		User logged_user = loggedUserContext.getLoggedUser();
+    gateway.sc.v2.User user_data = userManager.getUserById(logged_user.getUserid());
+    Map<String, Object> user_exts = user_data.getExtends_properties();
+    if (user_exts == null || !user_exts.containsKey("head_img")) {
+      renderDefaultUserImage(response);
+    } else {
+      ImageStream image_stream = null;
+      try {
+        image_stream = decodeDataURIAsImage((String)user_exts.get("head_img"));
+        if (StringUtils.equals("error", image_stream.contentType)) {
+          renderDefaultUserImage(response);
+        } else if (StringUtils.equals("redirect", image_stream.contentType)) {
+          response.sendRedirect(IOUtils.toString(image_stream.inputStream, "UTF-8"));
+        } else {
+          response.setContentType(image_stream.contentType);
+          try {
+            IOUtils.copy(image_stream.inputStream, response.getOutputStream());
+          } finally {
+            IOUtils.closeQuietly(image_stream.inputStream);
+          }
+          response.getOutputStream().flush();
+        }
+      } finally {
+        if (image_stream != null && image_stream.inputStream != null) {
+          IOUtils.closeQuietly(image_stream.inputStream);
+        }
       }
-      return Base64.decodeBase64(head_img_datauri);
-    } catch(Throwable e) {
-      if (log.isDebugEnabled()) {
-        log.debug("错误内容: " + head_img_datauri);
-      }
-      return this.defaultUserHeadImage;
-    }
+		}
   }
 
   @GetMapping(path = "/user/profile")
   @Operation(summary = "当前用户信息")
   @PreAuthorize("isAuthenticated()")
-  public Return<UserInfo> userinfo() {
-    UserInfo userinfo = loggedUserContext.getLoginUserInfo(false);
-		Set<String> roles = new HashSet<>(userManager.getUserRoles(
-      userinfo.getUserid(), IdType.id, null, true, runConfig.getApplicationCode()
-    ));
-    userinfo.setRoles(new LinkedList<>(roles));
-    return Return.wrap(userinfo);
+  public Return<gateway.sc.v2.User> userinfo() {
+    User logged_user = loggedUserContext.getLoggedUser();
+    gateway.sc.v2.User user_data = userManager.getUserById(logged_user.getUserid());
+		Set<String> roles = new HashSet<>(logged_user.getRoles());
+    user_data.setRoles(new LinkedList<>(roles));
+    return Return.wrap(user_data);
   }
 
-  @Operation(summary = "修改人员帐号")
+  @Operation(description = "修改人员帐号")
 	@PostMapping("/user/profile")
   @PreAuthorize("isAuthenticated()")
-	public Return<UserInfo> updateUser(
+	public Return<gateway.sc.v2.User> updateUser(
     @Parameter(description = "确认密码")
     @RequestParam(value = "verify_password", required = false)
     String verify_password,
@@ -131,7 +128,7 @@ public class UserProfileApi {
 		@RequestBody
 		gateway.sc.v2.User user
 	) {
-    UserInfo ouser = loggedUserContext.getLoginUserInfo(false);
+    User ouser = loggedUserContext.getLoggedUser();
 
     Validate.isTrue(
       userManager.verifyUserPassword(
@@ -144,12 +141,22 @@ public class UserProfileApi {
       throw new IllegalArgumentException("新的密码与确认密码不一致");
     }
 
-    gateway.sc.v2.User existed = userManager.getUserById(ouser.getUser_id());
+    gateway.sc.v2.User existed = userManager.getUserById(ouser.getUserid());
     Validate.notNull(existed, "用户数据不存在");
 
     existed.setName(user.getName());
     existed.setRegist_mobile(user.getRegist_mobile());
     existed.setRegist_email(user.getRegist_email());
+
+    if (existed.getExtends_properties() == null) {
+      existed.setExtends_properties(new HashMap<>());
+    }
+    if (user.getExtends_properties() != null && user.getExtends_properties().containsKey(HEAD_IMAGE_ARG)) {
+      existed.getExtends_properties().put(HEAD_IMAGE_ARG,
+        user.getExtends_properties().get(HEAD_IMAGE_ARG));
+    } else {
+      existed.getExtends_properties().put(HEAD_IMAGE_ARG, "");
+    }
 
 		user = userManager.updateUser(existed);
 
@@ -157,7 +164,7 @@ public class UserProfileApi {
       userManager.updateUserPassword(user.getUser_id(), IdType.id, new_password);
     }
 
-		return Return.wrap(loggedUserContext.getLoginUserInfo());
+		return Return.wrap(user);
 	}
 
   @Operation(summary = "获取人员权限角色")
@@ -211,6 +218,52 @@ public class UserProfileApi {
       }
     }
     return Return.wrap(function_codes);
+  }
+
+  private static void renderDefaultUserImage(HttpServletResponse response) throws IOException {
+		response.setContentType(MediaType.IMAGE_PNG_VALUE);
+		InputStream image_fin = new ClassPathResource("data/user.png").getInputStream();
+		try {
+			IOUtils.copy(image_fin, response.getOutputStream());
+		} finally {
+			IOUtils.closeQuietly(image_fin);
+		}
+		response.getOutputStream().flush();
+	}
+
+  private static ImageStream decodeDataURIAsImage(String imagedata) {
+    ImageStream image_stream = new ImageStream();
+    if (imagedata.startsWith("data:image/jpeg")) {
+      image_stream.contentType = MediaType.IMAGE_JPEG_VALUE;
+      imagedata = imagedata.substring("data:image/jpeg;base64,".length());
+      image_stream.inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(imagedata));
+    } else if (imagedata.startsWith("data:image/png")) {
+      image_stream.contentType = MediaType.IMAGE_PNG_VALUE;
+      imagedata = imagedata.substring("data:image/png;base64,".length());
+      image_stream.inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(imagedata));
+    } else if (imagedata.startsWith("data:image/gif")) {
+      image_stream.contentType = MediaType.IMAGE_GIF_VALUE;
+      imagedata = imagedata.substring("data:image/gif;base64,".length());
+      image_stream.inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(imagedata));
+    } else if (imagedata.startsWith("data:image/svg+xml")) {
+      image_stream.contentType = "image/svg+xml";
+      imagedata = imagedata.substring("data:image/svg+xml;base64,".length());
+      image_stream.inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(imagedata));
+    } else if (imagedata.startsWith("http")) {
+      image_stream.contentType = "redirect";
+      image_stream.inputStream = new ByteArrayInputStream(imagedata.getBytes());
+    } else {
+      image_stream.contentType = "error";
+    }
+    return image_stream;
+  }
+
+  public static class ImageStream {
+    
+    public String contentType;
+
+    public InputStream inputStream;
+
   }
 
 }

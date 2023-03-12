@@ -17,7 +17,6 @@ import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -89,8 +88,7 @@ public class DeleteRequestHandler extends AbstractManipulationRequestHandler<Int
 
       if (tdf != null && tdf.hasOwner_id_column()) {
         if (loggedUserContext.isUserLogged()) {
-          UserInfo logged_user = loggedUserContext.getLoginUserInfo();
-          ps.setObject(i, logged_user.getIdByType(tdf.getOwner_id_column().getIdtype()));
+          ps.setObject(i, loggedUserContext.getLoggedIdByType(tdf.getOwner_id_column().getIdtype()));
         } else {
           ps.setObject(i, null);
         }

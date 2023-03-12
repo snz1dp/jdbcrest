@@ -30,6 +30,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   @Resource
   private JdbcTypeConverterFactory typeConverterFactory;
 
+  @Resource
+  private UserRoleVerifier userRoleVerifier;
+
   public JdbcTypeConverterFactory getTypeConverterFactory() {
     return typeConverterFactory;
   }
@@ -156,7 +159,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         }
         sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
         if (loggedUserContext.isUserLogged()) { 
-          parameters.add(loggedUserContext.getLoginUserInfo().getIdByType(table_definition.getOwner_id_column().getIdtype()));
+          parameters.add(loggedUserContext.getLoggedIdByType(table_definition.getOwner_id_column().getIdtype()));
         } else {
           parameters.add(null);
         }
@@ -176,11 +179,12 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       if (table_definition != null && table_definition.hasOwner_app_column() && loggedUserContext.isUserLogged() && (
-        !table_definition.hasAll_data_role() || !loggedUserContext.hasRole(table_definition.getAll_data_role()) 
+        !table_definition.hasAll_data_role() || !userRoleVerifier.isUserInAnyRole(
+          loggedUserContext.getLoggedUser(), table_definition.getAll_data_role()) 
       )) {
         WhereCloumn w = WhereCloumn.of(table_definition.getOwner_app_column());
         w.setOr(true);
-        for (String appcode : loggedUserContext.getUserOwnerAppcodes(null)) {
+        for (String appcode : userRoleVerifier.getUserOwnerAppcodes(loggedUserContext.getLoggedUser())) {
           w.addCondition(table_definition.getOwner_app_column(), ConditionOperation.$eq, appcode);
         }
         sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));

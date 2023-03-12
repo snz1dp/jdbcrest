@@ -4,7 +4,7 @@
 	<groupId>com.snz1</groupId>
 	<artifactId>jdbcrest</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<url>http://maven.apache.org</url>
 
 	<parent>

@@ -19,10 +19,10 @@ import org.springframework.stereotype.Service;
 import com.snz1.jdbc.rest.service.JdbcTypeConverter;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.utils.Configurer;
 import com.snz1.utils.JsonUtils;
 import com.snz1.utils.WebUtils;
+import com.snz1.web.security.User;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,62 +94,63 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
         String endpath = var_path[1];
         if (StringUtils.equals(endpath, "userid")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
-            var_val = userinfo.getUser_id();
+            User userinfo = this.loggedUserContext.getLoggedUser();
+            var_val = userinfo.getUserid();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "username")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
-            var_val = userinfo.getUser_name();
+            User userinfo = this.loggedUserContext.getLoggedUser();
+            var_val = userinfo.getAccount_name();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "nickname")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getDisplay_name();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "employeeid")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getEmployeeid();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "idcard")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getIdcard();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "mobile")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getRegist_mobile();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "email")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getRegist_email();
           } else {
             var_val = default_val;
           }
         } else if (StringUtils.equals(endpath, "code")) {
           if (this.loggedUserContext.isUserLogged()) {
-            UserInfo userinfo = this.loggedUserContext.getLoginUserInfo();
+            User userinfo = this.loggedUserContext.getLoggedUser();
             var_val = userinfo.getCode();
           } else {
             var_val = default_val;
           }
         }
       }
+
       input_buf.append(var_val);
       var_index = var_end + 1;
       // 重新开始找

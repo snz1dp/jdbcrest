@@ -19,7 +19,6 @@ import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -58,39 +57,22 @@ public class UpdateRequestHandler extends AbstractManipulationRequestHandler<int
       input_data.put(definition.getUpdated_time_column(), updateRequest.getRequest_time());
     }
 
-    UserInfo logged_user = null;
-    if (loggedUserContext.isUserLogged()) {
-      logged_user = loggedUserContext.getLoginUserInfo();
-    }
-
     if (definition.hasUpdated_time_column()) {
       input_data.put(definition.getUpdated_time_column(), updateRequest.getRequest_time());
     }
 
     if (definition.hasMender_id_column()) {
       TableDefinition.UserIdColumn userid = definition.getMender_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
+      input_data.put(userid.getName(), loggedUserContext.getLoggedIdByType(userid.getIdtype()));
     }
 
     if (definition.hasMender_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getMender_name_column(), null);
-      }
+      input_data.put(definition.getMender_name_column(), loggedUserContext.getLoggedName());
     }
 
     if (definition.hasOwner_id_column()) {
       TableDefinition.UserIdColumn userid = definition.getOwner_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
+      input_data.put(userid.getName(), loggedUserContext.getLoggedIdByType(userid.getIdtype()));
     }
 
     return input_data;

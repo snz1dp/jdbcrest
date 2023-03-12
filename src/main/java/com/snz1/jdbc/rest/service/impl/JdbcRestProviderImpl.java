@@ -612,7 +612,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   private void doPrepareSQLServiceInputParameters(SQLServiceRequest sql_request, Map<String, Object> input_wrap) {
     if (loggedUserContext.isUserLogged()) {
-      input_wrap.put("user", loggedUserContext.getLoginUserInfo());
+      input_wrap.put("user", loggedUserContext.getLoggedUser());
     }
     Map<String, Object> request = new HashMap<>(3);
     request.put("time", sql_request.getRequest_time());

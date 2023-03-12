@@ -19,7 +19,6 @@ import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.SQLDialectProvider;
-import com.snz1.jdbc.rest.service.LoggedUserContext.UserInfo;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;
@@ -62,43 +61,22 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
       input_data.put(definition.getUpdated_time_column(), insertRequest.getRequest_time());
     }
 
-    UserInfo logged_user = null;
-    if (loggedUserContext.isUserLogged()) {
-      logged_user = loggedUserContext.getLoginUserInfo();
-    }
-
     if (definition.hasCreator_id_column()) {
       TableDefinition.UserIdColumn userid = definition.getCreator_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
+      input_data.put(userid.getName(), loggedUserContext.getLoggedIdByType(userid.getIdtype()));
     }
 
     if (definition.hasCreator_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getCreator_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getCreator_name_column(), null);
-      }
+      input_data.put(definition.getCreator_name_column(), loggedUserContext.getLoggedName());
     }
 
     if (definition.hasMender_id_column()) {
       TableDefinition.UserIdColumn userid = definition.getMender_id_column();
-      if (logged_user != null) {
-        input_data.put(userid.getName(), logged_user.getIdByType(userid.getIdtype()));
-      } else {
-        input_data.put(userid.getName(), null);
-      }
+      input_data.put(userid.getName(), loggedUserContext.getLoggedIdByType(userid.getIdtype()));
     }
 
     if (definition.hasMender_name_column()) {
-      if (logged_user != null) {
-        input_data.put(definition.getMender_name_column(), logged_user.getDisplay_name());
-      } else {
-        input_data.put(definition.getMender_name_column(), null);
-      }
+      input_data.put(definition.getMender_name_column(), loggedUserContext.getLoggedName());
     }
     return input_data;
   }
