@@ -91,6 +91,7 @@ public class AppPublishApi {
     Map<String, Object> version_data = new LinkedHashMap<>();
     ret.put("app", version_data);
 
+    String deployment_id = appInfoResolver.getDeploymentId();
     version_data.put("product_code", appVersion.getProduct_code());
     version_data.put("product_name", appVersion.getProduct_name());
     version_data.put("company_name", appVersion.getCompany_name());
@@ -98,6 +99,7 @@ public class AppPublishApi {
     version_data.put("contact_email", appVersion.getContact_email());
     version_data.put("legal_copyright", appVersion.getLegal_copyright());
     version_data.put("product_version", appVersion.getProduct_version());
+    version_data.put("deployment_id", deployment_id);
     if (StringUtils.isNotBlank(runConfig.getService_name())) {
       version_data.put("service_name", runConfig.getService_name());
     } else {

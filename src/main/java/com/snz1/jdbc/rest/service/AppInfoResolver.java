@@ -23,4 +23,7 @@ public interface AppInfoResolver {
   // 是否有授权
   boolean hasLicense();
 
+  // 获取部署ID
+  String getDeploymentId();
+
 }

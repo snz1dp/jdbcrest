@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.annotation.Resource;
 
@@ -70,6 +71,23 @@ public class AppInfoResolverImpl implements AppInfoResolver {
       log.info("授权失败：" + e.getMessage(), e);
     }
     return null;
+  }
+
+  @Override
+  public String getDeploymentId() {
+    String deployment_id = null;
+    if (runConfig.isPersistenceConfig()) {
+      deployment_id = Configurer.getAppProperty(Constants.DEPLOYMENT_ID_ARG, null);
+      if (StringUtils.isBlank(deployment_id)) {
+        Configurer.setAppProperty(Constants.DEPLOYMENT_ID_ARG, deployment_id = StringUtils.replace(
+          UUID.randomUUID().toString(), "-", ""
+        ));
+        deployment_id = Configurer.getAppProperty(Constants.DEPLOYMENT_ID_ARG, null);
+      }
+    } else {
+      deployment_id = runConfig.getDeployment_id();
+    }
+    return deployment_id;
   }
 
   @Override

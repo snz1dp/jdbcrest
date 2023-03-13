@@ -41,6 +41,9 @@ public class RunConfig {
   @Value("${app.license.code:${LICENSE_CODE:<NOT SUPPORT>}}")
   private String license_code;
 
+  @Value("${app.deployment.id:${DEPLOYMENT_ID:}}")
+  private String deployment_id;
+
   @Value("${app.sql.location:${SQL_LOCATION:}}")
   private String sql_location;
 
@@ -95,6 +98,10 @@ public class RunConfig {
 
   public String getLicense_code() {
     return license_code;
+  }
+
+  public String getDeployment_id() {
+    return deployment_id;
   }
 
   public boolean isPersistenceConfig() {

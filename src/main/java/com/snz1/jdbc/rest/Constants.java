@@ -101,4 +101,7 @@ public abstract class Constants {
   // 授权代码
   public static final String LICENSE_CODE_ARG = "license.code";
 
+  // 部署ID
+  public static final String DEPLOYMENT_ID_ARG = "deployment.id";
+
 }
