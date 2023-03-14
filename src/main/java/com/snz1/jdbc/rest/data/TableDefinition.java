@@ -22,6 +22,13 @@ public class TableDefinition implements Serializable {
   // 数据表别名（实际名称)
   private String alias;
 
+  // 是否只读
+  private Boolean readonly;
+
+  public boolean isReadonly() {
+    return this.readonly != null && this.readonly;
+  }
+
   // 是否有别名
   public boolean hasAlias_name() {
     return StringUtils.isNotBlank(alias);

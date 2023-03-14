@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public abstract class AbstractRequestHandler<T> implements ConnectionCallback<T>{
+public abstract class AbstractRequestHandler<T> implements ConnectionCallback<T> {
 
   private SQLDialectProvider sqlDialectProvider;
   
@@ -21,5 +21,13 @@ public abstract class AbstractRequestHandler<T> implements ConnectionCallback<T>
   private LoggedUserContext loggedUserContext;
 
   private AppInfoResolver appInfoResolver;
-    
+
+  public boolean isReadonly() {
+    return this.appInfoResolver.isGlobalReadonly();
+  }
+
+  public boolean isWriteable() {
+    return !this.isReadonly();
+  }
+
 }

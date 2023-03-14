@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
+import org.apache.commons.lang3.Validate;
 
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
@@ -46,6 +47,13 @@ public class DeleteRequestHandler extends AbstractManipulationRequestHandler<Int
     ManipulationRequest deleteRequest = this.getRequest();
     TableDefinition tdf = deleteRequest.getDefinition();
 
+    // 判定是否可写
+    Validate.isTrue(isWriteable(), "操作不允许");
+    if (tdf != null) {
+      // 校验操作是否允许
+      Validate.isTrue(!tdf.isReadonly(), "操作不允许");
+    }
+    
     SQLDialectProvider sqlDialectProvider = this.getSqlDialectProvider();
     JdbcTypeConverterFactory converterFactory = this.getConverterFactory();
     LoggedUserContext loggedUserContext = this.getLoggedUserContext();

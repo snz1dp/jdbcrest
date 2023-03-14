@@ -26,4 +26,7 @@ public interface AppInfoResolver {
   // 获取部署ID
   String getDeploymentId();
 
+  // 是否全局只读
+  boolean isGlobalReadonly();
+
 }

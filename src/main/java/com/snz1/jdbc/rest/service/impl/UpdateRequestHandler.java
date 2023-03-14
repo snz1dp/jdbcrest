@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
+import org.apache.commons.lang3.Validate;
 
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
@@ -83,6 +84,14 @@ public class UpdateRequestHandler extends AbstractManipulationRequestHandler<int
   public int[] doInConnection(Connection conn) throws SQLException, DataAccessException {
     ManipulationRequest updateRequest = this.getRequest();
     TableDefinition tdf = updateRequest.getDefinition();
+
+    // 判定是否可写
+    Validate.isTrue(isWriteable(), "操作不允许");
+    if (tdf != null) {
+      // 校验操作是否允许
+      Validate.isTrue(!tdf.isReadonly(), "操作不允许");
+    }
+
     SQLDialectProvider sqlDialectProvider = this.getSqlDialectProvider();
     JdbcTypeConverterFactory converterFactory = this.getConverterFactory();
 

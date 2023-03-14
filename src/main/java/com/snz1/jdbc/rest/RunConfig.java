@@ -62,10 +62,17 @@ public class RunConfig {
   @Value("${app.version:${SERVICE_VERSION:1.0.0}}")
   private String service_version;
 
+  @Value("${app.table.readonly:${READONLY_SERVICE:false}}")
+  private boolean global_readonly;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
     return webroot;
+  }
+
+  public boolean isGlobalReadonly() {
+    return global_readonly;
   }
 
   public String getDefaultTargetUrl() {

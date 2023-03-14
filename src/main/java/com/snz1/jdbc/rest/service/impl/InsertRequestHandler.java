@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
+import org.apache.commons.lang3.Validate;
 
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
@@ -85,6 +86,14 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
   @Nullable
   public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
     ManipulationRequest insertRequest = this.getRequest();
+
+    // 判定是否可写
+    Validate.isTrue(isWriteable(), "操作不允许");
+    if (insertRequest.hasDefinition()) {
+      // 校验操作是否允许
+      Validate.isTrue(!insertRequest.getDefinition().isReadonly(), "操作不允许");
+    }
+    
     SQLDialectProvider sqlDialectProvider = this.getSqlDialectProvider();
     JdbcTypeConverterFactory converterFactory = this.getConverterFactory();
 

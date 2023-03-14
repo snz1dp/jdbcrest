@@ -53,6 +53,11 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   }
 
   @Override
+  public boolean isGlobalReadonly() {
+    return runConfig.isGlobalReadonly();
+  }
+
+  @Override
   public LicenseSupport getLicenseSupport() {
     String lic = null;
     if (runConfig.isPersistenceConfig()) {
