@@ -65,6 +65,9 @@ public class RunConfig {
   @Value("${app.table.readonly:${READONLY_SERVICE:false}}")
   private boolean global_readonly;
 
+  @Value("${app.strict.mode:${STRICT_MODE:false}}")
+  private boolean strict_mode;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
@@ -85,6 +88,10 @@ public class RunConfig {
 
   public Version getAppVerison() {
     return appVerison;
+  }
+
+  public boolean isStrictMode() {
+    return this.strict_mode;
   }
 
   public PermissionDefinition getPermissionDefinition() {

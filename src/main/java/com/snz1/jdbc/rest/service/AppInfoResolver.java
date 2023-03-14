@@ -29,4 +29,7 @@ public interface AppInfoResolver {
   // 是否全局只读
   boolean isGlobalReadonly();
 
+  // 严格模式
+  boolean isStrictMode();
+
 }

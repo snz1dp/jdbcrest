@@ -920,6 +920,8 @@ roles:
 - `JDBC_ADMIN_USER` 数据管理用户
 - `JDBC_ADMIN_PASSWORD` 管理用户密码
 - `DATABASE_NAME` 待建数据库，如果配置了此参数则会判定数据库是否存在，不存在则自动创建。
+- `READONLY_SERVICE` 是否全局只读，为true时表示只读服务
+- `STRICT_MODE` 是否严格模式，为true时表示只有定义了
 
 ## 9、部署运行说明
 

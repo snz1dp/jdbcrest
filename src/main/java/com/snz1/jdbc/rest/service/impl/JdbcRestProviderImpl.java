@@ -195,10 +195,14 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       if (definition.hasAlias_name()) {
         table_name = definition.getAlias();
       }
+    } else if (this.appInfoResolver.isStrictMode()) {
+      throw new NotFoundException(String.format("%s不存在", table_name));
     }
+
     if (!testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
+
     table_query.setTable_name(table_name);
     return doFetchResultSetMeta(table_query, sql_dialect_provider);
   }

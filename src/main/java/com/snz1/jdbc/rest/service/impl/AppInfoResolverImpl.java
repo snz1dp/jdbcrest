@@ -58,6 +58,11 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   }
 
   @Override
+  public boolean isStrictMode() {
+    return runConfig.isStrictMode();
+  }
+
+  @Override
   public LicenseSupport getLicenseSupport() {
     String lic = null;
     if (runConfig.isPersistenceConfig()) {
