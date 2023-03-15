@@ -86,7 +86,7 @@ public class DatabaseUpdateApi {
       Validate.isTrue(
         !result_meta.getDefinition().isReadonly()
         && result_meta.getDefinition().isPublish(),
-        "不允许的操作"
+        "不允许对%s进行操作", table_name
       );
     }
 
@@ -144,7 +144,7 @@ public class DatabaseUpdateApi {
       Validate.isTrue(
         !result_meta.getDefinition().isReadonly()
         && result_meta.getDefinition().isPublish(),
-        "不允许的操作"
+        "不允许对%s进行操作", table_name
       );
     }
 

@@ -75,7 +75,7 @@ public class DatabaseQueryApi {
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
         result_meta.getDefinition().isPublish(),
-        "不允许的操作"
+        "%s不存在", table_name
       );
     }
 

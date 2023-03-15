@@ -1,12 +1,18 @@
 package com.snz1.jdbc.rest.api;
 
+import java.sql.SQLException;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 
@@ -34,7 +40,20 @@ public class DatabaseCacheApi {
     @PathVariable("table")
     String table_name,
     HttpServletRequest request
-  ) {
+  ) throws SQLException {
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
+    if (StringUtils.contains(table_name, ".")) {
+      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
+    } else {
+      table_name = result_meta.getTable_name();
+    }
+
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        result_meta.getDefinition().isPublish(),
+        "%s不存在", table_name
+      );
+    }
     restProvider.clearTableCaches(table_name);
     return Return.success();
   }
