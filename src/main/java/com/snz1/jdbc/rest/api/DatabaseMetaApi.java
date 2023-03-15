@@ -19,7 +19,6 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
@@ -52,12 +51,18 @@ public class DatabaseMetaApi {
   @Operation(summary = "获取模式")
   @GetMapping(path = "/schemas")
   public Return<List<Object>> getSchemas() throws SQLException {
+    if (appInfoResolver.isStrictMode()) {
+      return Return.success();
+    }
     return restProvider.getSchemas();
   }
 
   @Operation(summary = "获取目录")
   @GetMapping(path = "/catalogs")
   public Return<List<Object>> getCatalogs() throws SQLException {
+    if (appInfoResolver.isStrictMode()) {
+      return Return.success();
+    }
     return restProvider.getCatalogs();
   }
 
@@ -74,16 +79,13 @@ public class DatabaseMetaApi {
     String []types,
     HttpServletRequest request
   ) throws SQLException {
+    if (appInfoResolver.isStrictMode()) {
+      return Return.success();
+    }
     ResultDefinition result_meta = new ResultDefinition();
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
-    JdbcQueryResponse<List<Object>> list = null;
-    if (appInfoResolver.isStrictMode()) {
-      list = new JdbcQueryResponse<List<Object>>();
-    } else {
-      list = restProvider.getTables(
-        result_meta, catalog, schemaPattern, tableNamePattern, types);
-    }
-    return list;
+    return restProvider.getTables(
+      result_meta, catalog, schemaPattern, tableNamePattern, types);
   }
 
   @Operation(summary = "表元信息")
