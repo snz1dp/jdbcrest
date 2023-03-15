@@ -82,6 +82,14 @@ public class DatabaseUpdateApi {
       table_name = result_meta.getTable_name();
     }
 
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        !result_meta.getDefinition().isReadonly()
+        && result_meta.getDefinition().isPublish(),
+        "不允许的操作"
+      );
+    }
+
     // 构建操作请求
     ManipulationRequest update_request = new ManipulationRequest();
     update_request.setTable_name(table_name);
@@ -130,6 +138,14 @@ public class DatabaseUpdateApi {
       table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
     } else {
       table_name = result_meta.getTable_name();
+    }
+
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        !result_meta.getDefinition().isReadonly()
+        && result_meta.getDefinition().isPublish(),
+        "不允许的操作"
+      );
     }
 
     // 构建操作请求

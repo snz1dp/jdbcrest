@@ -25,8 +25,15 @@ public class TableDefinition implements Serializable {
   // 是否只读
   private Boolean readonly;
 
+  // 发布
+  private Boolean publish = true;
+
   public boolean isReadonly() {
     return this.readonly != null && this.readonly;
+  }
+
+  public boolean isPublish() {
+    return this.publish == null || this.publish;
   }
 
   // 是否有别名

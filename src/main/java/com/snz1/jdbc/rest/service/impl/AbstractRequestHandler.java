@@ -22,12 +22,4 @@ public abstract class AbstractRequestHandler<T> implements ConnectionCallback<T>
 
   private AppInfoResolver appInfoResolver;
 
-  public boolean isReadonly() {
-    return this.appInfoResolver.isGlobalReadonly();
-  }
-
-  public boolean isWriteable() {
-    return !this.isReadonly();
-  }
-
 }

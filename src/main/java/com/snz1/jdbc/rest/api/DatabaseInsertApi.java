@@ -8,6 +8,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,6 +46,14 @@ public class DatabaseInsertApi {
       table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
     } else {
       table_name = result_meta.getTable_name();
+    }
+
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        !result_meta.getDefinition().isReadonly()
+        && result_meta.getDefinition().isPublish(),
+        "不允许对%s进行操作", table_name
+      );
     }
 
     ManipulationRequest insert_request = new ManipulationRequest();

@@ -64,6 +64,14 @@ public class DatabaseDeleteApi {
       table_name = result_meta.getTable_name();
     }
 
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        !result_meta.getDefinition().isReadonly()
+        && result_meta.getDefinition().isPublish(),
+        "不允许对%s进行操作", table_name
+      );
+    }
+
     // 构建操作请求
     ManipulationRequest delete_request = new ManipulationRequest();
     delete_request.setTable_name(table_name);
@@ -109,7 +117,15 @@ public class DatabaseDeleteApi {
     } else {
       table_name = result_meta.getTable_name();
     }
-    
+
+    if (result_meta.hasDefinition()) {
+      Validate.isTrue(
+        !result_meta.getDefinition().isReadonly()
+        && result_meta.getDefinition().isPublish(),
+        "不允许对%s进行操作", table_name
+      );
+    }
+
     // 构建操作请求
     ManipulationRequest delete_request = new ManipulationRequest();
     delete_request.setTable_name(table_name);

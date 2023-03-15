@@ -472,7 +472,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     return result;
   }
 
-  protected void validateDMLRequest(JdbcDMLRequest []dmls, SQLDialectProvider sql_dialect_provider) throws SQLException {
+  private void doValidateDMLRequest(JdbcDMLRequest []dmls, SQLDialectProvider sql_dialect_provider) throws SQLException {
     Map<String, TableMeta> table_metas = new HashMap<String, TableMeta>();
     for (int i = 0; i < dmls.length; i++) {
       JdbcDMLRequest dml = dmls[0];
@@ -524,7 +524,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   public List<JdbcDMLResponse> executeDMLRequest(JdbcDMLRequest []dmls) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
-    validateDMLRequest(dmls, sql_dialect_provider);
+    doValidateDMLRequest(dmls, sql_dialect_provider);
     List<JdbcDMLResponse> responses = new ArrayList<JdbcDMLResponse>(dmls.length);
     for (int i = 0; i < dmls.length; i++) {
       JdbcDMLRequest dml = dmls[0];
