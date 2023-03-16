@@ -28,6 +28,8 @@ public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMeta
   public JdbcMetaData doInConnection(Connection conn) throws SQLException, DataAccessException {
     JdbcMetaData temp_meta = new JdbcMetaData();
     DatabaseMetaData table_meta =  conn.getMetaData();
+    temp_meta.setDriver_id(this.getAppInfoResolver().getDriverId(
+      table_meta.getDatabaseProductName()));
     temp_meta.setProduct_name(table_meta.getDatabaseProductName());
     temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
     temp_meta.setDriver_name(table_meta.getDriverName());

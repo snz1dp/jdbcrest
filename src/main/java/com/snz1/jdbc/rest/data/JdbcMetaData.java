@@ -6,6 +6,9 @@ import lombok.Data;
 
 @Data
 public class JdbcMetaData implements Serializable {
+
+  // 驱动ID
+  private String driver_id;
     
   // 数据库类型
   private String product_name;

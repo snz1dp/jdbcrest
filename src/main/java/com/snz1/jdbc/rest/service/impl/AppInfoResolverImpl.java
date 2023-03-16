@@ -127,4 +127,10 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     return ret;
   }
 
+  @Override
+  public String getDriverId(String product_name) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }
