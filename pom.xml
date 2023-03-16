@@ -176,12 +176,6 @@
 			<artifactId>mybatis</artifactId>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui -->
-		<dependency>
-			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-ui</artifactId>
-		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
 		<dependency>
 			<groupId>mysql</groupId>
@@ -256,14 +250,22 @@
 			<artifactId>orai18n</artifactId>
 			<version>${oracle.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.oracle.database.xml</groupId>
-			<artifactId>xdb6</artifactId>
-			<version>${oracle.version}</version>
-		</dependency>
+
 		<dependency>
 			<groupId>com.oracle.database.xml</groupId>
 			<artifactId>xmlparserv2</artifactId>
+			<version>${oracle.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.oracle.database.xml</groupId>
+					<artifactId>xdb6</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.oracle.database.xml</groupId>
+			<artifactId>xdb6</artifactId>
 			<version>${oracle.version}</version>
 		</dependency>
 
