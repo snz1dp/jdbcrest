@@ -32,7 +32,4 @@ public interface AppInfoResolver {
   // 严格模式
   boolean isStrictMode();
 
-  // 获取驱动ID
-  String getDriverId(String product_name);
-
 }

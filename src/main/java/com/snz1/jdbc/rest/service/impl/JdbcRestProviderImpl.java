@@ -88,7 +88,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   public void loadSQLDialectProviders(ContextRefreshedEvent event) {
     final Map<String, SQLDialectProvider> map = new LinkedHashMap<>();
     event.getApplicationContext().getBeansOfType(SQLDialectProvider.class).forEach((k, v) -> {
-      map.put(v.getName(), v);
+      map.put(v.getId(), v);
     });
     this.sqlDialectProviders = new HashMap<>(map);
   }
@@ -187,7 +187,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   ) throws SQLException {
     if (table_query.hasTable_meta()) return table_query.getTable_meta();
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     String table_name = table_query.getTable_name();
     if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
       TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_name);
@@ -288,7 +288,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     JdbcQueryRequest table_query
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
 
     String table_name = table_query.getTable_name();
 
@@ -321,14 +321,14 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   protected SQLDialectProvider getSQLDialectProvider() throws SQLException {
     JdbcMetaData metadata = getMetaData();
-    return this.sqlDialectProviders.get(metadata.getProduct_name().toLowerCase());
+    return this.sqlDialectProviders.get(metadata.getDriver_id());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public JdbcQueryResponse<Long> queryAllCountResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
@@ -342,7 +342,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @Override
   public JdbcQueryResponse<?> queryGroupCountResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     return datalist;
@@ -351,7 +351,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @Override
   public JdbcQueryResponse<?> queryGroupResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     table_query.getResult().setLimit(Constants.DEFAULT_MAX_LIMIT);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     return datalist;
@@ -361,7 +361,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @SuppressWarnings("unchecked")
   public JdbcQueryResponse<?> querySignletonResult(JdbcQueryRequest table_query) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     if (((List<Object>)datalist.getData()).size() == 0) {
@@ -420,7 +420,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     ManipulationRequest insert_request
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     Object result = doInsertTableData(
       insert_request,
       sql_dialect_provider,
@@ -445,7 +445,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     ManipulationRequest update_request
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     int []result = doUpdateTableData(
       update_request,
       sql_dialect_provider,
@@ -463,7 +463,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     ManipulationRequest delete_request
   ) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     Integer result = doDeleteTableData(
       delete_request,
       sql_dialect_provider,
@@ -523,7 +523,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @Override
   public List<JdbcDMLResponse> executeDMLRequest(JdbcDMLRequest []dmls) throws SQLException {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    Validate.notNull(sql_dialect_provider, "抱歉，暂时不支持%s!", getMetaData().getProduct_name());
+    Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     doValidateDMLRequest(dmls, sql_dialect_provider);
     List<JdbcDMLResponse> responses = new ArrayList<JdbcDMLResponse>(dmls.length);
     for (int i = 0; i < dmls.length; i++) {

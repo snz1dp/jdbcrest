@@ -22,10 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 @Component("dmdbsSQLDialectProvider")
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
     
-  public static final String NAME = "dm dbms";
+  public static final String NAME = "dmdbms";
 
   @Override
-  public String getName() {
+  public String getId() {
     return NAME;
   }
 

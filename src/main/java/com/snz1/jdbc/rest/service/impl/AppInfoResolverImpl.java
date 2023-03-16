@@ -38,6 +38,9 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   private LicenseSupport licenseSupport;
 
+  public AppInfoResolverImpl() {
+  }
+
   @Override
   public String getAppId() {
     return runConfig.getApplicationCode();
@@ -125,12 +128,6 @@ public class AppInfoResolverImpl implements AppInfoResolver {
       );
     }
     return ret;
-  }
-
-  @Override
-  public String getDriverId(String product_name) {
-    // TODO Auto-generated method stub
-    return null;
   }
 
 }

@@ -27,7 +27,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public static final String NAME = "mysql";
 
   @Override
-  public String getName() {
+  public String getId() {
     return NAME;
   }
 

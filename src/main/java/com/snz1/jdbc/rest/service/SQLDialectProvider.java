@@ -11,8 +11,8 @@ import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 // SQL方言实现
 public interface SQLDialectProvider {
 
-  // 数据库名称
-  String getName();
+  // 数据库ID
+  String getId();
 
   // 获取查询的合计
   JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);

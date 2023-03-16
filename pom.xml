@@ -31,6 +31,7 @@
 		<oracle.version>12.2.0.1</oracle.version>
 		<mariadb.version>2.4.3</mariadb.version>
 		<jaybird.version>4.0.0.java8</jaybird.version>
+		<opensearch.version>1.2.0.0</opensearch.version>
 	</properties>
 
 	<dependencies>
@@ -276,6 +277,14 @@
 			<version>${jaybird.version}</version>
 		</dependency>
 
+		<!-- firebirdsql -->
+		<dependency>
+			<groupId>org.opensearch.driver</groupId>
+			<artifactId>opensearch-sql-jdbc</artifactId>
+			<version>${opensearch.version}</version>
+		</dependency>
+
+		
 		<dependency>
 			<groupId>com.snz1</groupId>
 			<artifactId>utility</artifactId>

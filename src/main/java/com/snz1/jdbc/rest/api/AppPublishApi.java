@@ -1,5 +1,6 @@
 package com.snz1.jdbc.rest.api;
 
+import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
@@ -13,7 +14,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
+import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
+import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.stats.CacheStatisticsCollector;
 import com.snz1.utils.CalendarUtils;
 import com.snz1.utils.ContextUtils;
@@ -37,7 +40,9 @@ import gateway.sc.v2.config.CacheStatistics;
 import gateway.sc.v2.config.LicenseSupport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @Tag(name = "应用信息")
 @RequestMapping
@@ -54,6 +59,11 @@ public class AppPublishApi {
 
   @Resource
   private CacheStatisticsCollector cacheStatisticsCollector;
+
+  @Resource
+  private JdbcRestProvider restProvider;
+
+  private JdbcMetaData jdbcMetaData = null;
 
 	@Operation(summary = "目录默认跳转", hidden = true)
 	@GetMapping(path = "index", produces = MediaType.TEXT_HTML_VALUE)
@@ -106,6 +116,16 @@ public class AppPublishApi {
       version_data.put("service_name", appVersion.getProduct_name());
     }
     version_data.put("service_version", runConfig.getService_version());
+
+    if (jdbcMetaData == null) {
+      try {
+        ret.put("meta", this.jdbcMetaData = restProvider.getMetaData());
+      } catch (SQLException e) {
+        log.warn("获取元信息失败：{}", e.getMessage(), e);
+      }
+    } else {
+      ret.put("meta", this.jdbcMetaData);
+    }
 
     LicenseSupport license_support = appInfoResolver.getLicenseSupport();
     Date first_run_time  = runConfig.getFirstRunTime();

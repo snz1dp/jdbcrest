@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -12,14 +13,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.ResultMap;
 import org.apache.ibatis.mapping.ResultMapping;
@@ -27,13 +33,78 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 import org.postgresql.jdbc.PgArray;
+import org.springframework.core.io.ClassPathResource;
 
+import com.esotericsoftware.yamlbeans.YamlException;
 import com.snz1.jdbc.rest.Constants;
+import com.snz1.jdbc.rest.data.DatabaseIdName;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLClauses;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUtils {
+
+  private static Map<String, String> databaseNameIdMap;
+
+  private static Set<String> databaseDriverIdSet;
+
+  static {
+    loadDatabaseProviders();
+  }
+
+  private static File getDatabase_provider_file() {
+    String file_location = "data/database-provider.yaml";
+    try {
+      return new ClassPathResource(file_location).getFile();
+    } catch (IOException e) {
+      log.warn("无法获取数据库提供文件, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
+      return null;
+    }
+  }
+
+  private static void loadDatabaseProviders() {
+    File provider_file = getDatabase_provider_file();
+    Validate.notNull(provider_file, "未设置数据库提供配置文件");
+    Validate.isTrue(provider_file.exists() && provider_file.isFile(), "%s不是一个有效的文件", provider_file);
+    try {
+      databaseNameIdMap = Collections.unmodifiableMap(new HashMap<>(doLoadDatabseProviders(provider_file)));
+      databaseDriverIdSet = Collections.unmodifiableSet(new HashSet<>(databaseNameIdMap.values()));
+    } catch (Exception e) {
+      if (log.isDebugEnabled()) {
+        log.debug("加载提供器失败：{}", e.getMessage(), e);
+      }
+      throw new IllegalStateException("加载提供器失败：" + e.getMessage(), e);
+    }
+  
+  }
+
+  private static Map<String, String> doLoadDatabseProviders(File provider_file) throws YamlException, FileNotFoundException {
+    InputStream finput = new FileInputStream(provider_file);
+    try {
+      DatabaseIdName[] dabase_idnames = YamlUtils.fromYaml(finput, DatabaseIdName[].class);
+      Validate.isTrue(
+        dabase_idnames != null && dabase_idnames.length > 0,
+        "至少需要一种数据库提供");
+      LinkedHashMap<String, String> retmap = new LinkedHashMap<>();
+      for (DatabaseIdName idname : dabase_idnames) {
+        retmap.put(idname.getName(), idname.getId());
+      }
+      return retmap;
+    } finally {
+      IOUtils.closeQuietly(finput);
+    }
+  }
+
+  public static String getDatabaseDriverId(String product_name) {
+    return databaseNameIdMap.get(product_name);
+  }
+
+  public static Set<String> getDatabaseDriverIds() {
+    return databaseDriverIdSet;
+  }
 
   public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {
     JdbcMetaData temp_meta = new JdbcMetaData();

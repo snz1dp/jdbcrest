@@ -1,0 +1,57 @@
+
+# MySQL
+- id: mysql
+  name: MySQL
+
+# MariaDB
+- id: mariadb
+  name: MariaDB
+
+# PostgreSQL
+- id: postgresql
+  name: PostgreSQL
+
+# GBase
+- id: gbase
+  name: GBase
+
+# 达梦
+- id: dmdbms
+  name: DM DBMS
+
+# DB2
+- id: db2
+  name: DB2 for Unix/Windows
+
+- id: db2
+  name: DB2 for Unix/Windows
+
+- id: db2
+  name: z/OS
+
+- id: db2
+  name: iSeries
+
+# Oracle
+- id: oracle
+  name: Oracle
+
+# ClickHouse
+- id: clickhouse
+  name: ClickHouse
+
+# FireBird
+- id: firebird
+  name: FireBird
+
+# Microsoft SQL Server
+- id: mssql
+  name: Microsoft SQL Server
+
+# Trino
+- id: trino
+  name: Trino
+
+# OpenSearch
+- id: opensearch
+  name: OpenSearch

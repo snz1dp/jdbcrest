@@ -67,14 +67,14 @@ public class Initializer implements SpringApplicationRunListener {
       String sql_dialect_clazz_name = String.format(
         "%s.service.%s.SQLDialectProvider",
         getClass().getPackage().getName(), 
-        jdbc_meta.getProduct_name().toLowerCase()
+        jdbc_meta.getDriver_id()
       );
 
       Class<?> sql_dialect_clazz;
       try {
         sql_dialect_clazz = ClassUtils.getClass(sql_dialect_clazz_name);
       } catch(ClassNotFoundException e) {
-        throw new IllegalStateException(String.format("暂不支持%s:%s", jdbc_meta.getProduct_name(), e.getMessage()), e);
+        throw new IllegalStateException(String.format("暂时不支持%s数据库: %s", jdbc_meta.getProduct_name(), e.getMessage()), e);
       }
       
       // 设置与数据库相关的环境变量

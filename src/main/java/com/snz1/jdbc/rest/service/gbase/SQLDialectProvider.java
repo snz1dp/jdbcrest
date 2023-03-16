@@ -24,7 +24,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public static final String NAME = "gbase";
 
   @Override
-  public String getName() {
+  public String getId() {
     return NAME;
   }
 
