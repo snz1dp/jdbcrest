@@ -30,7 +30,7 @@
 		<trino.version>351</trino.version>
 		<oracle.version>12.2.0.1</oracle.version>
 		<mariadb.version>2.4.3</mariadb.version>
-		<jaybird.version>${4.0.0.java8}</jaybird.version>
+		<jaybird.version>4.0.0.java8</jaybird.version>
 	</properties>
 
 	<dependencies>
