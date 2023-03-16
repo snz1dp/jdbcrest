@@ -1,7 +1,6 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import org.springframework.dao.DataAccessException;
@@ -27,16 +26,7 @@ public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMeta
   @Override
   @Nullable
   public JdbcMetaData doInConnection(Connection conn) throws SQLException, DataAccessException {
-    JdbcMetaData temp_meta = new JdbcMetaData();
-    DatabaseMetaData table_meta =  conn.getMetaData();
-    temp_meta.setDriver_id(JdbcUtils.getDatabaseDriverId(
-      table_meta.getDatabaseProductName())
-    );
-    temp_meta.setProduct_name(table_meta.getDatabaseProductName());
-    temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
-    temp_meta.setDriver_name(table_meta.getDriverName());
-    temp_meta.setDriver_version(table_meta.getDriverVersion());
-    return temp_meta;
+    return JdbcUtils.getJdbcMetaData(conn);
   }
 
 }

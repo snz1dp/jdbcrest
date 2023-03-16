@@ -76,6 +76,21 @@
         "JDBC_USER": "gbase",
         "JDBC_PASSWORD": "gbase20110531"
       }
+    },
+    {
+      "type": "java",
+      "name": "Launch Application(opensearch)",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.Application",
+      "projectName": "jdbcrest",
+      "env": {
+        "CONFIG_TYPE": "none",
+        "CACHE_TYPE": "none",
+        "JDBC_DRIVER": "org.opensearch.jdbc.Driver",
+        "JDBC_URL": "jdbc:opensearch://localhost:9200",
+        "JDBC_USER": "",
+        "JDBC_PASSWORD": ""
+      }
     }
   ]
 }

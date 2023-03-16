@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -138,7 +139,12 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   @SuppressWarnings("unchecked")
   protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
     Object primary_key = null;
-    ResultSet ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), table_name);
+    ResultSet ks = null;
+    try {
+      ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), table_name);
+    } catch(SQLFeatureNotSupportedException e) {
+      return primary_key;
+    }
     try {
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
@@ -166,7 +172,12 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   @SuppressWarnings("unchecked")
   protected TableIndexs doFetchTableIndexs(Connection conn, String table_name) throws SQLException {
     TableIndexs index_lst = new TableIndexs();
-    ResultSet ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), table_name, false, false);
+    ResultSet ks = null;
+    try {
+      ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), table_name, false, false);
+    } catch(SQLFeatureNotSupportedException e) {
+      return index_lst;
+    }
     try {
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {

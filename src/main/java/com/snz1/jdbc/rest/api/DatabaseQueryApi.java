@@ -66,11 +66,7 @@ public class DatabaseQueryApi {
     HttpServletRequest request
   ) throws SQLException {
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    if (StringUtils.contains(table_name, ".")) {
-      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
-    } else {
-      table_name = result_meta.getTable_name();
-    }
+    table_name = result_meta.getTable_name();
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -119,11 +115,7 @@ public class DatabaseQueryApi {
     HttpServletRequest request
   ) throws SQLException {
     TableMeta table_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    if (StringUtils.contains(table_name, ".")) {
-      table_name = String.format("%s.%s", table_meta.getSchemas_name(), table_meta.getTable_name());
-    } else {
-      table_name = table_meta.getTable_name();
-    }
+    table_name = table_meta.getTable_name();
 
     // 获取表元信息
     JdbcQueryRequest table_query = new JdbcQueryRequest();

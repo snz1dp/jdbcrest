@@ -109,6 +109,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {
     JdbcMetaData temp_meta = new JdbcMetaData();
     DatabaseMetaData table_meta =  conn.getMetaData();
+    temp_meta.setDriver_id(getDatabaseDriverId(table_meta.getDatabaseProductName()));
     temp_meta.setProduct_name(table_meta.getDatabaseProductName());
     temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
     temp_meta.setDriver_name(table_meta.getDriverName());

@@ -76,11 +76,7 @@ public class DatabaseUpdateApi {
   ) throws IOException, SQLException {
     // 获取表元信息
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    if (StringUtils.contains(table_name, ".")) {
-      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
-    } else {
-      table_name = result_meta.getTable_name();
-    }
+    table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -134,11 +130,7 @@ public class DatabaseUpdateApi {
   ) throws IOException, SQLException {
     // 获取表元信息
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    if (StringUtils.contains(table_name, ".")) {
-      table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
-    } else {
-      table_name = result_meta.getTable_name();
-    }
+    table_name = result_meta.getTable_name();
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
