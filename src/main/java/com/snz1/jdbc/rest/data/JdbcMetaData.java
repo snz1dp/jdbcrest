@@ -19,6 +19,9 @@ public class JdbcMetaData implements Serializable {
   // 驱动名称
   private String driver_name;
 
+  // 驱动类
+  private String driver_class;
+
   // 驱动版本
   private String driver_version;
 

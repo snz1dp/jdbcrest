@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -109,11 +111,13 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {
     JdbcMetaData temp_meta = new JdbcMetaData();
     DatabaseMetaData table_meta =  conn.getMetaData();
+    Driver driver = DriverManager.getDriver(conn.getMetaData().getURL());
     temp_meta.setDriver_id(getDatabaseDriverId(table_meta.getDatabaseProductName()));
     temp_meta.setProduct_name(table_meta.getDatabaseProductName());
     temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
     temp_meta.setDriver_name(table_meta.getDriverName());
     temp_meta.setDriver_version(table_meta.getDriverVersion());
+    temp_meta.setDriver_class(driver.getClass().getName());
     return temp_meta;
   }
 
