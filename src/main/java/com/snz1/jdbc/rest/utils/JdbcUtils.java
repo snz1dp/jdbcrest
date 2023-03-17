@@ -101,6 +101,10 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   }
 
   public static String getDatabaseDriverId(String product_name) {
+    int start = product_name.indexOf("/");
+    if (start > 0) {
+      product_name = product_name.substring(0, start);
+    }
     return databaseNameIdMap.get(product_name);
   }
 

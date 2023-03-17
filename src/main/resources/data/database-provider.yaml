@@ -21,16 +21,7 @@
 
 # DB2
 - id: db2
-  name: DB2 for Unix/Windows
-
-- id: db2
-  name: DB2 for Unix/Windows
-
-- id: db2
-  name: z/OS
-
-- id: db2
-  name: iSeries
+  name: DB2
 
 # Oracle
 - id: oracle
