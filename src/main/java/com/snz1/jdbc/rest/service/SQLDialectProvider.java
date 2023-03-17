@@ -17,15 +17,11 @@ public interface SQLDialectProvider {
   // 是否检查数据表存在
   boolean checkTableExisted();
 
+  // 是否支持Schema
+  boolean supportSchemas();
+
   // 获取查询的合计
   JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);
-
-  // 准备无行查询
-  @Deprecated
-  PreparedStatement prepareNoRowSelect(
-    Connection conn,
-    JdbcQueryRequest table_query
-  ) throws SQLException;
 
   // 准备分页查询
   PreparedStatement preparePageSelect(

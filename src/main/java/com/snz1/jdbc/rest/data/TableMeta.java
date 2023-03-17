@@ -18,7 +18,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @ToString
 @EqualsAndHashCode
 public class TableMeta implements Serializable {
@@ -34,7 +36,6 @@ public class TableMeta implements Serializable {
   private List<TableColumn> columns = new LinkedList<>();
 
   // 表名
-  @Getter
   @Setter
   private String table_name;
 
@@ -71,6 +72,11 @@ public class TableMeta implements Serializable {
   public TableMeta addColumn(TableColumn col) {
     this.columns.add(col);
     return this;
+  }
+
+  public String getTable_name() {
+    if (StringUtils.isBlank(this.schemas_name)) return this.table_name;
+    return String.format("%s.%s", this.schemas_name, this.table_name);
   }
 
   // 是否有唯一索引
@@ -210,7 +216,11 @@ public class TableMeta implements Serializable {
       col.setName(column_name);
       col.setLabel(rs_meta.getColumnLabel(i));
       col.setSql_type(rs_meta.getColumnTypeName(i));
-      col.setJdbc_type(JDBCType.valueOf(rs_meta.getColumnType(i)));
+      try {
+        col.setJdbc_type(JDBCType.valueOf(rs_meta.getColumnType(i)));
+      } catch(IllegalArgumentException e) {
+        log.warn("数据类型(DATA_TYPE={})无法转成JDBC类型", rs_meta.getColumnType(i));
+      }
       col.setAuto_increment(rs_meta.isAutoIncrement(i));
       col.setNullable(rs_meta.isNullable(i) == ResultSetMetaData.columnNullable);
       col.setScale(rs_meta.getScale(i));
@@ -277,7 +287,12 @@ public class TableMeta implements Serializable {
       }
 
       col.setSql_type(rs_meta.getString("TYPE_NAME"));
-      col.setJdbc_type(JDBCType.valueOf(rs_meta.getInt("DATA_TYPE")));
+      try {
+        col.setJdbc_type(JDBCType.valueOf(rs_meta.getInt("DATA_TYPE")));
+      } catch(IllegalArgumentException e) {
+        log.warn("数据类型(DATA_TYPE={})无法转成JDBC类型", rs_meta.getInt("DATA_TYPE"));
+      }
+ 
       col.setAuto_increment(StringUtils.equals("YES", rs_meta.getString("IS_AUTOINCREMENT")));
       col.setNullable(StringUtils.equals("YES", rs_meta.getString("IS_NULLABLE")));
       col.setScale(rs_meta.getInt("NUM_PREC_RADIX"));

@@ -81,7 +81,9 @@ public class AppInfoResolverImpl implements AppInfoResolver {
       this.lastLicense = lic;
       return this.licenseSupport;
     } catch(NotExceptException e) {
-      log.info("授权失败：" + e.getMessage(), e);
+      if (log.isWarnEnabled()) {
+        log.warn("获取授权失败：" + e.getMessage());
+      }
     }
     return null;
   }

@@ -91,6 +91,21 @@
         "JDBC_USER": "",
         "JDBC_PASSWORD": ""
       }
+    },
+    {
+      "type": "java",
+      "name": "Launch Application(oracle)",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.Application",
+      "projectName": "jdbcrest",
+      "env": {
+        "CONFIG_TYPE": "none",
+        "CACHE_TYPE": "none",
+        "JDBC_DRIVER": "oracle.jdbc.driver.OracleDriver",
+        "JDBC_URL": "jdbc:oracle:thin:@localhost:1521:ORCLCDB",
+        "JDBC_USER": "SYS AS SYSDBA",
+        "JDBC_PASSWORD": "Oradoc_db1"
+      }
     }
   ]
 }

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
@@ -140,8 +141,16 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
     Object primary_key = null;
     ResultSet ks = null;
+
+    String schemas_name = conn.getSchema();
+    if (this.getSqlDialectProvider().supportSchemas() && StringUtils.contains(table_name, '.')) {
+      int first_start = table_name.indexOf(".");
+      schemas_name = table_name.substring(0, first_start);
+      table_name = table_name.substring(first_start + 1);
+    }
+
     try {
-      ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), table_name);
+      ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), schemas_name, table_name);
     } catch(SQLFeatureNotSupportedException e) {
       return primary_key;
     }
@@ -171,11 +180,20 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
   // 执行获取唯一索引
   @SuppressWarnings("unchecked")
   protected TableIndexs doFetchTableIndexs(Connection conn, String table_name) throws SQLException {
+    String schemas_name = conn.getSchema();
+    if (this.getSqlDialectProvider().supportSchemas() && StringUtils.contains(table_name, '.')) {
+      int first_start = table_name.indexOf(".");
+      schemas_name = table_name.substring(0, first_start);
+      table_name = table_name.substring(first_start + 1);
+    }
+
     TableIndexs index_lst = new TableIndexs();
     ResultSet ks = null;
     try {
-      ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), table_name, false, false);
+      ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), schemas_name, table_name, false, false);
     } catch(SQLFeatureNotSupportedException e) {
+      return index_lst;
+    } catch(Throwable e) {
       return index_lst;
     }
     try {

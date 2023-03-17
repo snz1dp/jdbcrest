@@ -28,7 +28,7 @@ public interface JdbcRestProvider {
   Object getTablePrimaryKey(String table_name) throws SQLException;
 
   // 测试表是否存在
-  boolean testTableExisted(String table_name, String ...types);
+  boolean testTableExisted(String table_name, String ...types) throws SQLException;
 
   // 获取表
   JdbcQueryResponse<List<Object>> getTables(

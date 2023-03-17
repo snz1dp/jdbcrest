@@ -25,24 +25,21 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
   @Resource
-  private LoggedUserContext loggedUserContext;
+  protected LoggedUserContext loggedUserContext;
 
   @Resource
-  private JdbcTypeConverterFactory typeConverterFactory;
+  protected JdbcTypeConverterFactory typeConverterFactory;
 
   @Resource
-  private UserRoleVerifier userRoleVerifier;
-
-  public JdbcTypeConverterFactory getTypeConverterFactory() {
-    return typeConverterFactory;
-  }
-
-  public LoggedUserContext getLoggedUserContext() {
-    return loggedUserContext;
-  }
+  protected UserRoleVerifier userRoleVerifier;
 
   @Override
   public boolean checkTableExisted() {
+    return true;
+  }
+
+  @Override
+  public boolean supportSchemas() {
     return true;
   }
 
@@ -136,8 +133,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         table_query.getGroup_by().forEach(g -> {
           sql.GROUP_BY(g.getColumn());
           if (g.hasHaving()) {
-            sql.HAVING(g.getHaving().toHavingSQL(this.getTypeConverterFactory()));
-            g.getHaving().buildParameters(parameters, this.getTypeConverterFactory());
+            sql.HAVING(g.getHaving().toHavingSQL(this.typeConverterFactory));
+            g.getHaving().buildParameters(parameters, this.typeConverterFactory);
           }
         });
       }
@@ -150,8 +147,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
-          w.buildParameters(parameters, this.getTypeConverterFactory());
+          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
+          w.buildParameters(parameters, this.typeConverterFactory);
         };
       }
 
@@ -178,8 +175,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
-          w.buildParameters(parameters, this.getTypeConverterFactory());
+          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
+          w.buildParameters(parameters, this.typeConverterFactory);
         };
       }
 
@@ -192,8 +189,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         for (String appcode : userRoleVerifier.getUserOwnerAppcodes(loggedUserContext.getLoggedUser())) {
           w.addCondition(table_definition.getOwner_app_column(), ConditionOperation.$eq, appcode);
         }
-        sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
-        w.buildParameters(parameters, this.getTypeConverterFactory());
+        sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
+        w.buildParameters(parameters, this.typeConverterFactory);
       }
 
       if (!docount && table_query.hasOrder_by()) {
@@ -289,7 +286,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.typeConverterFactory));
         }
       } else { // 主键更新
         Object rowkey = update_request.getRow_key();
@@ -325,7 +322,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
         };
       }
 
@@ -355,7 +352,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.getTypeConverterFactory()));
+          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.typeConverterFactory));
         }
       } else { // 主键删除
         Object rowkey = update_request.getRow_key();
@@ -393,7 +390,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.getTypeConverterFactory()));
+          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
         };
       }
 

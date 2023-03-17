@@ -1,6 +1,8 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,22 +137,28 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       }
     }
   }
-  
+
   // 测试表是否存在
-  public boolean testTableExisted(String table_name, String ...types) {
+  private boolean doTestTableExisted(SQLDialectProvider sql_dialect_provider, String table_name, String ...types) {
     if (log.isDebugEnabled()) {
       log.debug("检查数据表{}是否存在...", table_name);
     }
     long start_time = System.currentTimeMillis();
     try {
       return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(
-        this.appInfoResolver, table_name, types
+        sql_dialect_provider, this.appInfoResolver, table_name, types
       )));
     } finally {
       if (log.isDebugEnabled()) {
         log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
       }
     }
+  }
+  
+  // 测试表是否存在
+  public boolean testTableExisted(String table_name, String ...types) throws SQLException {
+    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
+    return this.doTestTableExisted(sql_dialect_provider, table_name, types);
   }
 
   // 获取主键
@@ -199,7 +207,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
 
-    if (sql_dialect_provider.checkTableExisted() && !testTableExisted(table_name)) {
+    if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(sql_dialect_provider, table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
 
@@ -332,9 +340,17 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
-    Long total_val = (long)((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
+    Object total_val = ((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
     JdbcQueryResponse<Long> ret = new JdbcQueryResponse<>();
-    ret.setData(total_val);
+    if (total_val instanceof BigDecimal) {
+      ret.setData(((BigDecimal)total_val).longValue());
+    } else if (total_val instanceof BigInteger) {
+      ret.setData(((BigInteger)total_val).longValue());
+    } else if (total_val instanceof Integer) {
+      ret.setData(((Integer)total_val).longValue());
+    } else if (total_val instanceof Long) {
+      ret.setData((Long)total_val);
+    }
     ret.setLic(datalist.getLic());
     return ret;
   }

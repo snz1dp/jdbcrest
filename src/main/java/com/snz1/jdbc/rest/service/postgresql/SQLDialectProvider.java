@@ -65,21 +65,6 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   @Override
-  public PreparedStatement prepareNoRowSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
-    JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
-    StringBuffer sqlbuf = new StringBuffer();
-    sqlbuf.append(base_query.getSql()).append(" LIMIT 0");
-    PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
-    if (base_query.hasParameter()) {
-      for (int i = 0; i < base_query.getParameters().size(); i++) {
-        Object param = base_query.getParameters().get(i);
-        ps.setObject(i + 1, param);
-      };
-    }
-    return ps;
-  }
-
-  @Override
   public PreparedStatement preparePageSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
