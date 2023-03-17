@@ -199,7 +199,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
 
-    if (!testTableExisted(table_name)) {
+    if (sql_dialect_provider.checkTableExisted() && !testTableExisted(table_name)) {
       throw new NotFoundException(String.format("%s不存在", table_name));
     }
 

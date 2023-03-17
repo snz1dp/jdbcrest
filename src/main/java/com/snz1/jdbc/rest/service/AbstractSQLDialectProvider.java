@@ -41,6 +41,11 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     return loggedUserContext;
   }
 
+  @Override
+  public boolean checkTableExisted() {
+    return true;
+  }
+
   // 获取查询的合计
   @Override
   @Deprecated

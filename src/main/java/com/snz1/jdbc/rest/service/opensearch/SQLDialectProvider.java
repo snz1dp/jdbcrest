@@ -29,6 +29,11 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     return NAME;
   }
 
+  @Override
+  public boolean checkTableExisted() {
+    return false;
+  }
+
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
     database_properties.put("DB_VALIDATION_QUERY", "select 1");

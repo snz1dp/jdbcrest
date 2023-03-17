@@ -14,6 +14,9 @@ public interface SQLDialectProvider {
   // 数据库ID
   String getId();
 
+  // 是否检查数据表存在
+  boolean checkTableExisted();
+
   // 获取查询的合计
   JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);
 
