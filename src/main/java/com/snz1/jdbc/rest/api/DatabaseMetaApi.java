@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
@@ -75,8 +76,6 @@ public class DatabaseMetaApi {
     String schemaPattern,
     @RequestParam(value="table", required = false)
     String tableNamePattern,
-    @RequestParam(value="type", required = false)
-    String []types,
     @RequestParam(value = "offset", defaultValue = "0")
     Long offset,
     @RequestParam(value = "limit", defaultValue = "0")
@@ -90,7 +89,8 @@ public class DatabaseMetaApi {
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
     return restProvider.getTables(
       result_meta, catalog, schemaPattern,
-      tableNamePattern, offset, limit, types);
+      tableNamePattern, offset, limit,
+      Constants.TABLE_TYPE);
   }
 
   @Operation(summary = "表元信息")

@@ -101,6 +101,9 @@ public abstract class Constants {
   // Table缓存
   public static final String TABLES_CACHE = "tables";
 
+  // TABLE类型
+  public static final String TABLE_TYPE = "TABLE";
+
   // 是否存在缓存
   public static final String EXISTED_CACHE = "existed";
 
