@@ -1,11 +1,13 @@
 package com.snz1.jdbc.rest.api;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
@@ -80,6 +81,10 @@ public class DatabaseMetaApi {
     Long offset,
     @RequestParam(value = "limit", defaultValue = "0")
     Long limit,
+    @RequestParam(value = "type", defaultValue = "all")
+    Type type,
+    @RequestParam(value = "system", defaultValue = "false")
+    Boolean system,
     HttpServletRequest request
   ) throws SQLException {
     if (appInfoResolver.isStrictMode()) {
@@ -87,10 +92,22 @@ public class DatabaseMetaApi {
     }
     ResultDefinition result_meta = new ResultDefinition();
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
+    List<String> types = new ArrayList<>(2);
+    if (Type.all == type) {
+      types.add(StringUtils.upperCase(Type.table.name()));
+      types.add(StringUtils.upperCase(Type.view.name()));
+      if (system) {
+        types.add(StringUtils.upperCase("SYSTEM VIEW"));
+        types.add(StringUtils.upperCase("SYSTEM TABLE"));
+      }
+    } else {
+      types.add(StringUtils.upperCase(type.name()));
+      types.add(String.format("SYSTEM %s", StringUtils.upperCase(type.name())));
+    }
     return restProvider.getTables(
       result_meta, catalog, schemaPattern,
       tableNamePattern, offset, limit,
-      Constants.TABLE_TYPE);
+      types.toArray(new String[0]));
   }
 
   @Operation(summary = "表元信息")
@@ -116,6 +133,18 @@ public class DatabaseMetaApi {
     table_query.copyTableMeta(result_meta);
     RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
     return Return.wrap(restProvider.queryResultMeta(table_query));
+  }
+
+  public static enum Type {
+
+    table,
+
+    view,
+    
+    all,
+
+    ;
+
   }
 
 }
