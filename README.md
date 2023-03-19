@@ -8,16 +8,16 @@
 
 目前支持的数据库列表：
 
-- MySQL5.7/8.0
-- PostgresQL9.6～14.4
-- 达梦8
-- 南大通用分布式数据库8a
-- ClickHouse
-- IBM DB2
-- oracle
-- MariaDB
-- Trino
-- opensearch
+- MySQL5.7/8.0 驱动类：`com.mysql.jdbc.Driver`
+- PostgresQL9.6～14.4 驱动类：`org.postgresql.Driver`
+- 达梦8 驱动类：`dm.jdbc.driver.DmDriver`
+- 南大通用分布式数据库8a 驱动类：`com.gbase.jdbc.Driver`
+- ClickHouse 驱动类：`com.clickhouse.jdbc.ClickHouseDriver`
+- IBM DB2 驱动类：`com.ibm.db2.jcc.DB2Driver`
+- Oracle 驱动类：`oracle.jdbc.driver.OracleDriver`
+- MariaDB 驱动类：`org.mariadb.jdbc.Driver`
+- Trino 驱动类：`io.trino.jdbc.TrinoDriver`
+- OpenSearch 驱动类：`org.opensearch.jdbc.Driver`
 
 > 其他数据库的JDBC连接需要适配方言。
 
@@ -935,11 +935,24 @@ roles:
 
 ## 9、部署运行说明
 
+### 9.1、PostgreSQL
+
 ```bash
 docker run --rm -ti -p 7188:7188 \
   -e JDBC_DRIVER=org.postgresql.Driver \
   -e JDBC_URL=jdbc:postgresql://your-db-host:5432/dbname \
   -e JDBC_USER=postgres \
   -e JDBC_PASSWORD=yourpass \
-  gitlab.snz1.cn:9288/database/jdbcrest:1.0.0
+  gitlab.snz1.cn:9288/database/jdbcrest:1.0.1
+```
+
+### 9.2、ClickHouse
+
+```bash
+docker run --rm -ti -p 7188:7188 \
+  -e JDBC_DRIVER=com.clickhouse.jdbc.ClickHouseDriver \
+  -e JDBC_URL=jdbc:clickhouse://your-clickhouse-host:8123 \
+  -e JDBC_USER=default \
+  -e JDBC_PASSWORD=yourpass \
+  gitlab.snz1.cn:9288/database/jdbcrest:1.0.1
 ```
