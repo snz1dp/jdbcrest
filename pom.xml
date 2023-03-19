@@ -277,7 +277,7 @@
 			<version>${jaybird.version}</version>
 		</dependency>
 
-		<!-- firebirdsql -->
+		<!-- opensearch -->
 		<dependency>
 			<groupId>org.opensearch.driver</groupId>
 			<artifactId>opensearch-sql-jdbc</artifactId>
