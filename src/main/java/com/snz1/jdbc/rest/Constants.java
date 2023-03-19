@@ -20,8 +20,20 @@ public abstract class Constants {
   // 去除重行参数
   public static final String DISTINCT_ARG =  "_distinct";
 
+  // 目录参数
+  public static final String CATALOG_ARG = "_catalog";
+
+  // 模式参数
+  public static final String SCHEMA_ARG = "_schema";
+
   // 关联查询
   public static final String JOIN_ARG =  "_join";
+
+  // 主键名称
+  public static final String PRIMARY_KEY_ARG = "_primary_key";
+
+  // 主键分割
+  public static final String KEY_SPLITTER_ARG = "_key_splitter";
 
   // 返回列请求参数
   public static final String RESULT_ALL_COLUMNS_ARG = "_result.all_column";
@@ -59,7 +71,7 @@ public abstract class Constants {
   // 缺省主键分割符
   public static final String DEFAULT_KEY_SPLITTER = "|";
 
-  // 请求头修改模式
+  // 请求头修改模式，为“patch”时表示补丁更新
   public static final String HEADER_UPDATE_MODE_ARG = "jdbcrest-update-mode";
 
   // 补丁模式

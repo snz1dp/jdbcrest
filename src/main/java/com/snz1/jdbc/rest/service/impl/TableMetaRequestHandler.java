@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -36,18 +35,10 @@ public class TableMetaRequestHandler extends AbstractJdbcQueryRequestHandler<Tab
   @Nullable
   public TableMeta doInConnection(Connection conn) throws SQLException, DataAccessException {
     JdbcQueryRequest table_query = this.getRequest();
-    Object primary_key =  doFetchTablePrimaryKey(conn, table_query.getTable_name());
-    TableIndexs table_index = doFetchTableIndexs(conn, table_query.getTable_name());
+    Object primary_key =  doFetchTablePrimaryKey(conn, table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name());
+    TableIndexs table_index = doFetchTableIndexs(conn, table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name());
 
-    String schemas_name = null;
-    String table_name = table_query.getTable_name();
-    if (this.getSqlDialectProvider().supportSchemas() && StringUtils.contains(table_name, '.')) {
-      int first_start = table_name.indexOf(".");
-      schemas_name = table_name.substring(0, first_start);
-      table_name = table_name.substring(first_start + 1);
-    }
-
-    ResultSet rs = conn.getMetaData().getColumns(conn.getCatalog(), schemas_name, table_name, "%");
+    ResultSet rs = conn.getMetaData().getColumns(table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name(), "%");
     try {
       return TableMeta.of(
         rs,

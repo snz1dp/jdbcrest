@@ -2,11 +2,20 @@ package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import org.apache.commons.lang3.StringUtils;
+
 import lombok.Data;
 
 // Jdbc转Restful请求
 @Data
 public abstract class JdbcRestfulRequest implements Serializable, Cloneable {
+
+  // 目录名称
+  private String catalog_name;
+
+  // 模式名称
+  private String schema_name;
 
   // 表名
   private String table_name;
@@ -23,6 +32,31 @@ public abstract class JdbcRestfulRequest implements Serializable, Cloneable {
   // 是否有定义
   public boolean hasDefinition() {
     return this.definition != null;
+  }
+
+  public void setDefinition(TableDefinition definition) {
+    this.definition = definition;
+    if (definition != null) {
+      this.catalog_name = definition.getCatalog();
+      this.schema_name = definition.getSchema();
+      if (StringUtils.isNotBlank(definition.getAlias())) {
+        this.table_name = definition.getAlias();
+      }
+    }
+  }
+
+  public String getFullTableName() {
+    if (StringUtils.isBlank(this.catalog_name)) {
+      if (StringUtils.isBlank(this.schema_name)) {
+        return this.table_name;
+      } else {
+        return String.format("\"%s\".\"%s\"", this.schema_name, this.table_name);
+      }
+    } else if (StringUtils.isBlank(this.schema_name)) {
+      return String.format("\"%s\".\"default\".\"%s\"", this.catalog_name, this.table_name);
+    } else {
+      return String.format("\"%s\".\"%s\".\"%s\"", this.catalog_name, this.schema_name, this.table_name);
+    }
   }
 
   // 克隆

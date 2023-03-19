@@ -75,8 +75,7 @@ public class DatabaseUpdateApi {
     HttpServletRequest request
   ) throws IOException, SQLException {
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = String.format("%s.%s", result_meta.getSchemas_name(), result_meta.getTable_name());
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -129,8 +128,7 @@ public class DatabaseUpdateApi {
     HttpServletRequest request
   ) throws IOException, SQLException {
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -143,7 +141,6 @@ public class DatabaseUpdateApi {
     // 构建操作请求
     ManipulationRequest batch_patch_request = new ManipulationRequest();
     batch_patch_request.copyTableMeta(result_meta);
-    batch_patch_request.setTable_name(table_name);
 
     // 提取更新输入
     Object input_data = RequestUtils.fetchManipulationRequestData(request);

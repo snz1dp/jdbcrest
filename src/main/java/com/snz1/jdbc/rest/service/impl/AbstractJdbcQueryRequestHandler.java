@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
@@ -41,6 +40,17 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
 
   private JdbcQueryRequest request;
 
+  protected JdbcQueryResponse<List<Object>> doFetchResultSet(
+    ResultSet rs,
+    ResultDefinition return_meta,
+    Object primary_key,
+    TableIndexs table_index,
+    TableDefinition table_definition
+  ) throws SQLException {
+    return this.doFetchResultSet(rs, return_meta, primary_key, table_index,
+      table_definition, null, null);
+  }
+
   // 执行获取结果集
   @SuppressWarnings("null")
   protected JdbcQueryResponse<List<Object>> doFetchResultSet(
@@ -48,7 +58,9 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
     ResultDefinition return_meta,
     Object primary_key,
     TableIndexs table_index,
-    TableDefinition table_definition
+    TableDefinition table_definition,
+    Long offset,
+    Long limit
   ) throws SQLException {
     boolean onepack = true; 
     boolean meta = false;
@@ -59,7 +71,6 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
       onepack = return_meta.isColumn_compact();
       objlist = ResultDefinition.ResultRowStruct.list.equals(return_meta.getRow_struct());
     }
-
     TableMeta result_meta = TableMeta.of(
       rs.getMetaData(),
       return_meta,
@@ -69,7 +80,16 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
     );
     List<Object> rows = new LinkedList<>();
 
+    long skip_index = 0;
+    long fetch_count = 0;
+
     while(rs.next()) {
+      if (offset != null && skip_index < offset) {
+        skip_index++;
+        continue;
+      }
+      if (limit != null && fetch_count >= limit) break;
+      fetch_count++;
       List<Object> row_list = null;
       Map<String, Object> row_map = null;
       Object row_data = null;
@@ -138,19 +158,12 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
 
   // 执行获取主键
   @SuppressWarnings("unchecked")
-  protected Object doFetchTablePrimaryKey(Connection conn, String table_name) throws SQLException {
+  protected Object doFetchTablePrimaryKey(Connection conn, String catalog_name, String schema_name, String table_name) throws SQLException {
     Object primary_key = null;
     ResultSet ks = null;
 
-    String schemas_name = conn.getSchema();
-    if (this.getSqlDialectProvider().supportSchemas() && StringUtils.contains(table_name, '.')) {
-      int first_start = table_name.indexOf(".");
-      schemas_name = table_name.substring(0, first_start);
-      table_name = table_name.substring(first_start + 1);
-    }
-
     try {
-      ks = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), schemas_name, table_name);
+      ks = conn.getMetaData().getPrimaryKeys(catalog_name, schema_name, table_name);
     } catch(SQLFeatureNotSupportedException e) {
       return primary_key;
     }
@@ -179,18 +192,11 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
 
   // 执行获取唯一索引
   @SuppressWarnings("unchecked")
-  protected TableIndexs doFetchTableIndexs(Connection conn, String table_name) throws SQLException {
-    String schemas_name = conn.getSchema();
-    if (this.getSqlDialectProvider().supportSchemas() && StringUtils.contains(table_name, '.')) {
-      int first_start = table_name.indexOf(".");
-      schemas_name = table_name.substring(0, first_start);
-      table_name = table_name.substring(first_start + 1);
-    }
-
+  protected TableIndexs doFetchTableIndexs(Connection conn, String catalog_name, String schema_name, String table_name) throws SQLException {
     TableIndexs index_lst = new TableIndexs();
     ResultSet ks = null;
     try {
-      ks = conn.getMetaData().getIndexInfo(conn.getCatalog(), schemas_name, table_name, false, false);
+      ks = conn.getMetaData().getIndexInfo(catalog_name, schema_name, table_name, false, false);
     } catch(SQLFeatureNotSupportedException e) {
       return index_lst;
     } catch(Throwable e) {

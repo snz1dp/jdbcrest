@@ -20,6 +20,7 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
@@ -105,21 +106,23 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   }
 
   @Override
-  public JdbcQueryResponse<List<Object>> getTables(
+  public JdbcQueryResponse<Page<Object>> getTables(
     ResultDefinition return_meta, String catalog, String schema_pattern,
-    String table_name_pattern, String... types
+    String table_name_pattern, Long offset, Long limit, String... types
   ) throws SQLException {
     StringBuffer cbuf = new StringBuffer(Constants.CATALOGS_CACHE);
-    cbuf.append(":").append(catalog).append(":").append(schema_pattern).append(":").append(table_name_pattern);
+    cbuf.append(":").append(catalog).append(":").append(schema_pattern).append(":").append(table_name_pattern)
+        .append(":").append(offset).append(":").append(limit);
     if (types != null && types.length > 0) {
       for (String type_name : types) {
         cbuf.append(":").append(type_name);
       }
     }
-    JdbcQueryResponse<List<Object>> ret = this.resolveCached(
+    JdbcQueryResponse<Page<Object>> ret = this.resolveCached(
       String.format("%s:meta", runConfig.getApplicationCode()),
       cbuf.toString(),
-      () -> super.getTables(return_meta, catalog, schema_pattern, table_name_pattern, types)
+      () -> super.getTables(return_meta, catalog, schema_pattern,
+        table_name_pattern, offset, limit, types)
     );
     // 校验授权
     ret.setLic(this.getAppInfoResolver().getLicenseMeta());
@@ -136,42 +139,12 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   }
 
   @Override
-  public boolean testTableExisted(String table_name, String... types) {
-    StringBuffer cbuf = new StringBuffer(Constants.EXISTED_CACHE);
-    cbuf.append(":").append(table_name);
-    if (types != null && types.length > 0) {
-      for (String type_name : types) {
-        cbuf.append(":").append(type_name);
-      }
-    }
-    try {
-      Boolean existed = this.resolveCached(
-        String.format("%s:meta", runConfig.getApplicationCode()),
-        cbuf.toString(),
-        () -> super.testTableExisted(table_name, types)
-      );
-      return existed;
-    } catch (SQLException e) {
-      throw new IllegalStateException(e.getMessage(), e);
-    }
-  }
-
-  @Override
-  public Object getTablePrimaryKey(String table_name) throws SQLException {
-    return this.resolveCached(
-      String.format("%s:meta", runConfig.getApplicationCode()),
-      String.format("%s:%s", Constants.PRIMARYKEY_CACHE, table_name),
-      () -> super.getTablePrimaryKey(table_name)
-    );
-  }
-
-  @Override
   protected TableMeta doFetchResultSetMeta(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     if (table_query.hasTable_meta()) return table_query.getTable_meta();
     try {
       return this.resolveCached(
         String.format("%s:meta", runConfig.getApplicationCode()),
-        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getTable_name()),
+        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFullTableName()),
         () -> super.doFetchResultSetMeta(table_query, sql_dialect_provider)
       );
     } catch (SQLException e) {
@@ -230,7 +203,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   ) {
     try {
       JdbcQueryResponse<?> ret = this.resolveCached(
-        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getTable_name()),
+        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getFullTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "list:"),
         () -> super.doQueryListResult(table_query, sql_dialect_provider)
       );
@@ -246,7 +219,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     try {
       return this.resolveCached(
-        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getTable_name()),
+        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getFullTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "total:"),
         () -> super.doQueryTotalResult(table_query, sql_dialect_provider)
       );
@@ -262,7 +235,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), insert_request.getTable_name()));
+    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), insert_request.getFullTableName()));
     return ret;
   }
 
@@ -273,7 +246,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), update_request.getTable_name()));
+    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), update_request.getFullTableName()));
     return ret;
   }
 
@@ -284,7 +257,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), delete_request.getTable_name()));
+    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), delete_request.getFullTableName()));
     return ret;
   }
 
@@ -346,7 +319,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   public void clearTableCaches(String table_name) {
-    table_name = resolveRealTableName(table_name);
     this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), table_name));
   }
 
@@ -367,7 +339,12 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   public void clearTableCaches() {
     List<Object> datalist = null;
     try {
-      datalist = this.getTables(null, null, null, null).getData();      
+      datalist = this.getTables(
+        null, null,
+         null,
+        null,
+        null, null
+      ).getData().getData();      
     } catch (SQLException e) {
       log.warn("清理缓存发生错误: {}", e.getMessage(), e);
     }

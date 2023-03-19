@@ -34,6 +34,10 @@
 | _join              | 字符串   |  否     |         | QueryString  | 关联表参数，格式为：<br>关联表名:字段名:主表字段  |
 | _order              | 字符串   |  否     |          | QueryString | 字段排序，格式为：<br>-字段1,字段2  |
 | _count              | 字符串   |  否     | *        | QueryString  | 统计数量，格式为：字段名  |
+| _primary_key              | 字符串   |  否     | *        | QueryString  | 主键字段名称，可多个  |
+| _key_splitter              | 字符串   |  否     | *        | QueryString  | 主键分割符号，默认为`｜`  |
+| _catalog              | 字符串   |  否     | *        | QueryString  | 数据库CATALOG名称  |
+| _schema              | 字符串   |  否     | *        | QueryString  | 数据库SCHEMA名称  |
 | _result.signleton   | 布尔   |  否     | true       | QueryString   | 为true时表示对象数据返回  |
 | _result.row_struct   | 枚举   |  否     | map        | QueryString  | 可选值：<br>list表示列表<br>map表示对象  |
 | _result.contain_meta | 布尔     |  否     | true     | QueryString   | 为true时在信封中返回数据元信息 |

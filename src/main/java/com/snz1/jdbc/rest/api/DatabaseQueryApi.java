@@ -65,8 +65,7 @@ public class DatabaseQueryApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -76,7 +75,6 @@ public class DatabaseQueryApi {
     }
 
     JdbcQueryRequest table_query = new JdbcQueryRequest(); 
-    table_query.setTable_name(table_name);
     table_query.copyTableMeta(result_meta);
 
     RequestUtils.fetchJdbcQueryRequest(request, table_query);
@@ -114,12 +112,10 @@ public class DatabaseQueryApi {
     String key,
     HttpServletRequest request
   ) throws SQLException {
-    TableMeta table_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = table_meta.getTable_name();
+    TableMeta table_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     // 获取表元信息
     JdbcQueryRequest table_query = new JdbcQueryRequest();
-    table_query.setTable_name(table_name);
     table_query.copyTableMeta(table_meta);
 
     // 获取自定义主键

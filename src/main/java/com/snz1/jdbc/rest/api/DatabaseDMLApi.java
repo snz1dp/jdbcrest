@@ -52,7 +52,7 @@ public class DatabaseDMLApi {
       if (dml.getInsert() != null && dml.getInsert().length > 0) {
         for (int j = 0; j < dml.getInsert().length; j++) {
           ManipulationRequest insert_request = dml.getInsert()[j];
-          String table_name = insert_request.getTable_name();
+          String table_name = insert_request.getFullTableName();
           Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
           if (appInfoResolver.isStrictMode()) {
             Validate.isTrue(
@@ -70,7 +70,7 @@ public class DatabaseDMLApi {
       if (dml.getUpdate() != null && dml.getUpdate().length > 0) {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
-          String table_name = update_request.getTable_name();
+          String table_name = update_request.getFullTableName();
           Validate.notBlank(table_name, "[%d-%d]更新请求未设置表名", i, j);
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
           if (appInfoResolver.isStrictMode()) {
@@ -89,7 +89,7 @@ public class DatabaseDMLApi {
       if (dml.getDelete() != null && dml.getDelete().length > 0) {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
-          String table_name = delete_request.getTable_name();
+          String table_name = delete_request.getFullTableName();
           Validate.notBlank(table_name, "[%d-%d]删除请求未设置表名", i, j);
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
           if (appInfoResolver.isStrictMode()) {

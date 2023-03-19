@@ -18,6 +18,7 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
+import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
@@ -67,7 +68,7 @@ public class DatabaseMetaApi {
 
   @Operation(summary = "获取数据表")
   @GetMapping(path = "/tables")
-  public Return<List<Object>> getTables(
+  public Return<Page<Object>> getTables(
     @RequestParam(value="catalog", required = false)
     String catalog,
     @RequestParam(value="schema", required = false)
@@ -76,6 +77,10 @@ public class DatabaseMetaApi {
     String tableNamePattern,
     @RequestParam(value="type", required = false)
     String []types,
+    @RequestParam(value = "offset", defaultValue = "0")
+    Long offset,
+    @RequestParam(value = "limit", defaultValue = "0")
+    Long limit,
     HttpServletRequest request
   ) throws SQLException {
     if (appInfoResolver.isStrictMode()) {
@@ -84,7 +89,8 @@ public class DatabaseMetaApi {
     ResultDefinition result_meta = new ResultDefinition();
     RequestUtils.fetchQueryRequestResultMeta(request, result_meta);
     return restProvider.getTables(
-      result_meta, catalog, schemaPattern, tableNamePattern, types);
+      result_meta, catalog, schemaPattern,
+      tableNamePattern, offset, limit, types);
   }
 
   @Operation(summary = "表元信息")
@@ -97,8 +103,7 @@ public class DatabaseMetaApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -106,8 +111,9 @@ public class DatabaseMetaApi {
         "%s不存在", table_name
       );
     }
+
     JdbcQueryRequest table_query = new JdbcQueryRequest(); 
-    table_query.setTable_name(table_name);
+    table_query.copyTableMeta(result_meta);
     RequestUtils.fetchQueryRequestResultMeta(request, table_query.getResult());
     return Return.wrap(restProvider.queryResultMeta(table_query));
   }

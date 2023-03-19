@@ -6,6 +6,11 @@ import java.sql.JDBCType;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
 import lombok.Data;
@@ -91,6 +96,9 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
   public void copyTableMeta(TableMeta table_meta) {
     this.setTable_meta(table_meta);
     this.setDefinition(table_meta.getDefinition());
+    this.setCatalog_name(table_meta.getCatalog_name());
+    this.setSchema_name(table_meta.getSchema_name());
+    this.setTable_name(table_meta.getTable_name());
   }
 
   //排序
@@ -217,14 +225,38 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
   @Data
   public static class Join implements Serializable {
 
+    private String catalog_name;
+
+    private String schema_name;
+
     private String table_name;
 
     private String join_column;
 
     private String outer_column;
 
-    public static Join of(String table_name, String join_column, String right_column) {
+    public String getFullTableName() {
+      if (StringUtils.isBlank(this.catalog_name)) {
+        if (StringUtils.isBlank(this.schema_name)) {
+          return this.table_name;
+        } else {
+          return String.format("%s.%s", this.schema_name, this.table_name);
+        }
+      } else if (StringUtils.isBlank(this.schema_name)) {
+        return String.format("%s.default.%s", this.catalog_name, this.table_name);
+      } else {
+        return String.format("%s.%s.%s", this.catalog_name, this.schema_name, this.table_name);
+      }
+    }
+
+    public static Join of(String catalog_name, String schema_name, String table_name, String join_column, String right_column) {
       Join join = new Join();
+      if (StringUtils.isNotBlank(catalog_name)) {
+        join.setCatalog_name(catalog_name);
+      }
+      if (StringUtils.isNotBlank(schema_name)) {
+        join.setSchema_name(schema_name);
+      }
       join.setTable_name(table_name);
       join.setJoin_column(join_column);
       join.setOuter_column(right_column);
@@ -233,8 +265,28 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
 
   }
 
-  public static JdbcQueryRequest of(String table_name) {
+  public static JdbcQueryRequest of(String catalog_name, String schema_name, String table_name) {
     JdbcQueryRequest treq = new JdbcQueryRequest();
+    if (StringUtils.isNotBlank(catalog_name)) {
+      treq.setCatalog_name(catalog_name);
+    }
+    if (StringUtils.isNotBlank(schema_name)) {
+      treq.setSchema_name(schema_name);
+    }
+    treq.setTable_name(table_name);
+    return treq;
+  }
+
+  public static JdbcQueryRequest of(String table_name, HttpServletRequest request) {
+    JdbcQueryRequest treq = new JdbcQueryRequest();
+    String catalog_name = request.getParameter(Constants.CATALOG_ARG);
+    if (StringUtils.isNotBlank(catalog_name)) {
+      treq.setCatalog_name(catalog_name);
+    }
+    String schema_name = request.getParameter(Constants.SCHEMA_ARG);
+    if (StringUtils.isNotBlank(schema_name)) {
+      treq.setSchema_name(schema_name);
+    }
     treq.setTable_name(table_name);
     return treq;
   }

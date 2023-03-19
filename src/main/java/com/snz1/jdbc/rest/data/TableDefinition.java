@@ -16,6 +16,12 @@ import lombok.Data;
 @Data
 public class TableDefinition implements Serializable {
 
+  // CATALOG
+  private String catalog;
+
+  // schema
+  private String schema;
+
   // 数据表名称
   private String name;
 

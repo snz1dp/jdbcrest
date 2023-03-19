@@ -52,27 +52,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
-  private JdbcMetaData jdbcMetaData;
+  protected JdbcMetaData jdbcMetaData;
 
   @Resource
-  private JdbcTemplate jdbcTemplate;
+  protected JdbcTemplate jdbcTemplate;
 
   @Resource
-  private SqlSessionFactory sessionFactory;
+  protected SqlSessionFactory sessionFactory;
 
   @Resource
-  private TableDefinitionRegistry tableDefinitionRegistry;
+  protected TableDefinitionRegistry tableDefinitionRegistry;
 
   @Resource
-  private LoggedUserContext loggedUserContext;
+  protected LoggedUserContext loggedUserContext;
 
   @Resource
-  private JdbcTypeConverterFactory typeConverterFactory;
+  protected JdbcTypeConverterFactory typeConverterFactory;
 
   @Resource
-  private AppInfoResolver appInfoResolver;
+  protected AppInfoResolver appInfoResolver;
 
-  private Map<String, SQLDialectProvider> sqlDialectProviders;
+  protected Map<String, SQLDialectProvider> sqlDialectProviders;
 
   public JdbcTypeConverterFactory getTypeConverterFactory() {
     return this.typeConverterFactory;
@@ -114,10 +114,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   // 获取表类表
   @Override
-  public JdbcQueryResponse<List<Object>> getTables(
+  public JdbcQueryResponse<Page<Object>> getTables(
     ResultDefinition return_meta,
     String catalog, String schema_pattern,
-    String table_name_pattern, String...types
+    String table_name_pattern, Long offset,
+    Long limit, String...types
   ) throws SQLException {
     if (log.isDebugEnabled()) {
       log.debug("获取数据表列表(CATALOG={}, SCHEMA={}, TABLE={}, TYPES={})...",
@@ -127,7 +128,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     try {
       return jdbcTemplate.execute(new GetTablesHandler(
         this.appInfoResolver, return_meta, catalog,
-        schema_pattern, table_name_pattern, types
+        schema_pattern, table_name_pattern,
+        offset, limit, types
       ));
     } finally {
       if (log.isDebugEnabled()) {
@@ -139,32 +141,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   }
 
   // 测试表是否存在
-  private boolean doTestTableExisted(SQLDialectProvider sql_dialect_provider, String table_name, String ...types) {
+  protected boolean doTestTableExisted(SQLDialectProvider sql_dialect_provider,
+    String catalog_name, String schema_name, String table_name, String ...types) {
     if (log.isDebugEnabled()) {
       log.debug("检查数据表{}是否存在...", table_name);
     }
     long start_time = System.currentTimeMillis();
     try {
       return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(
-        sql_dialect_provider, this.appInfoResolver, table_name, types
+        sql_dialect_provider, this.appInfoResolver, catalog_name, schema_name, table_name, types
       )));
     } finally {
       if (log.isDebugEnabled()) {
         log.debug("检查数据表{}是否存在耗时{}毫秒", table_name, (System.currentTimeMillis() - start_time));
       }
     }
-  }
-  
-  // 测试表是否存在
-  public boolean testTableExisted(String table_name, String ...types) throws SQLException {
-    SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
-    return this.doTestTableExisted(sql_dialect_provider, table_name, types);
-  }
-
-  // 获取主键
-  @Override
-  public Object getTablePrimaryKey(String table_name) throws SQLException {
-    return jdbcTemplate.execute(new GetPrimaryKeyHandler(table_name, this.appInfoResolver));
   }
 
   // 执行获取结果集元信息
@@ -175,20 +166,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider, this.appInfoResolver));
   }
 
-  protected TableDefinitionRegistry getTableDefinitionRegistry() {
-    return tableDefinitionRegistry;
-  }
-
-  protected String resolveRealTableName(String table_name) {
-    if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
-      TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_name);
-      if (definition.hasAlias_name()) {
-        table_name = definition.getAlias();
-      }
-    }
-    return table_name;
-  }
-
   // 元信息
   public TableMeta queryResultMeta(
     JdbcQueryRequest table_query
@@ -196,29 +173,26 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     if (table_query.hasTable_meta()) return table_query.getTable_meta();
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
-    String table_name = table_query.getTable_name();
-    if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
-      TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_name);
+    if (tableDefinitionRegistry.hasTableDefinition(table_query.getTable_name())) {
+      TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_query.getTable_name());
       table_query.setDefinition(definition);
-      if (definition.hasAlias_name()) {
-        table_name = definition.getAlias();
-      }
     } else if (this.appInfoResolver.isStrictMode()) {
-      throw new NotFoundException(String.format("%s不存在", table_name));
+      throw new NotFoundException(String.format("%s不存在", table_query.getFullTableName()));
     }
 
-    if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(sql_dialect_provider, table_name)) {
-      throw new NotFoundException(String.format("%s不存在", table_name));
+    if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(
+      sql_dialect_provider, table_query.getCatalog_name(),
+      table_query.getSchema_name(), table_query.getTable_name())) {
+      throw new NotFoundException(String.format("%s不存在", table_query.getFullTableName()));
     }
 
-    table_query.setTable_name(table_name);
     return doFetchResultSetMeta(table_query, sql_dialect_provider);
   }
 
   // 分页查询统计信息
   protected boolean doFetchQueryPageTotal(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}分页查询统计...", table_query.getTable_name());
+      log.debug("执行表{}分页查询统计...", table_query.getFullTableName());
     }
     long start_time = System.currentTimeMillis();
     try {
@@ -250,7 +224,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       return has_data;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -258,7 +232,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}数据行统计...", table_query.getTable_name());
+      log.debug("执行表{}数据行统计...", table_query.getFullTableName());
     }
     try {
       // 获取统计
@@ -266,7 +240,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       return query_count;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}数据行统计耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}数据行统计耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -275,7 +249,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   protected JdbcQueryResponse<?> doQueryListResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}数据行查询...", table_query.getTable_name());
+      log.debug("执行表{}数据行查询...", table_query.getFullTableName());
     }
     try {
       // 获取列表数据
@@ -285,7 +259,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       return datalist;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getTable_name(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -298,11 +272,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
 
-    String table_name = table_query.getTable_name();
-
     if (!table_query.hasTable_meta()) { // 无表元信息则查询
-      if (!testTableExisted(table_name)) {
-        throw new NotFoundException(String.format("数据表%s不存在", table_name));
+      if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(
+        sql_dialect_provider, table_query.getCatalog_name(),
+        table_query.getSchema_name(), table_query.getTable_name())) {
+        throw new NotFoundException(String.format("数据表%s不存在", table_query.getFullTableName()));
       }
     }
 
@@ -338,6 +312,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
     SQLDialectProvider sql_dialect_provider = getSQLDialectProvider();
     Validate.notNull(sql_dialect_provider, "暂时不支持%s数据库", getMetaData().getProduct_name());
     table_query.getResult().setRow_struct(ResultDefinition.ResultRowStruct.list);
+    table_query.getResult().setOffset(0l);
     table_query.getResult().setLimit(1l);
     JdbcQueryResponse<?> datalist = this.doQueryListResult(table_query, sql_dialect_provider);
     Object total_val = ((List<Object>)(((List<Object>)datalist.getData()).get(0))).get(0);
@@ -495,11 +470,15 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       if (dml.getInsert() != null && dml.getInsert().length > 0) {
         for (int j = 0; j < dml.getInsert().length; j++) {
           ManipulationRequest insert_request = dml.getInsert()[j];
+          String catalog_name = insert_request.getCatalog_name();
+          String schema_name = insert_request.getSchema_name();
           String table_name = insert_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
-          TableMeta table_meta = table_metas.get(table_name);
+          TableMeta table_meta = table_metas.get(insert_request.getFullTableName());
           if (table_meta == null) {
-            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
+            table_metas.put(insert_request.getFullTableName(),
+              table_meta = queryResultMeta(JdbcQueryRequest.of(
+                catalog_name, schema_name, table_name)));
           }
           insert_request.copyTableMeta(table_meta);
           insert_request.rebuildWhere();
@@ -508,12 +487,16 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       if (dml.getUpdate() != null && dml.getUpdate().length > 0) {
         for (int j = 0; j < dml.getUpdate().length; j++) {
           ManipulationRequest update_request = dml.getUpdate()[j];
+          String catalog_name = update_request.getCatalog_name();
+          String schema_name = update_request.getSchema_name();
           String table_name = update_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]更新请求未设置表名", i, j);
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(table_name);
+          TableMeta table_meta = table_metas.get(update_request.getFullTableName());
           if (table_meta == null) {
-            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
+            table_metas.put(update_request.getFullTableName(),
+              table_meta = queryResultMeta(JdbcQueryRequest.of(
+                catalog_name, schema_name, table_name)));
           }
           update_request.copyTableMeta(table_meta);
           update_request.rebuildWhere();
@@ -522,12 +505,16 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
       if (dml.getDelete() != null && dml.getDelete().length > 0) {
         for (int j = 0; j < dml.getDelete().length; j++) {
           ManipulationRequest delete_request = dml.getDelete()[j];
+          String catalog_name = delete_request.getCatalog_name();
+          String schema_name = delete_request.getSchema_name();
           String table_name = delete_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]删除请求未设置表名", i, j);
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(table_name);
+          TableMeta table_meta = table_metas.get(delete_request.getFullTableName());
           if (table_meta == null) {
-            table_metas.put(table_name, table_meta = queryResultMeta(JdbcQueryRequest.of(table_name)));
+            table_metas.put(delete_request.getFullTableName(),
+              table_meta = queryResultMeta(JdbcQueryRequest.of(
+                catalog_name, schema_name, table_name)));
           }
           delete_request.copyTableMeta(table_meta);
           delete_request.rebuildWhere();

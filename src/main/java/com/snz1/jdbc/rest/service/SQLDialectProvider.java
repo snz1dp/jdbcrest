@@ -20,6 +20,9 @@ public interface SQLDialectProvider {
   // 是否支持Schema
   boolean supportSchemas();
 
+  // 是否允许用count(*)
+  boolean supportCountAnyColumns();
+
   // 获取查询的合计
   JdbcQueryStatement prepareQueryCount(JdbcQueryRequest table_query);
 

@@ -57,8 +57,7 @@ public class DatabaseDeleteApi {
   ) throws IOException, SQLException {
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -70,13 +69,11 @@ public class DatabaseDeleteApi {
 
     // 构建操作请求
     ManipulationRequest delete_request = new ManipulationRequest();
-    delete_request.setTable_name(table_name);
+    // 获取表元信息
+    delete_request.copyTableMeta(result_meta);
 
     // 提取自定义主键
     RequestUtils.fetchManipulationRequestCustomKey(request, delete_request.getCustom_key());
-
-    // 获取表元信息
-    delete_request.copyTableMeta(result_meta);
 
     // 获取主键
     RequestCustomKey custom_key = delete_request.getCustom_key();
@@ -107,9 +104,7 @@ public class DatabaseDeleteApi {
   ) throws IOException, SQLException {
 
     // 获取表元信息
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
-
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
         !result_meta.getDefinition().isReadonly()
@@ -120,8 +115,6 @@ public class DatabaseDeleteApi {
 
     // 构建操作请求
     ManipulationRequest delete_request = new ManipulationRequest();
-    delete_request.setTable_name(table_name);
-
     // 获取表元信息
     delete_request.copyTableMeta(result_meta);
 

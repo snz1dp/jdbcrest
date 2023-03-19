@@ -56,7 +56,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
     try {
-      sql.FROM(table_query.getTable_name());
+      sql.FROM(table_query.getFullTableName());
 
       if (table_query.getSelect().hasCount() || docount) {
         if (!docount && table_query.hasGroup_by()) {
@@ -72,9 +72,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
       } else if (!table_query.getSelect().hasColumns()) {
         sql.SELECT("ROWNUM AS ROWNUM__");
         if (table_query.getSelect().isDistinct()) {
-          sql.SELECT_DISTINCT(table_query.getTable_name() + ".*");
+          sql.SELECT_DISTINCT(table_query.getFullTableName() + ".*");
         } else {
-          sql.SELECT(table_query.getTable_name() + ".*");
+          sql.SELECT(table_query.getFullTableName() + ".*");
         }
       } else {
         sql.SELECT("ROWNUM AS ROWNUM__");
@@ -109,10 +109,10 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
         table_query.getJoin().forEach(j -> {
           sql.LEFT_OUTER_JOIN(String.format(
             "%s on %s.%s = %s.%s",
-            j.getTable_name(),
-            j.getTable_name(),
+            j.getFullTableName(),
+            j.getFullTableName(),
             j.getJoin_column(),
-            table_query.getTable_name(),
+            table_query.getFullTableName(),
             j.getOuter_column()
           ));
         });
@@ -247,7 +247,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
       StringBuffer ignore_sql = new StringBuffer(" /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
-      ignore_sql.append(insert_request.getTable_name())
+      ignore_sql.append(insert_request.getFullTableName())
         .append("(")
         .append(insert_request.getPrimary_key())
         .append(")) */");

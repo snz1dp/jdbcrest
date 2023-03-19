@@ -334,8 +334,10 @@ public abstract class RequestUtils {
         if (join_field_data.length != 3) {
           throw new IllegalArgumentException(String.format("关联参数错误：%s", join_field));
         }
+        String join_catalog = request.getParameter(Constants.JOIN_ARG + "." + join_field_data[0] + ".catalog");
+        String join_schema = request.getParameter(Constants.JOIN_ARG + "." + join_field_data[0] + ".schema");
         JdbcQueryRequest.Join join_col = JdbcQueryRequest.Join.of(
-          join_field_data[0], join_field_data[1], join_field_data[2]
+          join_catalog, join_schema, join_field_data[0], join_field_data[1], join_field_data[2]
         );
         join.add(join_col);
       }
@@ -385,7 +387,7 @@ public abstract class RequestUtils {
   public static RequestCustomKey fetchManipulationRequestCustomKey(HttpServletRequest request, RequestCustomKey custom) {
     // 获取主键定义
     Enumeration<String> primary_keys = request.getHeaders(Constants.HEADER_PRIMARY_KEY_ARG);
-    if (primary_keys != null) {
+    if (primary_keys != null && primary_keys.hasMoreElements()) {
       List<String> custer_primary_list = new LinkedList<>();
       while(primary_keys.hasMoreElements()) {
         String primary_key = primary_keys.nextElement();
@@ -395,13 +397,29 @@ public abstract class RequestUtils {
       if (custer_primary_list.size() > 0) {
         custom.setCustom_key(custer_primary_list.size() == 1 ? custer_primary_list.get(0) : custer_primary_list);
       }
+    } else {
+      String[] key_names = request.getParameterValues(Constants.PRIMARY_KEY_ARG);
+      List<String> custer_primary_list = new LinkedList<>();
+      if (key_names != null && key_names.length > 0) {
+        for (String key_name : key_names) {
+          if (StringUtils.isBlank(key_name)) continue;
+          custer_primary_list.add(key_name);
+        }
+      }
+      if (custer_primary_list.size() > 0) {
+        custom.setCustom_key(custer_primary_list.size() == 1 ? custer_primary_list.get(0) : custer_primary_list);
+      }
     }
 
     // 主键分割
-    custom.setKey_splitter(request.getHeader(Constants.HEADER_PRIMARY_KEY_ARG));
+    custom.setKey_splitter(request.getHeader(Constants.HEADER_KEY_SPLITTER_ARG));
     if (!custom.hasKey_splitter()) {
-      custom.setKey_splitter(Constants.DEFAULT_KEY_SPLITTER);
+      custom.setKey_splitter(request.getParameter(Constants.KEY_SPLITTER_ARG));
+      if (!custom.hasKey_splitter()) {
+        custom.setKey_splitter(Constants.DEFAULT_KEY_SPLITTER);
+      }
     }
+
     return custom;
   }
 

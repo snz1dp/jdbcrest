@@ -122,6 +122,21 @@
         "JDBC_USER": "db2inst1",
         "JDBC_PASSWORD": "changeme"
       }
+    },
+    {
+      "type": "java",
+      "name": "Launch Application(trino)",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.Application",
+      "projectName": "jdbcrest",
+      "env": {
+        "CONFIG_TYPE": "none",
+        "CACHE_TYPE": "none",
+        "JDBC_DRIVER": "io.trino.jdbc.TrinoDriver",
+        "JDBC_URL": "jdbc:trino://localhost:8543?SSL=true&SSLVerification=NONE",
+        "JDBC_USER": "root",
+        "JDBC_PASSWORD": "snz1dp9527"
+      }
     }
   ]
 }

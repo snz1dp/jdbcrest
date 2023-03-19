@@ -40,8 +40,7 @@ public class DatabaseInsertApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException, IOException {
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
@@ -52,11 +51,8 @@ public class DatabaseInsertApi {
     }
 
     ManipulationRequest insert_request = new ManipulationRequest();
-    insert_request.setTable_name(table_name);
-
     // 获取表元信息
     insert_request.copyTableMeta(result_meta);
-
     // 提取插入输入
     insert_request.setInput_data(RequestUtils.fetchManipulationRequestData(request));
 

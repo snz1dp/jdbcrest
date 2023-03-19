@@ -27,7 +27,7 @@
 		<db2.version>11.5.7.0</db2.version>
 		<postgis.version>2.5.0</postgis.version>
 		<mssql.version>8.2.0.jre8</mssql.version>
-		<trino.version>351</trino.version>
+		<trino.version>410</trino.version>
 		<oracle.version>12.2.0.1</oracle.version>
 		<mariadb.version>2.4.3</mariadb.version>
 		<jaybird.version>4.0.0.java8</jaybird.version>

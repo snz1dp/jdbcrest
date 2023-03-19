@@ -30,12 +30,12 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   @Override
   public boolean checkTableExisted() {
-    return false;
+    return true;
   }
 
   @Override
   public boolean supportSchemas() {
-    return false;
+    return true;
   }
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {

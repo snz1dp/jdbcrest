@@ -36,13 +36,18 @@ public class TableMeta implements Serializable {
   private List<TableColumn> columns = new LinkedList<>();
 
   // 表名
+  @Getter
   @Setter
   private String table_name;
+
+  @Getter
+  @Setter
+  private String catalog_name;
 
   // Schemas
   @Getter
   @Setter
-  private String schemas_name;
+  private String schema_name;
 
   // 字段统计
   @Getter
@@ -74,9 +79,18 @@ public class TableMeta implements Serializable {
     return this;
   }
 
-  public String getTable_name() {
-    if (StringUtils.isBlank(this.schemas_name)) return this.table_name;
-    return String.format("%s.%s", this.schemas_name, this.table_name);
+  public String getFullTableName() {
+    if (StringUtils.isBlank(this.catalog_name)) {
+      if (StringUtils.isBlank(this.schema_name)) {
+        return this.table_name;
+      } else {
+        return String.format("%s.%s", this.schema_name, this.table_name);
+      }
+    } else if (StringUtils.isBlank(this.schema_name)) {
+      return String.format("%s.default.%s", this.catalog_name, this.table_name);
+    } else {
+      return String.format("%s.%s.%s", this.catalog_name, this.schema_name, this.table_name);
+    }
   }
 
   // 是否有唯一索引
@@ -191,12 +205,16 @@ public class TableMeta implements Serializable {
     }
 
     for (int i = 1; i <= col_count; i++) {
-      if (metadata.getTable_name() == null) {
+      if (metadata.table_name == null) {
         metadata.setTable_name(rs_meta.getTableName(i));
       }
 
-      if (metadata.getSchemas_name() == null) {
-        metadata.setSchemas_name(rs_meta.getSchemaName(i));
+      if (metadata.getSchema_name() == null) {
+        metadata.setSchema_name(rs_meta.getSchemaName(i));
+      }
+
+      if (metadata.getCatalog_name() == null) {
+        metadata.setCatalog_name(rs_meta.getCatalogName(i));
       }
 
       String column_name = rs_meta.getColumnName(i);
@@ -233,12 +251,16 @@ public class TableMeta implements Serializable {
       metadata.getColumns().add(col);
     }
 
-    if (StringUtils.isBlank(metadata.getTable_name())) {
+    if (StringUtils.isBlank(metadata.table_name)) {
       metadata.setTable_name(null);
     }
 
-    if (StringUtils.isBlank(metadata.getSchemas_name())) {
-      metadata.setSchemas_name(null);
+    if (StringUtils.isBlank(metadata.getSchema_name())) {
+      metadata.setSchema_name(null);
+    }
+
+    if (StringUtils.isBlank(metadata.getCatalog_name())) {
+      metadata.setCatalog_name(null);
     }
 
     return metadata;
@@ -257,12 +279,14 @@ public class TableMeta implements Serializable {
     int col_count = 0;
 
     while (rs_meta.next()) {
+      if (metadata.getCatalog_name() == null) {
+        metadata.setCatalog_name(rs_meta.getString("TABLE_CAT"));
+      }
+      if (metadata.getSchema_name() == null) {
+        metadata.setSchema_name(rs_meta.getString("TABLE_SCHEM"));
+      }
       if (metadata.getTable_name() == null) {
         metadata.setTable_name(rs_meta.getString("TABLE_NAME"));
-      }
-
-      if (metadata.getSchemas_name() == null) {
-        metadata.setSchemas_name(rs_meta.getString("TABLE_SCHEM"));
       }
 
       String column_name = rs_meta.getString("COLUMN_NAME");
@@ -317,12 +341,14 @@ public class TableMeta implements Serializable {
       metadata.setNormal_indexs(table_index.getNormal_indexs());
     }
 
+    if (StringUtils.isBlank(metadata.getCatalog_name())) {
+      metadata.setCatalog_name(null);
+    }
+    if (StringUtils.isBlank(metadata.getSchema_name())) {
+      metadata.setSchema_name(null);
+    }
     if (StringUtils.isBlank(metadata.getTable_name())) {
       metadata.setTable_name(null);
-    }
-
-    if (StringUtils.isBlank(metadata.getSchemas_name())) {
-      metadata.setSchemas_name(null);
     }
 
     return metadata;

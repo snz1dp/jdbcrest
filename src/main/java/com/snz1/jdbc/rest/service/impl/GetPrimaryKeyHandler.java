@@ -15,11 +15,16 @@ import lombok.ToString;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@Deprecated
 public class GetPrimaryKeyHandler extends AbstractJdbcQueryRequestHandler<Object> {
 
   private String table_name;
 
-  public GetPrimaryKeyHandler(String table_name, AppInfoResolver appInfoResolver) {
+  private String catalog_name;
+
+  private String schema_name;
+
+  public GetPrimaryKeyHandler(String catalog_name, String schema_name, String table_name, AppInfoResolver appInfoResolver) {
     super(null, null, null, null, appInfoResolver);
     this.table_name = table_name;
   }
@@ -27,7 +32,7 @@ public class GetPrimaryKeyHandler extends AbstractJdbcQueryRequestHandler<Object
   @Override
   @Nullable
   public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
-    return doFetchTablePrimaryKey(conn, table_name);
+    return doFetchTablePrimaryKey(conn, catalog_name, schema_name, table_name);
   }
 
 }

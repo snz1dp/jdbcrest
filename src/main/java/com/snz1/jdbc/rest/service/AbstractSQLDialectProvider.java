@@ -12,6 +12,7 @@ import javax.annotation.Resource;
 import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
+import com.alibaba.druid.util.StringUtils;
 import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
@@ -43,6 +44,11 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     return true;
   }
 
+  @Override
+  public boolean supportCountAnyColumns() {
+    return true;
+  }
+
   // 获取查询的合计
   @Override
   @Deprecated
@@ -69,7 +75,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
     try {
-      sql.FROM(table_query.getTable_name());
+      sql.FROM(table_query.getFullTableName());
 
       if (table_query.getSelect().hasCount() || docount) {
         if (!docount && table_query.hasGroup_by()) {
@@ -78,9 +84,15 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           });
         }
         if (table_query.getSelect().hasCount()) {
-          sql.SELECT(String.format("count(%s)", table_query.getSelect().getCount()));
-        } else {
+          if (StringUtils.equals(table_query.getSelect().getCount(), "*") && this.supportCountAnyColumns()) {
+            sql.SELECT(String.format("count(%s)", table_query.getSelect().getCount()));
+          } else {
+            sql.SELECT(String.format("count(%s)", table_query.getTable_meta().getColumns().get(0).getName()));
+          }
+        } else if (this.supportCountAnyColumns()) {
           sql.SELECT("count(*)");
+        } else {
+          sql.SELECT(String.format("count(%s)", table_query.getTable_meta().getColumns().get(0).getName()));
         }
       } else if (!table_query.getSelect().hasColumns()) {
         if (table_query.getSelect().isDistinct()) {
@@ -120,10 +132,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         table_query.getJoin().forEach(j -> {
           sql.LEFT_OUTER_JOIN(String.format(
             "%s on %s.%s = %s.%s",
-            j.getTable_name(),
-            j.getTable_name(),
+            j.getFullTableName(),
+            j.getFullTableName(),
             j.getJoin_column(),
-            table_query.getTable_name(),
+            table_query.getFullTableName(),
             j.getOuter_column()
           ));
         });
@@ -222,7 +234,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
-      sql.INSERT_INTO(insert_request.getTable_name());
+      sql.INSERT_INTO(insert_request.getFullTableName());
       insert_request.getColumns().forEach(v -> {
         if (v.getAuto_increment() != null && v.getAuto_increment()) return;
         sql.VALUES(v.getName(), "?");
@@ -245,7 +257,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     try {
       TableDefinition table_definition = update_request.getDefinition();
-      sql.UPDATE(update_request.getTable_name());
+      sql.UPDATE(update_request.getFullTableName());
       if (update_request.hasWhere() || update_request.isPatch_update()) { // 条件更新或补丁更新
         for (TableColumn v : update_request.getColumns()) {
           String k = v.getName();
@@ -343,7 +355,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
-      sql.DELETE_FROM(update_request.getTable_name());
+      sql.DELETE_FROM(update_request.getFullTableName());
       boolean where_append = false;
       if (update_request.hasWhere()) { // 有查询条件的更新
         for (int i = 0; i < update_request.getWhere().size(); i++) {

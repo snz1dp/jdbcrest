@@ -20,6 +20,7 @@ import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
+// TODO: 未完成测试
 @Slf4j
 @Component("mariadbSQLDialectProvider")
 public class SQLDialectProvider extends AbstractSQLDialectProvider {

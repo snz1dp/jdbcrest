@@ -40,16 +40,15 @@ public class DatabaseCacheApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
-    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name));
-    table_name = result_meta.getTable_name();
+    TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
         result_meta.getDefinition().isPublish(),
-        "%s不存在", table_name
+        "%s不存在", result_meta.getFullTableName()
       );
     }
-    restProvider.clearTableCaches(table_name);
+    restProvider.clearTableCaches(result_meta.getFullTableName());
     return Return.success();
   }
 

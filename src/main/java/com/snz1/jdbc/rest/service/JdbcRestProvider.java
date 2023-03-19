@@ -9,6 +9,7 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
@@ -24,17 +25,12 @@ public interface JdbcRestProvider {
   // 获取目录
   JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException;
 
-  // 获取表主键
-  Object getTablePrimaryKey(String table_name) throws SQLException;
-
-  // 测试表是否存在
-  boolean testTableExisted(String table_name, String ...types) throws SQLException;
-
   // 获取表
-  JdbcQueryResponse<List<Object>> getTables(
+  JdbcQueryResponse<Page<Object>> getTables(
     ResultDefinition return_meta,
     String catalog, String schemaPattern,
-    String tableNamePattern, String... types
+    String tableNamePattern, 
+    Long offset, Long limit, String... types
   ) throws SQLException;
 
   // 查询表

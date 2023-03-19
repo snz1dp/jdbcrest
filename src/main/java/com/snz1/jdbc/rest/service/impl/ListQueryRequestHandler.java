@@ -43,8 +43,8 @@ public class ListQueryRequestHandler extends AbstractJdbcQueryRequestHandler<Jdb
       primary_key = table_query.getTable_meta().getPrimary_key();
       table_index = new TableIndexs(table_query.getTable_meta().getUnique_indexs(), table_query.getTable_meta().getNormal_indexs());
     } else {
-      primary_key = doFetchTablePrimaryKey(conn, table_query.getTable_name());
-      table_index = doFetchTableIndexs(conn, table_query.getTable_name());
+      primary_key = doFetchTablePrimaryKey(conn, table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name());
+      table_index = doFetchTableIndexs(conn, table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name());
     }
 
     // 如果有默认配置字段则设置到请求对象中
