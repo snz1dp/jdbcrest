@@ -132,4 +132,19 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     return ret;
   }
 
+  @Override
+  public String getJdbcURL() {
+    return runConfig.getJdbc_url();
+  }
+
+  @Override
+  public String getJdbcUser() {
+    return runConfig.getJdbc_user();
+  }
+
+  @Override
+  public boolean isSsoEnabled() {
+    return runConfig.getSso_enabled();
+  }
+
 }

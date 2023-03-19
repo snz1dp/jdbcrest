@@ -26,7 +26,11 @@ public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMeta
   @Override
   @Nullable
   public JdbcMetaData doInConnection(Connection conn) throws SQLException, DataAccessException {
-    return JdbcUtils.getJdbcMetaData(conn);
+    JdbcMetaData jdbc_meta = JdbcUtils.getJdbcMetaData(conn);
+    jdbc_meta.setJdbc_url(this.getAppInfoResolver().getJdbcURL());
+    jdbc_meta.setJdbc_user(this.getAppInfoResolver().getJdbcUser());
+    jdbc_meta.setSso_enabled(this.getAppInfoResolver().isSsoEnabled());
+    return jdbc_meta;
   }
 
 }

@@ -25,4 +25,13 @@ public class JdbcMetaData implements Serializable {
   // 驱动版本
   private String driver_version;
 
+  // 连接URL
+  private String jdbc_url;
+
+  // 连接用户
+  private String jdbc_user;
+
+  // 是否启用单点
+  private Boolean sso_enabled;
+
 }

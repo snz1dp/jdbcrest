@@ -68,6 +68,15 @@ public class RunConfig {
   @Value("${app.strict.mode:${STRICT_MODE:false}}")
   private boolean strict_mode;
 
+  @Value("${spring.datasource.url:${JDBC_URL:}}")
+  private String jdbc_url;
+
+  @Value("${spring.datasource.username:${JDBC_USER:}}")
+  private String jdbc_user;
+
+  @Value("${spring.security.ssoheader:${SSO_ENABLED:false}}")
+  private Boolean sso_enabled;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
@@ -202,6 +211,18 @@ public class RunConfig {
 
   public String getService_name() {
     return service_name;
+  }
+
+  public String getJdbc_url() {
+    return jdbc_url;
+  }
+
+  public String getJdbc_user() {
+    return jdbc_user;
+  }
+
+  public Boolean getSso_enabled() {
+    return sso_enabled;
   }
 
 }

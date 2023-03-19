@@ -32,4 +32,13 @@ public interface AppInfoResolver {
   // 严格模式
   boolean isStrictMode();
 
+  // JDBC URL
+  String getJdbcURL();
+
+  // JDBC 用户
+  String getJdbcUser();
+
+  // 是否启用了单点登录
+  boolean isSsoEnabled();
+
 }
