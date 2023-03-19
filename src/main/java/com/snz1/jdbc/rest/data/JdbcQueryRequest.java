@@ -279,8 +279,14 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
     return treq;
   }
 
+  public static JdbcQueryRequest of(String table_name) {
+    return of(table_name, null);
+  }
+
   public static JdbcQueryRequest of(String table_name, HttpServletRequest request) {
     JdbcQueryRequest treq = new JdbcQueryRequest();
+    treq.setTable_name(table_name);
+    if (request == null) return treq;
     String catalog_name = request.getParameter(Constants.CATALOG_ARG);
     if (StringUtils.isNotBlank(catalog_name)) {
       treq.setCatalog_name(catalog_name);
@@ -289,7 +295,6 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
     if (StringUtils.isNotBlank(schema_name)) {
       treq.setSchema_name(schema_name);
     }
-    treq.setTable_name(table_name);
     return treq;
   }
 
