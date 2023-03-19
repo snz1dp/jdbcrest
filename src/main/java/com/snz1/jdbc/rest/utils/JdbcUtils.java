@@ -35,7 +35,6 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 import org.postgresql.jdbc.PgArray;
-import org.springframework.core.io.ClassPathResource;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.snz1.jdbc.rest.Constants;
@@ -57,20 +56,14 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     loadDatabaseProviders();
   }
 
-  private static File getDatabase_provider_file() {
+  private static InputStream getDatabase_provider_file() {
     String file_location = "data/database-provider.yaml";
-    try {
-      return new ClassPathResource(file_location).getFile();
-    } catch (IOException e) {
-      log.warn("无法获取数据库提供文件, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
-      return null;
-    }
+    return Thread.currentThread().getContextClassLoader().getResourceAsStream(file_location);
   }
 
   private static void loadDatabaseProviders() {
-    File provider_file = getDatabase_provider_file();
+    InputStream provider_file = getDatabase_provider_file();
     Validate.notNull(provider_file, "未设置数据库提供配置文件");
-    Validate.isTrue(provider_file.exists() && provider_file.isFile(), "%s不是一个有效的文件", provider_file);
     try {
       databaseNameIdMap = Collections.unmodifiableMap(new HashMap<>(doLoadDatabseProviders(provider_file)));
       databaseDriverIdSet = Collections.unmodifiableSet(new HashSet<>(databaseNameIdMap.values()));
@@ -83,8 +76,8 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   
   }
 
-  private static Map<String, String> doLoadDatabseProviders(File provider_file) throws YamlException, FileNotFoundException {
-    InputStream finput = new FileInputStream(provider_file);
+  private static Map<String, String> doLoadDatabseProviders(InputStream provider_file) throws YamlException, FileNotFoundException {
+    InputStream finput = provider_file;
     try {
       DatabaseIdName[] dabase_idnames = YamlUtils.fromYaml(finput, DatabaseIdName[].class);
       Validate.isTrue(
