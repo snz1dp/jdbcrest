@@ -40,13 +40,18 @@ public class TableMetaRequestHandler extends AbstractJdbcQueryRequestHandler<Tab
 
     ResultSet rs = conn.getMetaData().getColumns(table_query.getCatalog_name(), table_query.getSchema_name(), table_query.getTable_name(), "%");
     try {
-      return TableMeta.of(
+      TableMeta meta = TableMeta.of(
         rs,
         table_query.getResult(),
         primary_key,
         table_index,
         table_query.getDefinition()
       );
+      if (!this.getSqlDialectProvider().supportSchemas()) {
+        meta.setCatalog_name(null);
+        meta.setSchema_name(null);
+      }
+      return meta;
     } finally {
       JdbcUtils.closeResultSet(rs);
     }

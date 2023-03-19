@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 
@@ -235,17 +236,18 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
 
     private String outer_column;
 
+    @JsonIgnore
     public String getFullTableName() {
       if (StringUtils.isBlank(this.catalog_name)) {
         if (StringUtils.isBlank(this.schema_name)) {
           return this.table_name;
         } else {
-          return String.format("%s.%s", this.schema_name, this.table_name);
+          return String.format("\"%s\".\"%s\"", this.schema_name, this.table_name);
         }
       } else if (StringUtils.isBlank(this.schema_name)) {
-        return String.format("%s.default.%s", this.catalog_name, this.table_name);
+        return String.format("\"%s\".\"%s\"", this.catalog_name, this.table_name);
       } else {
-        return String.format("%s.%s.%s", this.catalog_name, this.schema_name, this.table_name);
+        return String.format("\"%s\".\"%s\".\"%s\"", this.catalog_name, this.schema_name, this.table_name);
       }
     }
 

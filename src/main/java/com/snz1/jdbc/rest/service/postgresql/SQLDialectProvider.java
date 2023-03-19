@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("postgresqlSQLDialectProvider")
+@ConditionalOnClass(org.postgresql.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "postgresql";

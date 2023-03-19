@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("gbaseSQLDialectProvider")
+@ConditionalOnClass(com.gbase.jdbc.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "gbase";
@@ -64,6 +66,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     String insert_sql = this.createInsertRequestBaseSQL(insert_request);
+    if (insert_request.hasPrimary_key()) {
+      // TODO: 添加冲突处理
+    }
     return conn.prepareStatement(insert_sql);
   }
 

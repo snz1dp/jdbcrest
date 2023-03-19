@@ -12,6 +12,12 @@
 - PostgresQL9.6～14.4
 - 达梦8
 - 南大通用分布式数据库8a
+- ClickHouse
+- IBM DB2
+- oracle
+- MariaDB
+- Trino
+- opensearch
 
 > 其他数据库的JDBC连接需要适配方言。
 

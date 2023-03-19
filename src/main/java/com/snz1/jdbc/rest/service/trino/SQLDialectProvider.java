@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("trinoSQLDialectProvider")
+@ConditionalOnClass(io.trino.jdbc.TrinoDriver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "trino";
@@ -72,8 +74,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
     // TODO: 冲突处理未验证
       StringBuffer ignore_sql = new StringBuffer(" OVERWRITE");
-      sqlbuf.delete(7, 10)
-            .insert(6, ignore_sql.toString());
+      sqlbuf.delete(7, 10).insert(6, ignore_sql.toString());
     }
     return conn.prepareStatement(sqlbuf.toString());
   }

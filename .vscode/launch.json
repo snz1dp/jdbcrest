@@ -137,6 +137,21 @@
         "JDBC_USER": "root",
         "JDBC_PASSWORD": "snz1dp9527"
       }
+    },
+    {
+      "type": "java",
+      "name": "Launch Application(clickhouse)",
+      "request": "launch",
+      "mainClass": "com.snz1.jdbc.rest.Application",
+      "projectName": "jdbcrest",
+      "env": {
+        "CONFIG_TYPE": "none",
+        "CACHE_TYPE": "none",
+        "JDBC_DRIVER": "com.clickhouse.jdbc.ClickHouseDriver",
+        "JDBC_URL": "jdbc:clickhouse://localhost:8123",
+        "JDBC_USER": "default",
+        "JDBC_PASSWORD": "snz1dp9527",
+      }
     }
   ]
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.jdbc.SQL;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("oracleSQLDialectProvider")
+@ConditionalOnClass(oracle.jdbc.driver.OracleDriver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
     
   public static final String NAME = "oracle";
@@ -245,7 +247,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
-    if (insert_request.hasPrimary_key()) { // 添加冲突处理
+    if (insert_request.hasPrimary_key()) {
+      // 添加冲突处理, TODO: 未验证
       StringBuffer ignore_sql = new StringBuffer(" /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
       ignore_sql.append(insert_request.getFullTableName())
         .append("(")

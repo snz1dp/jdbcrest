@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("dmdbsSQLDialectProvider")
+@ConditionalOnClass(dm.jdbc.driver.DmDriver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
     
   public static final String NAME = "dmdbms";

@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("mysqlSQLDialectProvider")
+@ConditionalOnClass(com.mysql.jdbc.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "mysql";
@@ -81,7 +83,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
-    if (insert_request.hasPrimary_key()) { // 添加冲突处理
+    if (insert_request.hasPrimary_key()) {
+      // TODO: 添加冲突处理，未测试
       sqlbuf.insert(6, " ignore"); // 在insert后插入ignore
     }
     return conn.prepareStatement(sqlbuf.toString());

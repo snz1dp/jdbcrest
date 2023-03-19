@@ -1,12 +1,16 @@
 package com.snz1.jdbc.rest.service.opensearch;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
@@ -20,9 +24,28 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("opensearchSQLDialectProvider")
+@ConditionalOnClass(org.opensearch.jdbc.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public static final String NAME = "opensearch";
+
+  static {
+    try {
+      addObjectTypeConverters();
+    } catch(Throwable e) {
+      log.warn("加载opensearch类型转换出错: {}", e.getMessage());
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "rawTypes"})
+  protected static void addObjectTypeConverters() throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException {
+    Class<?> type_converters_clazz = ClassUtils.getClass("org.opensearch.jdbc.types.TypeConverters");
+    if (type_converters_clazz == null) return;
+    Field map_field = FieldUtils.getDeclaredField(type_converters_clazz, "tcMap", true);
+    if (map_field == null || map_field.get(null) == null) return;
+    Map<JDBCType, Object> map_value = (Map<JDBCType, Object>)map_field.get(null);
+    map_value.put(JDBCType.STRUCT, new ObjectTypeConverter());
+  }
 
   @Override
   public String getId() {
@@ -75,23 +98,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
-    if (insert_request.hasPrimary_key()) { // 添加冲突处理
-      sqlbuf.append(" on conflict(");
-      if (insert_request.testComposite_key()) {
-        boolean append = false;
-        List<?> keydata = (List<?>)insert_request.getPrimary_key();
-        for (int i = 0; i < keydata.size(); i++) {
-          if (append) {
-            sqlbuf.append(", ");
-          } else {
-            append = true;
-          }
-          sqlbuf.append(keydata.get(i));
-        }
-      } else {
-        sqlbuf.append(insert_request.getPrimary_key());
-      }
-      sqlbuf.append(") do nothing");
+    if (insert_request.hasPrimary_key()) {
+      // TODO: 添加冲突处理
     }
     return conn.prepareStatement(sqlbuf.toString());
   }
