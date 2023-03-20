@@ -138,6 +138,10 @@ public class DatabaseUpdateApi {
       );
     }
 
+    if (!result_meta.hasColumns()) {
+      result_meta.setColumns(RequestUtils.fetchManipulationRequestColumns(request));
+    }
+
     // 构建操作请求
     ManipulationRequest batch_patch_request = new ManipulationRequest();
     batch_patch_request.copyTableMeta(result_meta);

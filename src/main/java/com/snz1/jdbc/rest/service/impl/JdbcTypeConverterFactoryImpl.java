@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.lang.reflect.Array;
 import java.sql.JDBCType;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -74,7 +75,7 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
       if (StringUtils.equals(var_path[0], "system") && var_path.length == 2) {
         String endpath = var_path[1];
         if (StringUtils.equals(endpath, "now")) {
-          var_val = JsonUtils.toJson(new Date());
+          var_val = new SimpleDateFormat(JsonUtils.JsonDateFormat).format(new Date());
         } else if (StringUtils.equals(endpath, "timestamp")) {
           var_val = System.currentTimeMillis();
         }

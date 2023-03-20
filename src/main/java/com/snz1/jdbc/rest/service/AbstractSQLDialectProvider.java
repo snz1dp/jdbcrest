@@ -230,15 +230,28 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 插入数据
+  @SuppressWarnings("unchecked")
   protected String createInsertRequestBaseSQL(ManipulationRequest insert_request) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
       sql.INSERT_INTO(insert_request.getFullTableName());
-      insert_request.getColumns().forEach(v -> {
-        if (v.getAuto_increment() != null && v.getAuto_increment()) return;
-        sql.VALUES(v.getName(), "?");
-      });
+      if (insert_request.hasColumns()) {
+        insert_request.getColumns().forEach(v -> {
+          if (v.getAuto_increment() != null && v.getAuto_increment()) return;
+          sql.VALUES(v.getName(), "?");
+        });
+      } else {
+        Map<String, Object> input_line0 = null;
+        if (insert_request.getInput_data() instanceof List) {
+          input_line0 = ((List<Map<String, Object>>)insert_request.getInput_data()).get(0);
+        } else {
+          input_line0 = (Map<String, Object>)insert_request.getInput_data();
+        }
+        for (String key : input_line0.keySet()){
+          sql.VALUES(key, "?");
+        }
+      }
       return sql.toString();
     } finally {
       if (log.isDebugEnabled()) {

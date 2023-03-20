@@ -76,6 +76,7 @@ public class ManipulationRequest extends JdbcRestfulRequest {
     this.setPrimary_key(table_meta.getPrimary_key());
     this.setUnique_indexs(table_meta.getUnique_indexs());
     this.setColumns(table_meta.getColumns());
+    this.setTable_name(table_meta.getTable_name());
   }
   
   // 是否有主键
@@ -239,7 +240,7 @@ public class ManipulationRequest extends JdbcRestfulRequest {
   }
 
   public boolean hasColumns() {
-    return this.columns != null;
+    return this.columns != null && this.columns.size() > 0;
   }
 
   // 重新编译查询条件

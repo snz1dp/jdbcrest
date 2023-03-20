@@ -80,6 +80,9 @@ public abstract class Constants {
   // 条件前缀
   public static final String HEADER_WHERE_PREFIX = "jdbcrest-";
 
+  // 字段前缀
+  public static final String HEADER_FEILD_PREFIX = "jdbcfield-";
+
   // SQL分割
   public static final String SQL_SPLITTER = ";";
 

@@ -168,6 +168,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
       return primary_key;
     }
     try {
+      if (ks == null) return null;
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         List<Object> primary_key_lst = new LinkedList<>();
@@ -203,6 +204,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
       return index_lst;
     }
     try {
+      if (ks == null || ks.getMetaData() == null) return null;
       JdbcQueryResponse<List<Object>> list = doFetchResultSet(ks, null, null, null, null);
       if (list.getData() != null && list.getData().size() > 0) {
         for (Object index_item : list.getData()) {

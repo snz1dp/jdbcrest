@@ -46,3 +46,7 @@
 # OpenSearch
 - id: opensearch
   name: OpenSearch
+
+# TDengine
+- id: tdengine
+  name: TDengine

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -50,6 +51,9 @@ public class TableMetaRequestHandler extends AbstractJdbcQueryRequestHandler<Tab
       if (!this.getSqlDialectProvider().supportSchemas()) {
         meta.setCatalog_name(null);
         meta.setSchema_name(null);
+      }
+      if (StringUtils.isBlank(meta.getTable_name())) {
+        meta.setTable_name(table_query.getTable_name());
       }
       return meta;
     } finally {

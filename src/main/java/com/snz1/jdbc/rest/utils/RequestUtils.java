@@ -25,6 +25,7 @@ import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.RequestCustomKey;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SelectMeta;
+import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.WhereCloumn;
 
 import gateway.api.JsonUtils;
@@ -492,6 +493,23 @@ public abstract class RequestUtils {
 
   public static List<ManipulationRequest> fetchManipulationRequestList(HttpServletRequest request) throws IOException {
     return JsonUtils.fromJson(request.getInputStream(), new TypeToken<List<ManipulationRequest>>(){}.getType());
+  }
+
+  public static List<TableColumn> fetchManipulationRequestColumns(HttpServletRequest request) throws IOException {
+    List<TableColumn> list = new LinkedList<>();
+    Enumeration<String> head_names = request.getHeaderNames();
+    while(head_names.hasMoreElements()) {
+      String param_name = StringUtils.lowerCase(head_names.nextElement());
+      if (!StringUtils.startsWith(param_name, Constants.HEADER_FEILD_PREFIX)) continue;
+      String header_name = param_name.substring(Constants.HEADER_FEILD_PREFIX.length());
+      String param_val = request.getHeader(param_name);
+      JDBCType jdbc_type = JDBCType.valueOf(StringUtils.upperCase(param_val));
+      TableColumn column = new TableColumn();
+      column.setName(header_name);
+      column.setJdbc_type(jdbc_type);
+      list.add(column);
+    }
+    return list;
   }
 
 }

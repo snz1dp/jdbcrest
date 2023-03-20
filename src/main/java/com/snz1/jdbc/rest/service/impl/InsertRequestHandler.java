@@ -95,22 +95,30 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
       for (Map<String, Object> input_data : input_datas) {
         input_data = doBuildInsertRequestInputData(input_data);
         int i = 1;
-        for (TableColumn v : insertRequest.getColumns()) {
-          if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-          if (log.isDebugEnabled()) {
-            log.debug("字段名 = {}", v.getName());
+        if (insertRequest.hasColumns()) {
+          for (TableColumn v : insertRequest.getColumns()) {
+            if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
+            if (log.isDebugEnabled()) {
+              log.debug("字段名 = {}", v.getName());
+            }
+            Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
+            try {
+              ps.setObject(i, val);
+            } catch(SQLException e) {
+              String error_message = String.format(
+                "参数%d, 字段名 = %s, 参数类 = %s",
+                i, v.getName(), val == null ? "null" : val.getClass().getName()
+              );
+              throw new IllegalStateException(error_message, e);
+            }
+            i = i + 1;
           }
-          Object val = converterFactory.convertObject(input_data.get(v.getName()), v.getJdbc_type());
-          try {
+        } else {
+          for (Map.Entry<String, Object> input_entry : input_data.entrySet()) {
+            Object val = converterFactory.convertObject(input_entry.getValue(), null);
             ps.setObject(i, val);
-          } catch(SQLException e) {
-            String error_message = String.format(
-              "参数%d, 字段名 = %s, 参数类 = %s",
-              i, v.getName(), val == null ? "null" : val.getClass().getName()
-            );
-            throw new IllegalStateException(error_message, e);
+            i = i + 1;
           }
-          i = i + 1;
         }
         ps.addBatch();
       }

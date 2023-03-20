@@ -32,6 +32,7 @@
 		<mariadb.version>2.4.3</mariadb.version>
 		<jaybird.version>4.0.0.java8</jaybird.version>
 		<opensearch.version>1.2.0.0</opensearch.version>
+		<taos.version>3.1.0</taos.version>
 	</properties>
 
 	<dependencies>
@@ -284,7 +285,14 @@
 			<version>${opensearch.version}</version>
 		</dependency>
 
-		
+		<!-- Taos Jdbcdriver -->
+		<dependency>
+			<groupId>com.taosdata.jdbc</groupId>
+			<artifactId>taos-jdbcdriver</artifactId>
+			<version>${taos.version}</version>
+		</dependency>
+
+		<!-- Utility -->
 		<dependency>
 			<groupId>com.snz1</groupId>
 			<artifactId>utility</artifactId>

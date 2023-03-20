@@ -50,6 +50,11 @@ public class DatabaseInsertApi {
       );
     }
 
+    if (!result_meta.hasColumns()) {
+      result_meta.setColumns(RequestUtils.fetchManipulationRequestColumns(request));
+    }
+
+    // 设置字段类型
     ManipulationRequest insert_request = new ManipulationRequest();
     // 获取表元信息
     insert_request.copyTableMeta(result_meta);

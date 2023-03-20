@@ -3,11 +3,13 @@ package com.snz1.jdbc.rest;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.Driver;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.boot.ConfigurableBootstrapContext;
 import org.springframework.boot.SpringApplication;
@@ -38,20 +40,38 @@ public class Initializer implements SpringApplicationRunListener {
   }
 
   private void createDatabase(ConfigurableEnvironment environment) {
+    String databaseDriver = environment.getProperty("spring.datasource.driver-class-name", "");
+    Validate.notBlank(databaseDriver, "未设置数据库驱动");
+    Driver jdbc_driver = null;
+    try {
+      @SuppressWarnings("unchecked")
+      Class<Driver> driver_clazz = (Class<Driver>) Class.forName(databaseDriver);
+      jdbc_driver = driver_clazz.newInstance();
+    } catch(InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+      throw new IllegalStateException("找不到数据库驱动类: " + databaseDriver);
+    }
+
     String databaseUsername = environment.getProperty("spring.datasource.admin.username");
     String databasePassword = environment.getProperty("spring.datasource.admin.password");
     if (StringUtils.isBlank(databaseUsername)) {
       databaseUsername = environment.getProperty("spring.datasource.username");
       databasePassword = environment.getProperty("spring.datasource.password");
     }
-
+    
     String databaseJdbcURL = environment.getProperty("spring.datasource.url", "");
-
     String databaseName = environment.getProperty("spring.datasource.create.database", "");
 
     Connection conn;
     try {
-      conn = DriverManager.getConnection(databaseJdbcURL, databaseUsername, databasePassword);
+      Properties user_and_password = new Properties();
+      if (databaseUsername != null) {
+         user_and_password.put("user", databaseUsername);
+      }
+
+      if (databasePassword != null) {
+        user_and_password.put("password", databasePassword);
+      }
+      conn = jdbc_driver.connect(databaseJdbcURL, user_and_password);
     } catch (SQLException e) {
       throw new IllegalStateException("创建数据库连接失败: " + e.getMessage(), e);
     }

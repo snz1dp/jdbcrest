@@ -79,6 +79,10 @@ public class TableMeta implements Serializable {
     return this;
   }
 
+  public boolean hasColumns() {
+    return this.columns != null && this.columns.size() > 0;
+  }
+
   @JsonIgnore
   public String getFullTableName() {
     if (StringUtils.isBlank(this.catalog_name)) {
@@ -195,6 +199,7 @@ public class TableMeta implements Serializable {
     TableIndexs table_index,
     TableDefinition definition
   ) throws SQLException {
+    if (rs_meta == null) return null;
     TableMeta metadata = new TableMeta();
     metadata.setPrimary_key(primary_key);
     int col_count = rs_meta.getColumnCount();
@@ -207,15 +212,21 @@ public class TableMeta implements Serializable {
 
     for (int i = 1; i <= col_count; i++) {
       if (metadata.table_name == null) {
-        metadata.setTable_name(rs_meta.getTableName(i));
+        try {
+          metadata.setTable_name(rs_meta.getTableName(i));
+        } catch(SQLException e) {}
       }
 
       if (metadata.getSchema_name() == null) {
-        metadata.setSchema_name(rs_meta.getSchemaName(i));
+        try {
+          metadata.setSchema_name(rs_meta.getSchemaName(i));
+        } catch(SQLException e) {}
       }
 
       if (metadata.getCatalog_name() == null) {
-        metadata.setCatalog_name(rs_meta.getCatalogName(i));
+        try {
+          metadata.setCatalog_name(rs_meta.getCatalogName(i));
+        } catch(SQLException e) {}
       }
 
       String column_name = rs_meta.getColumnName(i);
@@ -246,9 +257,11 @@ public class TableMeta implements Serializable {
       col.setPrecision(rs_meta.getPrecision(i));
       col.setColumn_size(rs_meta.getPrecision(i));
       col.setDisplay_size(rs_meta.getColumnDisplaySize(i));
-      if (StringUtils.isNotBlank(rs_meta.getTableName(i))) {
-        col.setTable_name(rs_meta.getTableName(i));
-      }
+      try {
+        if (StringUtils.isNotBlank(rs_meta.getTableName(i))) {
+          col.setTable_name(rs_meta.getTableName(i));
+        }
+      } catch(SQLException e) {}
       metadata.getColumns().add(col);
     }
 
@@ -279,7 +292,7 @@ public class TableMeta implements Serializable {
     metadata.setPrimary_key(primary_key);
     int col_count = 0;
 
-    while (rs_meta.next()) {
+    while (rs_meta != null && rs_meta.next()) {
       if (metadata.getCatalog_name() == null) {
         metadata.setCatalog_name(rs_meta.getString("TABLE_CAT"));
       }
