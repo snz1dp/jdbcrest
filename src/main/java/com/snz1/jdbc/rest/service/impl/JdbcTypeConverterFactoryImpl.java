@@ -50,6 +50,7 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
 
   // 换取内置变量
   private Object fetchBuildInVariable(Object input, JDBCType type) {
+    Date curr_time = new Date();
     StringBuffer input_buf = new StringBuffer();
     int var_index = 0;
     int var_start = StringUtils.indexOf((String)input, "${", var_index);
@@ -75,9 +76,9 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
       if (StringUtils.equals(var_path[0], "system") && var_path.length == 2) {
         String endpath = var_path[1];
         if (StringUtils.equals(endpath, "now")) {
-          var_val = new SimpleDateFormat(JsonUtils.JsonDateFormat).format(new Date());
+          var_val = new SimpleDateFormat(JsonUtils.JsonDateFormat).format(curr_time);
         } else if (StringUtils.equals(endpath, "timestamp")) {
-          var_val = System.currentTimeMillis();
+          var_val = curr_time.getTime();
         }
       } else if (var_path.length == 3 && StringUtils.equals(var_path[0], "app") && StringUtils.equals(var_path[1], "config")) {
         var_val = Configurer.getAppProperty(var_path[2], default_val);
