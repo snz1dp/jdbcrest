@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service.opensearch;
+package com.snz1.jdbc.rest.provider.opensearch;
 
 import java.sql.SQLException;
 import java.util.Map;

@@ -22,10 +22,10 @@ import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.TableIndex;
 import com.snz1.jdbc.rest.data.TableIndexs;
 import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.JsonUtils;
 

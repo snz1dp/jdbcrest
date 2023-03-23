@@ -1,36 +1,54 @@
-package com.snz1.jdbc.rest.service.mysql;
+package com.snz1.jdbc.rest.provider.opensearch;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
-import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("mysqlSQLDialectProvider")
-@ConditionalOnClass(com.mysql.jdbc.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
-  public static final String NAME = "mysql";
+  static {
+    try {
+      addObjectTypeConverters();
+    } catch(Throwable e) {
+      log.warn("加载opensearch类型转换出错: {}", e.getMessage());
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "rawTypes"})
+  protected static void addObjectTypeConverters() throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException {
+    Class<?> type_converters_clazz = ClassUtils.getClass("org.opensearch.jdbc.types.TypeConverters");
+    if (type_converters_clazz == null) return;
+    Field map_field = FieldUtils.getDeclaredField(type_converters_clazz, "tcMap", true);
+    if (map_field == null || map_field.get(null) == null) return;
+    Map<JDBCType, Object> map_value = (Map<JDBCType, Object>)map_field.get(null);
+    map_value.put(JDBCType.STRUCT, new ObjectTypeConverter());
+  }
 
   @Override
-  public String getId() {
-    return NAME;
+  public boolean checkTableExisted() {
+    return false;
+  }
+
+  @Override
+  public boolean supportSchemas() {
+    return false;
   }
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
@@ -42,24 +60,10 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public static void createDatabaseIfNotExisted(
     Connection conn, String databaseName, String databaseUsername, String databasePassword
   ) {
-    ResultSet result = null;
-    Statement stmt = null;
-    try {
-      stmt = conn.createStatement();
-      result = stmt.executeQuery(String.format("SHOW DATABASE LIKE '%s';", databaseName));
-      if (!result.next()) {
-        String createSQL = String.format("CREATE DATABASE IF NOT EXISTS %s;", databaseName);
-        if (log.isDebugEnabled()) {} {
-          log.debug("执行SQL语句: " + createSQL);
-        }
-        stmt.execute(createSQL);
-      }
-    } catch(SQLException e) {
-      throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
-    } finally {
-      JdbcUtils.closeResultSet(result);
-      JdbcUtils.closeStatement(stmt);
+    if (log.isDebugEnabled()) {
+      log.debug("无法动态创建数据库");
     }
+    throw new IllegalStateException("无法动态创建数据库");
   }
 
   @Override
@@ -67,9 +71,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
-          .append(" OFFSET ")
-          .append(table_query.getResult().getOffset())
           .append(" LIMIT ")
+          .append(table_query.getResult().getOffset())
+          .append(",")
           .append(table_query.getResult().getLimit());
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
@@ -84,8 +88,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
     if (insert_request.hasPrimary_key()) {
-      // TODO: 添加冲突处理，未测试
-      sqlbuf.insert(6, " ignore"); // 在insert后插入ignore
+      // TODO: 添加冲突处理
     }
     return conn.prepareStatement(sqlbuf.toString());
   }

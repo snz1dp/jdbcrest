@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -40,13 +41,16 @@ import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcProviderMeta;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLClauses;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUtils {
 
-  private static Map<String, JdbcProviderMeta> databaseNameIdMap;
+  private static Map<String, JdbcProviderMeta> databaseNameMap;
+
+  private static Map<String, SQLDialectProvider> sqlDialectProviderMap;
 
   static {
     loadDatabaseProviders();
@@ -61,14 +65,28 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     InputStream provider_file = getDatabase_provider_file();
     Validate.notNull(provider_file, "未设置数据库提供配置文件");
     try {
-      databaseNameIdMap = Collections.unmodifiableMap(new HashMap<>(doLoadDatabseProviders(provider_file)));
+      sqlDialectProviderMap = Collections.unmodifiableMap(doCreateSQLDialectProviders(
+        databaseNameMap = Collections.unmodifiableMap(
+          new HashMap<>(doLoadDatabseProviders(provider_file))
+        )
+      ));
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
         log.debug("加载提供器失败：{}", e.getMessage(), e);
       }
       throw new IllegalStateException("加载提供器失败：" + e.getMessage(), e);
     }
-  
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Map<String, SQLDialectProvider> doCreateSQLDialectProviders(Map<String, JdbcProviderMeta> meta)
+    throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    Map<String, SQLDialectProvider> ret = new HashMap<>(meta.size());
+    for (JdbcProviderMeta provider : meta.values()) {
+      Class<SQLDialectProvider> provider_clazz = (Class<SQLDialectProvider> )ClassUtils.getClass(provider.getProvider());
+      ret.put(provider.getId(), provider_clazz.newInstance());
+    }
+    return ret;
   }
 
   private static Map<String, JdbcProviderMeta> doLoadDatabseProviders(InputStream provider_file) throws YamlException, FileNotFoundException {
@@ -80,7 +98,12 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
         "至少需要一种数据库提供");
       LinkedHashMap<String, JdbcProviderMeta> retmap = new LinkedHashMap<>();
       for (JdbcProviderMeta idname : dabase_idnames) {
-        retmap.put(idname.getName(), idname);
+        try {
+          ClassUtils.getClass(idname.getProvider());
+          retmap.put(idname.getName(), idname);
+        } catch(ClassNotFoundException e) {
+          log.warn("无法找到{}数据库提供类", e);
+        }
       }
       return retmap;
     } finally {
@@ -93,7 +116,11 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     if (start > 0) {
       product_name = product_name.substring(0, start);
     }
-    return databaseNameIdMap.get(product_name);
+    return databaseNameMap.get(product_name);
+  }
+
+  public static SQLDialectProvider getSQLDialectProvider(String driver_id) {
+    return sqlDialectProviderMap.get(driver_id);
   }
 
   public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {

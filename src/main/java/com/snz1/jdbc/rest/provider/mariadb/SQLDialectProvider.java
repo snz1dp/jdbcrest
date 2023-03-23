@@ -1,34 +1,26 @@
-package com.snz1.jdbc.rest.service.gbase;
+package com.snz1.jdbc.rest.provider.mariadb;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
+import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("gbaseSQLDialectProvider")
-@ConditionalOnClass(com.gbase.jdbc.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
-
-  public static final String NAME = "gbase";
-
-  @Override
-  public String getId() {
-    return NAME;
-  }
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
@@ -39,10 +31,24 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   public static void createDatabaseIfNotExisted(
     Connection conn, String databaseName, String databaseUsername, String databasePassword
   ) {
-    if (log.isDebugEnabled()) {
-      log.debug("无法动态创建数据库");
+    ResultSet result = null;
+    Statement stmt = null;
+    try {
+      stmt = conn.createStatement();
+      result = stmt.executeQuery(String.format("SHOW DATABASE LIKE '%s';", databaseName));
+      if (!result.next()) {
+        String createSQL = String.format("CREATE DATABASE IF NOT EXISTS %s;", databaseName);
+        if (log.isDebugEnabled()) {} {
+          log.debug("执行SQL语句: " + createSQL);
+        }
+        stmt.execute(createSQL);
+      }
+    } catch(SQLException e) {
+      throw new IllegalStateException("创建数据库失败: " + e.getMessage(), e);
+    } finally {
+      JdbcUtils.closeResultSet(result);
+      JdbcUtils.closeStatement(stmt);
     }
-    throw new IllegalStateException("无法动态创建数据库");
   }
 
   @Override
@@ -50,9 +56,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
-          .append(" limit ")
+          .append(" OFFSET ")
           .append(table_query.getResult().getOffset())
-          .append(",")
+          .append(" LIMIT ")
           .append(table_query.getResult().getLimit());
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
@@ -65,11 +71,12 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
-    String insert_sql = this.createInsertRequestBaseSQL(insert_request);
-    if (insert_request.hasPrimary_key()) {
-      // TODO: 添加冲突处理
+    StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
+    if (insert_request.hasPrimary_key()) { 
+      // TODO: 添加冲突处理，未测试
+      sqlbuf.insert(6, " ignore"); // 在insert后插入ignore
     }
-    return conn.prepareStatement(insert_sql);
+    return conn.prepareStatement(sqlbuf.toString());
   }
 
 }

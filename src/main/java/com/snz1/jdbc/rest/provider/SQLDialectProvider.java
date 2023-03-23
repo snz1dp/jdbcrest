@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service;
+package com.snz1.jdbc.rest.provider;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,9 +10,6 @@ import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 
 // SQL方言实现
 public interface SQLDialectProvider {
-
-  // 数据库ID
-  String getId();
 
   // 是否检查数据表存在
   boolean checkTableExisted();

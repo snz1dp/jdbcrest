@@ -1,5 +1,4 @@
-package com.snz1.jdbc.rest.service.dmdbms;
-
+package com.snz1.jdbc.rest.provider.db2;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,33 +6,32 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("dmdbsSQLDialectProvider")
-@ConditionalOnClass(dm.jdbc.driver.DmDriver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
-    
-  public static final String NAME = "dmdbms";
 
   @Override
-  public String getId() {
-    return NAME;
+  public boolean checkTableExisted() {
+    return true;
+  }
+
+  @Override
+  public boolean supportSchemas() {
+    return true;
   }
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
-    database_properties.put("DB_VALIDATION_QUERY", "select 1");
+    database_properties.put("DB_VALIDATION_QUERY", "values current timestamp");
 		environment.getPropertySources().addLast(new MapPropertySource("jdbcrest", database_properties));
   }
 
@@ -51,9 +49,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
-          .append(" OFFSET ")
-          .append(table_query.getResult().getOffset())
           .append(" LIMIT ")
+          .append(table_query.getResult().getOffset())
+          .append(",")
           .append(table_query.getResult().getLimit());
     PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
     if (base_query.hasParameter()) {
@@ -67,13 +65,8 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
 
   public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
-    if (insert_request.hasPrimary_key()) { // 添加冲突处理
-      StringBuffer ignore_sql = new StringBuffer(" /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
-      ignore_sql.append(insert_request.getFullTableName())
-        .append("(")
-        .append(insert_request.getPrimary_key())
-        .append(")) */");
-      sqlbuf.insert(6, ignore_sql.toString()); // 在insert后插入ignore
+    if (insert_request.hasPrimary_key()) { 
+      // TODO: 添加冲突处理
     }
     return conn.prepareStatement(sqlbuf.toString());
   }

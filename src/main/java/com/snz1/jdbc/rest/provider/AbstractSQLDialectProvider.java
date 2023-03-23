@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service;
+package com.snz1.jdbc.rest.provider;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,8 +6,6 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Resource;
 
 import org.apache.ibatis.jdbc.SQL;
 
@@ -19,20 +17,32 @@ import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.WhereCloumn;
+import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
+import com.snz1.jdbc.rest.service.LoggedUserContext;
+import com.snz1.jdbc.rest.service.UserRoleVerifier;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
-  @Resource
   protected LoggedUserContext loggedUserContext;
 
-  @Resource
   protected JdbcTypeConverterFactory typeConverterFactory;
 
-  @Resource
   protected UserRoleVerifier userRoleVerifier;
+
+  public void setLoggedUserContext(LoggedUserContext loggedUserContext) {
+    this.loggedUserContext = loggedUserContext;
+  }
+
+  public void setTypeConverterFactory(JdbcTypeConverterFactory typeConverterFactory) {
+    this.typeConverterFactory = typeConverterFactory;
+  }
+
+  public void setUserRoleVerifier(UserRoleVerifier userRoleVerifier) {
+    this.userRoleVerifier = userRoleVerifier;
+  }
 
   @Override
   public boolean checkTableExisted() {

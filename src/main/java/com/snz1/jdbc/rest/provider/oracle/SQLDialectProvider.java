@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service.oracle;
+package com.snz1.jdbc.rest.provider.oracle;
 
 
 import java.sql.Connection;
@@ -10,33 +10,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.jdbc.SQL;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.WhereCloumn;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("oracleSQLDialectProvider")
-@ConditionalOnClass(oracle.jdbc.driver.OracleDriver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
     
-  public static final String NAME = "oracle";
-
-  @Override
-  public String getId() {
-    return NAME;
-  }
-
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
     database_properties.put("DB_VALIDATION_QUERY", "SELECT 1+1 FROM DUAL");

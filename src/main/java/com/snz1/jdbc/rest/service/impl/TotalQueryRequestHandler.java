@@ -4,7 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

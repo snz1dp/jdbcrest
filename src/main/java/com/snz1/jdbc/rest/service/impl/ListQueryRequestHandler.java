@@ -12,8 +12,8 @@ import org.springframework.lang.Nullable;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.TableIndexs;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.Data;

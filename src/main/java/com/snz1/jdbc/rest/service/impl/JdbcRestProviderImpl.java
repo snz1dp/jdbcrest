@@ -6,7 +6,6 @@ import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +17,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.snz1.jdbc.rest.Constants;
@@ -33,6 +31,8 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
@@ -40,8 +40,9 @@ import com.snz1.jdbc.rest.service.CacheClear;
 import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
+import com.snz1.jdbc.rest.service.UserRoleVerifier;
+import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -50,7 +51,7 @@ import gateway.api.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
+public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, InitializingBean {
 
   protected JdbcMetaData jdbcMetaData;
 
@@ -72,7 +73,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
   @Resource
   protected AppInfoResolver appInfoResolver;
 
-  protected Map<String, SQLDialectProvider> sqlDialectProviders;
+  @Resource
+  private UserRoleVerifier userRoleVerifier;
+
+  @Override
+  public void afterPropertiesSet() {
+    AbstractSQLDialectProvider provider;
+    try {
+      provider = (AbstractSQLDialectProvider) getSQLDialectProvider();
+      provider.setLoggedUserContext(loggedUserContext);
+      provider.setTypeConverterFactory(typeConverterFactory);
+      provider.setUserRoleVerifier(userRoleVerifier);
+    } catch (SQLException e) {
+      throw new IllegalStateException("初始话数据库提供器失败");
+    }
+  }
 
   public JdbcTypeConverterFactory getTypeConverterFactory() {
     return this.typeConverterFactory;
@@ -84,15 +99,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   protected LoggedUserContext getLoggedUserContext() {
     return loggedUserContext;
-  }
-
-  @EventListener(ContextRefreshedEvent.class)
-  public void loadSQLDialectProviders(ContextRefreshedEvent event) {
-    final Map<String, SQLDialectProvider> map = new LinkedHashMap<>();
-    event.getApplicationContext().getBeansOfType(SQLDialectProvider.class).forEach((k, v) -> {
-      map.put(v.getId(), v);
-    });
-    this.sqlDialectProviders = new HashMap<>(map);
   }
 
   // 获取Schemas
@@ -303,7 +309,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear {
 
   protected SQLDialectProvider getSQLDialectProvider() throws SQLException {
     JdbcMetaData metadata = getMetaData();
-    return this.sqlDialectProviders.get(metadata.getDriver_id());
+    return JdbcUtils.getSQLDialectProvider(metadata.getDriver_id());
   }
 
   @Override

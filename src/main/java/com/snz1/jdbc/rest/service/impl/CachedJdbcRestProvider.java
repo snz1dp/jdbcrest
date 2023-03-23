@@ -25,8 +25,8 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition.SQLFragment;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
-import com.snz1.jdbc.rest.service.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.SQLServiceRegistry;
 import com.snz1.utils.JsonUtils;
 

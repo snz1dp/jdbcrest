@@ -1,4 +1,4 @@
-package com.snz1.jdbc.rest.service.postgresql;
+package com.snz1.jdbc.rest.provider.postgresql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,30 +10,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
+import com.snz1.jdbc.rest.provider.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
-import com.snz1.jdbc.rest.service.AbstractSQLDialectProvider;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component("postgresqlSQLDialectProvider")
-@ConditionalOnClass(org.postgresql.Driver.class)
 public class SQLDialectProvider extends AbstractSQLDialectProvider {
-
-  public static final String NAME = "postgresql";
-
-  @Override
-  public String getId() {
-    return NAME;
-  }
 
   public static void setupDatabaseEnvironment(ConfigurableEnvironment environment) {
     Map<String, Object> database_properties = new HashMap<>();
