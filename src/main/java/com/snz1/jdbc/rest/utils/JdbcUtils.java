@@ -17,13 +17,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,8 +36,8 @@ import org.postgresql.jdbc.PgArray;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.snz1.jdbc.rest.Constants;
-import com.snz1.jdbc.rest.data.DatabaseIdName;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
+import com.snz1.jdbc.rest.data.JdbcProviderMeta;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLClauses;
 
@@ -48,9 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUtils {
 
-  private static Map<String, String> databaseNameIdMap;
-
-  private static Set<String> databaseDriverIdSet;
+  private static Map<String, JdbcProviderMeta> databaseNameIdMap;
 
   static {
     loadDatabaseProviders();
@@ -66,7 +62,6 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     Validate.notNull(provider_file, "未设置数据库提供配置文件");
     try {
       databaseNameIdMap = Collections.unmodifiableMap(new HashMap<>(doLoadDatabseProviders(provider_file)));
-      databaseDriverIdSet = Collections.unmodifiableSet(new HashSet<>(databaseNameIdMap.values()));
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
         log.debug("加载提供器失败：{}", e.getMessage(), e);
@@ -76,16 +71,16 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   
   }
 
-  private static Map<String, String> doLoadDatabseProviders(InputStream provider_file) throws YamlException, FileNotFoundException {
+  private static Map<String, JdbcProviderMeta> doLoadDatabseProviders(InputStream provider_file) throws YamlException, FileNotFoundException {
     InputStream finput = provider_file;
     try {
-      DatabaseIdName[] dabase_idnames = YamlUtils.fromYaml(finput, DatabaseIdName[].class);
+      JdbcProviderMeta[] dabase_idnames = YamlUtils.fromYaml(finput, JdbcProviderMeta[].class);
       Validate.isTrue(
         dabase_idnames != null && dabase_idnames.length > 0,
         "至少需要一种数据库提供");
-      LinkedHashMap<String, String> retmap = new LinkedHashMap<>();
-      for (DatabaseIdName idname : dabase_idnames) {
-        retmap.put(idname.getName(), idname.getId());
+      LinkedHashMap<String, JdbcProviderMeta> retmap = new LinkedHashMap<>();
+      for (JdbcProviderMeta idname : dabase_idnames) {
+        retmap.put(idname.getName(), idname);
       }
       return retmap;
     } finally {
@@ -93,7 +88,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     }
   }
 
-  public static String getDatabaseDriverId(String product_name) {
+  public static JdbcProviderMeta getProviderMeta(String product_name) {
     int start = product_name.indexOf("/");
     if (start > 0) {
       product_name = product_name.substring(0, start);
@@ -101,15 +96,14 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     return databaseNameIdMap.get(product_name);
   }
 
-  public static Set<String> getDatabaseDriverIds() {
-    return databaseDriverIdSet;
-  }
-
   public static JdbcMetaData getJdbcMetaData(Connection conn) throws SQLException {
     JdbcMetaData temp_meta = new JdbcMetaData();
     DatabaseMetaData table_meta =  conn.getMetaData();
     Driver driver = DriverManager.getDriver(conn.getMetaData().getURL());
-    temp_meta.setDriver_id(getDatabaseDriverId(table_meta.getDatabaseProductName()));
+    JdbcProviderMeta provider = getProviderMeta(table_meta.getDatabaseProductName());
+    Validate.notNull(provider, "目前不支持%s", table_meta.getDatabaseProductName());
+    temp_meta.setDriver_id(provider.getId());
+    temp_meta.setProvider_class(provider.getProvider());
     temp_meta.setProduct_name(table_meta.getDatabaseProductName());
     temp_meta.setProduct_version(table_meta.getDatabaseProductVersion());
     temp_meta.setDriver_name(table_meta.getDriverName());

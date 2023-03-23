@@ -84,12 +84,7 @@ public class Initializer implements SpringApplicationRunListener {
         throw new IllegalStateException("获取数据库信息失败: " + e.getMessage(), e);
       }
 
-      String sql_dialect_clazz_name = String.format(
-        "%s.service.%s.SQLDialectProvider",
-        getClass().getPackage().getName(), 
-        jdbc_meta.getDriver_id()
-      );
-
+      String sql_dialect_clazz_name = jdbc_meta.getProvider_class();
       Class<?> sql_dialect_clazz;
       try {
         sql_dialect_clazz = ClassUtils.getClass(sql_dialect_clazz_name);

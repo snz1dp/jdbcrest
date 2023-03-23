@@ -2,51 +2,64 @@
 # MySQL
 - id: mysql:mysql8
   name: MySQL
+  provider: com.snz1.jdbc.rest.service.mysql.SQLDialectProvider
 
 # MariaDB
 - id: mysql:mariaDB
   name: MariaDB
+  provider: com.snz1.jdbc.rest.service.mariadb.SQLDialectProvider
 
 # PostgreSQL
 - id: postgresql:postgres-jdbc
   name: PostgreSQL
+  provider: com.snz1.jdbc.rest.service.postgresql.SQLDialectProvider
 
 # GBase
 - id: gbase
   name: GBase
+  provider: com.snz1.jdbc.rest.service.gbase.SQLDialectProvider
 
 # 达梦
 - id: dmdbms
   name: DM DBMS
+  provider: com.snz1.jdbc.rest.service.dmdbms.SQLDialectProvider
 
 # DB2
 - id: db2:db2
   name: DB2
+  provider: com.snz1.jdbc.rest.service.db2.SQLDialectProvider
 
 # Oracle
 - id: oracle:oracle_thin
   name: Oracle
+  provider: com.snz1.jdbc.rest.service.oracle.SQLDialectProvider
 
 # ClickHouse
 - id: clickhouse:com_clickhouse
   name: ClickHouse
+  provider: com.snz1.jdbc.rest.service.clickhouse.SQLDialectProvider
 
 # FireBird
-- id: firebird
-  name: FireBird
+# - id: firebird
+#   name: FireBird
+#   provider: com.snz1.jdbc.rest.service.firebird.SQLDialectProvider
 
 # Microsoft SQL Server
-- id: sqlserver:microsoft
-  name: Microsoft SQL Server
+# - id: sqlserver:microsoft
+#   name: Microsoft SQL Server
+#   provider: com.snz1.jdbc.rest.service.sqlserver.SQLDialectProvider
 
 # Trino
 - id: generic:trino_jdbc
   name: Trino
+  provider: com.snz1.jdbc.rest.service.trino.SQLDialectProvider
 
 # OpenSearch
 - id: opensearch
   name: OpenSearch
+  provider: com.snz1.jdbc.rest.service.opensearch.SQLDialectProvider
 
 # TDengine
 - id: tdengine
   name: TDengine
+  provider: com.snz1.jdbc.rest.service.tdengine.SQLDialectProvider
