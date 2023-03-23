@@ -1,14 +1,14 @@
 
 # MySQL
-- id: mysql
+- id: mysql:mysql8
   name: MySQL
 
 # MariaDB
-- id: mariadb
+- id: mysql:mariaDB
   name: MariaDB
 
 # PostgreSQL
-- id: postgresql
+- id: postgresql:postgres-jdbc
   name: PostgreSQL
 
 # GBase
@@ -20,15 +20,15 @@
   name: DM DBMS
 
 # DB2
-- id: db2
+- id: db2:db2
   name: DB2
 
 # Oracle
-- id: oracle
+- id: oracle:oracle_thin
   name: Oracle
 
 # ClickHouse
-- id: clickhouse
+- id: clickhouse:com_clickhouse
   name: ClickHouse
 
 # FireBird
@@ -36,11 +36,11 @@
   name: FireBird
 
 # Microsoft SQL Server
-- id: mssql
+- id: sqlserver:microsoft
   name: Microsoft SQL Server
 
 # Trino
-- id: trino
+- id: generic:trino_jdbc
   name: Trino
 
 # OpenSearch
