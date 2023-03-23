@@ -77,6 +77,15 @@ public class RunConfig {
   @Value("${spring.security.ssoheader:${SSO_ENABLED:false}}")
   private Boolean sso_enabled;
 
+  @Value("${app.predefined.enabled:${PERMISSION_ENABLED:false}}")
+  private Boolean predefined_enabled;
+
+  @Value("${app.config.type:${CONFIG_TYPE:none}}")
+  private String dynamic_config_type;
+
+  @Value("${spring.cache.type:${CACHE_TYPE:none}}")
+  private String cache_type;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
@@ -223,6 +232,18 @@ public class RunConfig {
 
   public Boolean getSso_enabled() {
     return sso_enabled;
+  }
+
+  public Boolean getPredefined_enabled() {
+    return predefined_enabled;
+  }
+
+  public String getDynamic_config_type() {
+    return dynamic_config_type;
+  }
+
+  public String getCache_type() {
+    return cache_type;
   }
 
 }

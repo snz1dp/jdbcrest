@@ -131,11 +131,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   @Override
   public JdbcMetaData getMetaData() throws SQLException {
-    return this.resolveCached(
-      String.format("%s:meta", runConfig.getApplicationCode()),
-      Constants.METADATA_CACHE,
-      () -> super.getMetaData()
-    );
+    return super.getMetaData();
   }
 
   @Override

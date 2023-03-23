@@ -30,6 +30,9 @@ public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMeta
     jdbc_meta.setJdbc_url(this.getAppInfoResolver().getJdbcURL());
     jdbc_meta.setJdbc_user(this.getAppInfoResolver().getJdbcUser());
     jdbc_meta.setSso_enabled(this.getAppInfoResolver().isSsoEnabled());
+    jdbc_meta.setPredefined_enabled(this.getAppInfoResolver().isPredefinedEnabled());
+    jdbc_meta.setDynamic_config_type(this.getAppInfoResolver().getDynamiConfigType());
+    jdbc_meta.setCache_type(this.getAppInfoResolver().getCacheType());
     return jdbc_meta;
   }
 

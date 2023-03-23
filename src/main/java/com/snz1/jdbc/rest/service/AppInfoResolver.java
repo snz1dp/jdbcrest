@@ -40,5 +40,14 @@ public interface AppInfoResolver {
 
   // 是否启用了单点登录
   boolean isSsoEnabled();
+  
+  // 是否启用了预定义配置
+  boolean isPredefinedEnabled();
+  
+  // 获取动态配置类型
+  String getDynamiConfigType();
+
+  // 获取缓存类型
+  String getCacheType();
 
 }

@@ -147,4 +147,19 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     return runConfig.getSso_enabled();
   }
 
+  @Override
+  public String getCacheType() {
+    return runConfig.getCache_type();
+  }
+
+  @Override
+  public String getDynamiConfigType() {
+    return runConfig.getDynamic_config_type();
+  }
+
+  @Override
+  public boolean isPredefinedEnabled() {
+    return runConfig.getPredefined_enabled();
+  }
+
 }

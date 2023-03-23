@@ -37,4 +37,16 @@ public class JdbcMetaData implements Serializable {
   // 是否启用单点
   private Boolean sso_enabled;
 
+  // 是否支持Schema
+  private Boolean support_schema;
+
+  // 是否启用预定义配置
+  private Boolean predefined_enabled;
+
+  // 动态配置类型
+  private String dynamic_config_type = "none";
+
+  // 缓存类型
+  private String cache_type = "none";
+
 }
