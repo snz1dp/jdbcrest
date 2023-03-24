@@ -7,9 +7,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 
-import javax.annotation.Resource;
-
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,10 +29,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Swagger2Config {
 
-  @Resource
+  @Autowired
 	private Version version;
 
-	@Resource
+	@Autowired
 	private RunConfig runConfig;
 
 	@Bean
