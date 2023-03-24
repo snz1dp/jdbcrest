@@ -41,6 +41,8 @@ service:
   - DB_TEST_RETURN=false
   - CHECK_PROXY_SIGNATURE=false
   - PROXY_SIGNATURE_SALT=
+  - SUPPORT_GROUP=
+  - SUPPORT_EMAIL=
   - JWT_TOKEN="{{ .Snz1dp.Jwt.Token }}"
   - JWT_PRIVKEY="{{ .Snz1dp.Jwt.PrivateKey }}"
   - CACHE_TYPE=none

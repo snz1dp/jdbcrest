@@ -1,12 +1,15 @@
 package com.snz1.jdbc.rest.conf;
 
+import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import javax.annotation.Resource;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,20 +30,37 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Swagger2Config {
 
-  @Autowired
+  @Resource
 	private Version version;
+
+	@Resource
+	private RunConfig runConfig;
 
 	@Bean
 	public OpenAPI openApi() {
+		String service_name = version.getProduct_name();
+		if (StringUtils.isNotBlank(runConfig.getService_name())) {
+      service_name = runConfig.getService_name();
+		}
+    String service_version = runConfig.getService_version();
+		String support_group = runConfig.getSupport_group();
+		String group_url = "";
+		String support_email = "";
+		if (StringUtils.isBlank(support_group)) {
+			support_group = version.getCompany_name();
+			group_url = version.getCompany_url();
+			support_email = version.getContact_email();
+		}
+		
 		OpenAPI openAPI = new OpenAPI();
 		// 基本信息
 		Contact contact = new Contact();
-		contact.setName(version.getCompany_name());
-		contact.setEmail(version.getContact_email());
-		contact.setUrl(version.getCompany_url());
-		openAPI.info(new Info().title(version.getProduct_name())
-						.description(version.getDescription())
-						.version(version.getProduct_version())
+		contact.setName(support_group);
+		contact.setEmail(support_email);
+		contact.setUrl(group_url);
+		openAPI.info(new Info().title(service_name)
+						.description(service_name)
+						.version(service_version)
 						.contact(contact)
 		);
 		return openAPI;

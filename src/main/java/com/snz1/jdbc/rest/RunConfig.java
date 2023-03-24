@@ -62,6 +62,12 @@ public class RunConfig {
   @Value("${app.version:${SERVICE_VERSION:1.0.0}}")
   private String service_version;
 
+  @Value("${app.support.group:${SUPPORT_GROUP:}}")
+  private String support_group;
+
+  @Value("${app.support.email:${SUPPORT_EMAIL:}}")
+  private String support_email;
+
   @Value("${app.table.readonly:${READONLY_SERVICE:false}}")
   private boolean global_readonly;
 
@@ -244,6 +250,14 @@ public class RunConfig {
 
   public String getCache_type() {
     return cache_type;
+  }
+
+  public String getSupport_group() {
+    return support_group;
+  }
+
+  public String getSupport_email() {
+    return support_email;
   }
 
 }
