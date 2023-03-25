@@ -65,6 +65,9 @@ public class RunConfig {
   @Value("${app.support.group:${SUPPORT_GROUP:}}")
   private String support_group;
 
+  @Value("${app.support.username:${SUPPORT_USERNAME:}}")
+  private String support_username;
+
   @Value("${app.support.email:${SUPPORT_EMAIL:}}")
   private String support_email;
 
@@ -258,6 +261,10 @@ public class RunConfig {
 
   public String getSupport_email() {
     return support_email;
+  }
+
+  public String getSupport_username() {
+    return support_username;
   }
 
 }

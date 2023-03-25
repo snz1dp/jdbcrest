@@ -4,10 +4,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-import javax.annotation.Resource;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.snz1.jdbc.rest.Constants;
@@ -15,6 +14,7 @@ import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.data.LicenseMeta;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
+import com.snz1.scheme.FileConfigDataSchemaManager;
 import com.snz1.utils.CalendarUtils;
 import com.snz1.utils.Configurer;
 import com.snz1.utils.TimeZoneUtils;
@@ -28,15 +28,18 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class AppInfoResolverImpl implements AppInfoResolver {
 
-  @Resource
+  @Autowired
   private RunConfig runConfig;
 
-  @Resource
+  @Autowired
   private ToolProvider toolProvider;
 
   private String lastLicense;
 
   private LicenseSupport licenseSupport;
+
+  @Autowired(required = false)
+  private FileConfigDataSchemaManager schemaManager;
 
   public AppInfoResolverImpl() {
   }
@@ -160,6 +163,32 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   @Override
   public boolean isPredefinedEnabled() {
     return runConfig.getPredefined_enabled();
+  }
+
+  @Override
+  public Integer getSchemaVersion() {
+    if (this.schemaManager == null) return null;
+    return schemaManager.getVersion();
+  }
+
+  @Override
+  public String getSupportEmail() {
+    return runConfig.getSupport_email();
+  }
+
+  @Override
+  public String getSupportGroup() {
+    return runConfig.getSupport_group();
+  }
+
+  @Override
+  public String getSupportUsername() {
+    return runConfig.getSupport_username();
+  }
+
+  @Override
+  public Date getFirstRunTime() {
+    return runConfig.getFirstRunTime();
   }
 
 }

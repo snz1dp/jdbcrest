@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -24,6 +23,7 @@ import com.snz1.utils.TimeZoneUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,16 +51,16 @@ public class AppPublishApi {
   private FunctionTreeNode[] EMPTY_TREENODES = new FunctionTreeNode[0];
   private RoleGroup[] EMPTY_GROUPS = new RoleGroup[0];
 
-  @Resource
+  @Autowired
   private RunConfig runConfig;
 
-  @Resource
+  @Autowired
   private AppInfoResolver appInfoResolver;
 
-  @Resource
+  @Autowired
   private CacheStatisticsCollector cacheStatisticsCollector;
 
-  @Resource
+  @Autowired
   private JdbcRestProvider restProvider;
 
   private JdbcMetaData jdbcMetaData = null;
@@ -128,7 +128,7 @@ public class AppPublishApi {
     }
 
     LicenseSupport license_support = appInfoResolver.getLicenseSupport();
-    Date first_run_time  = runConfig.getFirstRunTime();
+    Date first_run_time  = appInfoResolver.getFirstRunTime();
     if (license_support != null) {
       ret.put("license", license_support);
       if (license_support.getPrebationary() != null) {
@@ -144,6 +144,7 @@ public class AppPublishApi {
       Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
       ret.put("end", end_time);
     }
+    ret.put("start", runConfig.getFirstRunTime());
     return Return.wrap(ret);
   }
 

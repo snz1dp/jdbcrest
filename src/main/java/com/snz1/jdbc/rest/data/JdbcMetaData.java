@@ -49,4 +49,16 @@ public class JdbcMetaData implements Serializable {
   // 缓存类型
   private String cache_type = "none";
 
+  // 数据结构版本
+  private Integer schema_version;
+
+  // 支持团队
+  private String support_group;
+
+  // 支持邮寄
+  private String support_email;
+
+  // 支持用户
+  private String support_username;
+
 }

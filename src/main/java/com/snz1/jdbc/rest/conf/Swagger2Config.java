@@ -43,14 +43,14 @@ public class Swagger2Config {
 		}
     String service_version = runConfig.getService_version();
 		String support_group = runConfig.getSupport_group();
-		String group_url = "";
-		String support_email = "";
+		String group_url = runConfig.getSupport_group();
+		String support_email = runConfig.getSupport_email();
 		if (StringUtils.isBlank(support_group)) {
 			support_group = version.getCompany_name();
 			group_url = version.getCompany_url();
 			support_email = version.getContact_email();
 		}
-		
+
 		OpenAPI openAPI = new OpenAPI();
 		// 基本信息
 		Contact contact = new Contact();

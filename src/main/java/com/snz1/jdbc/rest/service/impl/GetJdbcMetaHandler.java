@@ -33,6 +33,10 @@ public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMeta
     jdbc_meta.setPredefined_enabled(this.getAppInfoResolver().isPredefinedEnabled());
     jdbc_meta.setDynamic_config_type(this.getAppInfoResolver().getDynamiConfigType());
     jdbc_meta.setCache_type(this.getAppInfoResolver().getCacheType());
+    jdbc_meta.setSchema_version(this.getAppInfoResolver().getSchemaVersion());
+    jdbc_meta.setSupport_group(this.getAppInfoResolver().getSupportGroup());
+    jdbc_meta.setSupport_username(this.getAppInfoResolver().getSupportUsername());
+    jdbc_meta.setSupport_email(this.getAppInfoResolver().getSupportEmail());
     return jdbc_meta;
   }
 

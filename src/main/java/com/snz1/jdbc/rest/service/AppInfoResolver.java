@@ -1,5 +1,7 @@
 package com.snz1.jdbc.rest.service;
 
+import java.util.Date;
+
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.data.LicenseMeta;
 
@@ -49,5 +51,20 @@ public interface AppInfoResolver {
 
   // 获取缓存类型
   String getCacheType();
+
+  // 获取数据版本
+  Integer getSchemaVersion();
+
+  // 支持团队
+  String getSupportGroup();
+
+  // 支持EMail
+  String getSupportEmail();
+
+  // 支持用户
+  String getSupportUsername();
+
+  // 获取开始运行时间
+  Date getFirstRunTime();
 
 }
