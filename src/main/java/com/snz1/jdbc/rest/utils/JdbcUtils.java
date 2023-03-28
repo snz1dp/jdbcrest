@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ClassUtils;
@@ -278,6 +279,9 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
         } else if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.list)) {
           mapping_builder.javaType(List.class);
           mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.ListTypeHandler());
+        } else if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.set)) {
+          mapping_builder.javaType(Set.class);
+          mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.SetTypeHandler());
         } else if (Objects.equals(result_column.getType(), ResultDefinition.ResultType.base64)) {
           mapping_builder.javaType(String.class);
           mapping_builder.typeHandler(new com.snz1.jdbc.rest.dao.Base64TypeHandler());

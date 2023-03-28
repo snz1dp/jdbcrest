@@ -82,6 +82,8 @@ public class ResultDefinition implements Serializable {
 
     list,
 
+    set,
+
     base64;
 
   }
