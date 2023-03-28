@@ -81,7 +81,12 @@ public class UserRoleVerifierImpl implements UserRoleVerifier {
   public String[] getUserOwnerAppcodes(User logged_user, String... appcodes) {
     if (hasAllAppRoleCode() && isUserInAnyRole(logged_user, this.allAppRoleCode)) {
       if (appcodes == null || appcodes.length == 0) return null;
-      return appcodes;
+      Set<String> codes = new HashSet<>();
+      for (String appcode : appcodes) {
+        if (StringUtils.isBlank(appcode)) continue;
+        codes.add(appcode);
+      }
+      return codes.toArray(new String[0]);
     };
 
     if (appcodes != null && appcodes.length > 0) {
@@ -143,7 +148,12 @@ public class UserRoleVerifierImpl implements UserRoleVerifier {
   public String[] getUserApprovalAppcodes(User logged_user, String... appcodes) {
     if (hasAllAppRoleCode() && isUserInAnyRole(logged_user, this.allAppRoleCode)) {
       if (appcodes == null || appcodes.length == 0) return null;
-      return appcodes;
+      Set<String> codes = new HashSet<>();
+      for (String appcode : appcodes) {
+        if (StringUtils.isBlank(appcode)) continue;
+        codes.add(appcode);
+      }
+      return codes.toArray(new String[0]);
     }
 
     if (appcodes != null && appcodes.length > 0) {
