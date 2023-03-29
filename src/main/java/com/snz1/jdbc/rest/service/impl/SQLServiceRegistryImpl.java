@@ -71,7 +71,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       if (file.isDirectory()) {
         defintions.putAll(
           this.doLoadSQLServiceDefinitions(
-            String.format("%s.%s", parent_name, file.getName()),
+            String.format("%s%s.", parent_name, file.getName()),
             String.format("%s/%s", relative_path, file.getName()
           ), file)
         );
@@ -82,7 +82,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       }
       try {
         String service_path = String.format("%s/%s", relative_path, file.getName().substring(0, file.getName().length() - 4));
-        String service_name = String.format("%s.%s", parent_name, file.getName().substring(0, file.getName().length() - 4));
+        String service_name = String.format("%s%s", parent_name, file.getName().substring(0, file.getName().length() - 4));
         if (StringUtils.endsWith(service_path, "/")) {
           service_path = service_path.substring(0, service_path.length() - 1);
         }
