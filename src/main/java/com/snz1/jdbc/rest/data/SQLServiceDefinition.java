@@ -14,7 +14,11 @@ import lombok.Data;
 // SQL转服务定义
 @Data
 public class SQLServiceDefinition implements Serializable {
-  
+
+  private String service_name;
+
+  private String service_title;
+
   // 服务路径，从SQL文件名中获取
   private String service_path;
 
@@ -62,6 +66,9 @@ public class SQLServiceDefinition implements Serializable {
 
   @Data
   public static class ResultDefinitionYamlWrapper {
+
+    // 标题
+    private String title;
 
     // 单对象返回
     private boolean signleton = false;

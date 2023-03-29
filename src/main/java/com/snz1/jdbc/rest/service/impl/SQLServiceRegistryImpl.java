@@ -52,7 +52,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     }
     Validate.isTrue(sql_directory.exists() && sql_directory.isDirectory(), "%s不是一个有效的目录", sql_directory);
     try {
-      this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("/services", sql_directory));
+      this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("", "/services", sql_directory));
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
         log.debug("{}", e.getMessage(), e);
@@ -61,15 +61,20 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     }
   }
 
-  protected Map<String, SQLServiceDefinition> doLoadSQLServiceDefinitions(String relative_path, File sql_dir) throws Exception {
+  protected Map<String, SQLServiceDefinition> doLoadSQLServiceDefinitions(String parent_name, String relative_path, File sql_dir) throws Exception {
     if (log.isDebugEnabled()) {
       log.debug("加载目录 {} 下的SQL文件...", sql_dir);
     }
-    
+
     Map<String, SQLServiceDefinition> defintions = new LinkedHashMap<>();
     for (File file : sql_dir.listFiles()) {
       if (file.isDirectory()) {
-        defintions.putAll(this.doLoadSQLServiceDefinitions(String.format("%s/%s", relative_path, file.getName()), file));
+        defintions.putAll(
+          this.doLoadSQLServiceDefinitions(
+            String.format("%s.%s", parent_name, file.getName()),
+            String.format("%s/%s", relative_path, file.getName()
+          ), file)
+        );
       }
       if (!StringUtils.endsWith(StringUtils.lowerCase(file.getName()), ".sql")) continue;
       if (log.isDebugEnabled()) {
@@ -77,10 +82,11 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       }
       try {
         String service_path = String.format("%s/%s", relative_path, file.getName().substring(0, file.getName().length() - 4));
+        String service_name = String.format("%s.%s", parent_name, file.getName().substring(0, file.getName().length() - 4));
         if (StringUtils.endsWith(service_path, "/")) {
           service_path = service_path.substring(0, service_path.length() - 1);
         }
-        SQLServiceDefinition def = this.doSQLServiceDefinition(service_path, file);
+        SQLServiceDefinition def = this.doLoadSQLServiceDefinition(service_name, service_path, file);
         defintions.put(service_path, def);
       } catch (Throwable e) {
         throw new IllegalStateException(String.format("加载SQL文件%s失败: %s", file.toString(), e.getMessage()), e);
@@ -89,8 +95,9 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     return defintions;
   }
 
-  protected SQLServiceDefinition doSQLServiceDefinition(String service_path, File sql_file) throws Exception {
+  protected SQLServiceDefinition doLoadSQLServiceDefinition(String service_name, String service_path, File sql_file) throws Exception {
     SQLServiceDefinition sql_def = new SQLServiceDefinition();
+    sql_def.setService_name(service_name);
     sql_def.setService_path(service_path);
     sql_def.setFile_location(sql_file.getAbsolutePath());
     SQLServiceDefinition.SQLFragment sql_frag = null;
@@ -146,6 +153,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
         if (result_wrapper == null) {
           result_wrapper = new SQLServiceDefinition.ResultDefinitionYamlWrapper();
         }
+
         if (result_wrapper.getColumns() != null && result_wrapper.getColumns().length > 0) {
           for (ResultDefinition.ResultColumn cl : result_wrapper.getColumns()) {
             Validate.notBlank(cl.getName(), "字段名不能为空");
@@ -155,6 +163,12 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
         }
         sql_frag.getResult().setSignleton(result_wrapper.isSignleton());
         sql_frag.getResult().setColumn_compact(result_wrapper.isColumn_compact());
+
+        if (StringUtils.isBlank(sql_def.getService_title()) && StringUtils.isNotBlank(
+          result_wrapper.getTitle()
+        )) {
+          sql_def.setService_title(result_wrapper.getTitle());
+        }
       }
 
       // 构建MyBatis解析段
