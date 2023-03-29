@@ -27,6 +27,7 @@ public class SQLServiceDefinition implements Serializable {
   private String file_location;
 
   // SQL片段列表
+  @JsonIgnore
   private List<SQLFragment> sql_fragments = new LinkedList<SQLFragment>();
 
   public boolean hasSql_fragments() {
