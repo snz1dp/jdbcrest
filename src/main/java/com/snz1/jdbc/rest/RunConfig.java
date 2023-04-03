@@ -95,6 +95,9 @@ public class RunConfig {
   @Value("${spring.cache.type:${CACHE_TYPE:none}}")
   private String cache_type;
 
+  @Value("${app.license.strict:false}")
+  private Boolean strict_license;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
@@ -265,6 +268,10 @@ public class RunConfig {
 
   public String getSupport_username() {
     return support_username;
+  }
+
+  public Boolean getStrict_license() {
+    return strict_license;
   }
 
 }
