@@ -13,8 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import com.snz1.jdbc.rest.utils.FileUtils;
 import com.snz1.utils.Configurer;
@@ -28,6 +28,8 @@ public class RunConfig {
 
   @Resource
   private Version appVerison;
+
+  private ResourceLoader resourceLoader = new PathMatchingResourcePatternResolver();
 
   @Value("${server.context-path:/jdbc/rest/api}")
   private String webroot;
@@ -155,19 +157,13 @@ public class RunConfig {
   public File getSql_location_dir() {
     String sql_location = this.getSql_location();
     if (StringUtils.isBlank(sql_location)) return null;
+
     File sql_directory;
     try {
-      sql_directory = new UrlResource(sql_location).getFile();
+      sql_directory = this.resourceLoader.getResource(sql_location).getFile();
     } catch (IOException e) {
-      if (StringUtils.startsWith(sql_location, "classpath:")) {
-        sql_location = StringUtils.substring(sql_location, 10);
-      }
-      try {
-        sql_directory = new ClassPathResource(sql_location).getFile();
-      } catch (IOException ex) {
-        log.warn("无法获取SQL服务目录信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
-        return null;
-      }
+      log.warn("无法获取SQL服务目录信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
+      return null;
     }
     return sql_directory;
   }
@@ -179,17 +175,10 @@ public class RunConfig {
     }
     File tdf_resource;
     try {
-      tdf_resource = new UrlResource(file_location).getFile();
+      tdf_resource = this.resourceLoader.getResource(file_location).getFile();
     } catch (IOException e) {
-      if (StringUtils.startsWith(file_location, "classpath:")) {
-        file_location = StringUtils.substring(file_location, 10);
-      }
-      try {
-        tdf_resource = new ClassPathResource(file_location).getFile();
-      } catch (IOException ex) {
-        log.warn("获取数据表配置文件信息失败, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
-        return null;
-      }
+      log.warn("获取数据表配置文件信息失败, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
+      return null;
     }
     return tdf_resource;
   }
