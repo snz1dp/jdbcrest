@@ -58,6 +58,10 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       }
     }
 
+    while (sql_location.endsWith("/")) {
+      sql_location = sql_location.substring(0, sql_location.length() - 1);
+    }
+
     try {
       this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("", "/services", sql_location));
     } catch (Exception e) {
