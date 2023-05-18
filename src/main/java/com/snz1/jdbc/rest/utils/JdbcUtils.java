@@ -1,7 +1,5 @@
 package com.snz1.jdbc.rest.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -154,7 +152,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
   }
 
 
-	public static List<SQLClauses> loadSQLClausesFromFile(File file, String batch_splitter, Charset defaultCharset) throws IOException {
+	public static List<SQLClauses> loadSQLClausesFromFile(InputStream file, String batch_splitter, Charset defaultCharset) throws IOException {
     List<SQLClauses> sql_batchs = new LinkedList<SQLClauses>();
     List<String> filelines = readURLToLines(file, defaultCharset);
     SQLClauses sql_clauses = new SQLClauses();
@@ -198,13 +196,8 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     return new ArrayList<SQLClauses>(sql_batchs);
   }
 
-  public static List<String> readURLToLines(File url, Charset defaultCharset) throws IOException {
-    InputStream in = new FileInputStream(url);
-    try {
-      return IOUtils.readLines(in, defaultCharset);
-    } finally {
-      IOUtils.closeQuietly(in);
-    }
+  public static List<String> readURLToLines(InputStream in, Charset defaultCharset) throws IOException {
+    return IOUtils.readLines(in, defaultCharset);
   }
 
   // 分析SQL参数

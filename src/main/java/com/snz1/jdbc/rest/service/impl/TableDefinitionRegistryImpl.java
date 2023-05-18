@@ -1,8 +1,7 @@
 package com.snz1.jdbc.rest.service.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,8 +13,11 @@ import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import com.esotericsoftware.yamlbeans.YamlException;
@@ -30,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
 
+  private ResourceLoader resourceLoader = new PathMatchingResourcePatternResolver();
+
   @Autowired
   private RunConfig runConfig;
 
@@ -38,25 +42,24 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
   // 加载表定义配置
   @PostConstruct
   public void loadTableDefinitions() {
-    File deffile = runConfig.getTable_definition_file();
-    if (deffile == null) {
+    String def_location = runConfig.getTable_definition();
+    // 加载资源
+    InputStream tdf_ism = null;
+    if (StringUtils.isNotBlank(def_location)) {
+      try {
+        tdf_ism = resourceLoader.getResource(def_location).getInputStream();
+      } catch(IOException e) {
+        log.warn("无法加载数据表配置文件“{}”：{}", def_location, e.getMessage(), e);
+        return;
+      }
+    }
+
+    if (tdf_ism == null) {
       if (log.isDebugEnabled()) {
         log.debug("未设置数据表配置文件参数, 忽略数据表配置加载");
       }
       return;
     }
-
-    if (log.isInfoEnabled()) {
-      log.info("加载数据表配置文件{} ...", deffile);
-    }
-
-    // 加载资源
-    FileInputStream tdf_ism;
-		try {
-			tdf_ism = new FileInputStream(deffile);
-		} catch (IOException e) {
-			throw new IllegalStateException(String.format("无法读取数据表配置文件: %s", deffile), e);
-		}
 
     // 读取配置
     YamlReader yamlReader = new YamlReader(new InputStreamReader(tdf_ism));
@@ -64,11 +67,11 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     try {
       table_definitions = yamlReader.read(TableDefinition[].class);
     } catch (YamlException e) {
-			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", deffile, e.getMessage()), e);
+			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", def_location, e.getMessage()), e);
     }
 
     if (table_definitions == null || table_definitions.length == 0) {
-      log.warn("数据表配置文件 {} 中无任何配置内容", deffile);
+      log.warn("数据表配置文件 {} 中无任何配置内容", def_location);
       return;
     }
 

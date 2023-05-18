@@ -1,26 +1,19 @@
 package com.snz1.jdbc.rest;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 
 import javax.annotation.Resource;
 
 import gateway.sc.v2.PermissionDefinition;
-import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import com.snz1.jdbc.rest.utils.FileUtils;
 import com.snz1.utils.Configurer;
 import com.snz1.utils.JsonUtils;
 
-@Slf4j
 public class RunConfig {
 
   @Autowired(required = false)
@@ -28,8 +21,6 @@ public class RunConfig {
 
   @Resource
   private Version appVerison;
-
-  private ResourceLoader resourceLoader = new PathMatchingResourcePatternResolver();
 
   @Value("${server.context-path:/jdbc/rest/api}")
   private String webroot;
@@ -154,35 +145,6 @@ public class RunConfig {
     return !StringUtils.equals(this.config_type, "none");
   }
 
-  public File getSql_location_dir() {
-    String sql_location = this.getSql_location();
-    if (StringUtils.isBlank(sql_location)) return null;
-
-    File sql_directory;
-    try {
-      sql_directory = this.resourceLoader.getResource(sql_location).getFile();
-    } catch (IOException e) {
-      log.warn("无法获取SQL服务目录信息, Path={}, 错误信息: {}", sql_location, e.getMessage(), e);
-      return null;
-    }
-    return sql_directory;
-  }
-
-  public File getTable_definition_file() {
-    String file_location = this.getTable_definition();
-    if (StringUtils.isBlank(file_location)) {
-      return null;
-    }
-    File tdf_resource;
-    try {
-      tdf_resource = this.resourceLoader.getResource(file_location).getFile();
-    } catch (IOException e) {
-      log.warn("获取数据表配置文件信息失败, Path={}, 错误信息: {}", file_location, e.getMessage(), e);
-      return null;
-    }
-    return tdf_resource;
-  }
-
   public Date getFirstRunTime() {
     if (this.isPersistenceConfig()) {
       String installed_time = Configurer.getAppProperty("first_run_time", null);
@@ -197,19 +159,6 @@ public class RunConfig {
         } catch(Throwable e) {
           Configurer.setAppProperty("first_run_time", JsonUtils.toJson(this.firstRunTime));
         }
-      }
-    } else {
-      File temp_file = this.getTable_definition_file();
-      if (temp_file != null) {
-        try {
-          return this.firstRunTime = FileUtils.getCreateTime(temp_file);
-        } catch (IOException e) {}
-      }
-      temp_file = this.getSql_location_dir();
-      if (temp_file != null) {
-        try {
-          return this.firstRunTime = FileUtils.getCreateTime(temp_file);
-        } catch (IOException e) {}
       }
     }
     return this.firstRunTime;

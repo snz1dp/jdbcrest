@@ -1,6 +1,6 @@
 package com.snz1.jdbc.rest.service.impl;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.JDBCType;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,10 +11,13 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
@@ -32,7 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class SQLServiceRegistryImpl implements SQLServiceRegistry {
-    
+
+  private ResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();
+
   @Resource
   private RunConfig runConfig;
 
@@ -43,16 +48,18 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
 
   @PostConstruct
   public void loadSQLServiceDefinitions() {
-    File sql_directory = runConfig.getSql_location_dir();
-    if (sql_directory == null) {
-      if (log.isDebugEnabled()) {
-        log.debug("未设置SQL服务目录配置参数, 忽略SQL服务加载!");
+    String sql_location = runConfig.getSql_location();
+    if (StringUtils.isNotBlank(sql_location)) {
+      try {
+        Validate.isTrue(resourceLoader.getResource(sql_location).exists());
+      } catch (Throwable e) {
+        log.warn("无法加载SQL服务目录“{}”：{}", sql_location, e.getMessage(), e);
+        return;
       }
-      return;
     }
-    Validate.isTrue(sql_directory.exists() && sql_directory.isDirectory(), "%s不是一个有效的目录", sql_directory);
+
     try {
-      this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("", "/services", sql_directory));
+      this.sqlServiceDefinitions = new HashMap<>(this.doLoadSQLServiceDefinitions("", "/services", sql_location));
     } catch (Exception e) {
       if (log.isDebugEnabled()) {
         log.debug("{}", e.getMessage(), e);
@@ -61,45 +68,64 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
     }
   }
 
-  protected Map<String, SQLServiceDefinition> doLoadSQLServiceDefinitions(String parent_name, String relative_path, File sql_dir) throws Exception {
+  protected Map<String, SQLServiceDefinition> doLoadSQLServiceDefinitions(String parent_name, String relative_path, String sql_dir) throws Exception {
     if (log.isDebugEnabled()) {
       log.debug("加载目录 {} 下的SQL文件...", sql_dir);
     }
 
+    String prefix_dir = sql_dir;
+    if (StringUtils.startsWith(sql_dir, "classpath:")) {
+      prefix_dir = sql_dir.substring("classpath:".length());
+    } else if (StringUtils.startsWith(sql_dir, "classpath*:")) {
+      prefix_dir = sql_dir.substring("classpath*:".length());
+    } else if (StringUtils.startsWith(sql_dir, "file:")) {
+      prefix_dir = sql_dir.substring("file:".length());
+    }
+
+    while (prefix_dir.startsWith("/")) {
+      prefix_dir = prefix_dir.substring(1);
+    }
+
+    org.springframework.core.io.Resource[] resources = resourceLoader.getResources(String.format("%s/**/*.sql", sql_dir));
     Map<String, SQLServiceDefinition> defintions = new LinkedHashMap<>();
-    for (File file : sql_dir.listFiles()) {
-      if (file.isDirectory()) {
-        defintions.putAll(
-          this.doLoadSQLServiceDefinitions(
-            String.format("%s%s.", parent_name, file.getName()),
-            String.format("%s/%s", relative_path, file.getName()
-          ), file)
-        );
-      }
-      if (!StringUtils.endsWith(StringUtils.lowerCase(file.getName()), ".sql")) continue;
-      if (log.isDebugEnabled()) {
-        log.debug("加载SQL文件 {} ...", file.toString());
-      }
-      try {
-        String service_path = String.format("%s/%s", relative_path, file.getName().substring(0, file.getName().length() - 4));
-        String service_name = String.format("%s%s", parent_name, file.getName().substring(0, file.getName().length() - 4));
-        if (StringUtils.endsWith(service_path, "/")) {
-          service_path = service_path.substring(0, service_path.length() - 1);
+    for (org.springframework.core.io.Resource resource : resources) {
+      String start_uri = resource.getURI().toString();
+      int start_x = start_uri.indexOf("!/");
+      if (start_x > 0) {
+        start_uri = start_uri.substring(start_x + 3);
+      } else {
+        start_x = start_uri.indexOf(":");
+        if (start_x > 0) {
+          start_uri = start_uri.substring(start_x + 2);
         }
-        SQLServiceDefinition def = this.doLoadSQLServiceDefinition(service_name, service_path, file);
+      }
+      String nosuffix_file = start_uri.substring(prefix_dir.length(), start_uri.length() - 4);
+      String service_path = String.format("%s/%s", relative_path, nosuffix_file);
+      String service_name = String.format("%s%s", parent_name, nosuffix_file);
+      log.info("service_path = {}, service_name = {}", service_path, service_name);
+      InputStream resource_ism = resource.getInputStream();
+      try {
+        SQLServiceDefinition def = this.doLoadSQLServiceDefinition(
+          service_name, service_path,
+          resource.getURI().toString(),
+          resource.getInputStream());
         defintions.put(service_path, def);
-      } catch (Throwable e) {
-        throw new IllegalStateException(String.format("加载SQL文件%s失败: %s", file.toString(), e.getMessage()), e);
+      } finally {
+        IOUtils.closeQuietly(resource_ism);
       }
     }
+
     return defintions;
   }
 
-  protected SQLServiceDefinition doLoadSQLServiceDefinition(String service_name, String service_path, File sql_file) throws Exception {
+  protected SQLServiceDefinition doLoadSQLServiceDefinition(
+    String service_name, String service_path,
+    String file_path, InputStream sql_file
+  ) throws Exception {
     SQLServiceDefinition sql_def = new SQLServiceDefinition();
     sql_def.setService_name(service_name);
     sql_def.setService_path(service_path);
-    sql_def.setFile_location(sql_file.getAbsolutePath());
+    sql_def.setFile_location(file_path);
     SQLServiceDefinition.SQLFragment sql_frag = null;
     int i = 0;
 

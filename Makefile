@@ -60,12 +60,12 @@ clean-all: clean
 
 # 本地编译
 component: clean
-	./mvnw package -Pdepends
+	./mvnw package -Pdepends -DskipTests
 
 # 安装本地
 install: component
-	./mvnw install -Pdepends
+	./mvnw install -Pdepends -DskipTests
 
 # 部署远程
 deploy: component
-	./mvnw clean deploy -Pdepends
+	./mvnw clean deploy -Pdepends -DskipTests

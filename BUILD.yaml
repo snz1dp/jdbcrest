@@ -67,7 +67,7 @@ service:
     anonymous:
     - /jdbc/rest/api/health
     - /jdbc/rest/api/version
-    - /jdbc/rest/api/v2
+    - /jdbc/rest/api/v3
     - /jdbc/rest/api/swagger-ui
     - /jdbc/rest/api/swagger-resources
 

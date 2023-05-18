@@ -3,7 +3,7 @@
   access: permitAll
 
 # 文档资源
-- path: /v2/**
+- path: /v3/**
   access: permitAll
 - path: /swagger/**
   access: permitAll
