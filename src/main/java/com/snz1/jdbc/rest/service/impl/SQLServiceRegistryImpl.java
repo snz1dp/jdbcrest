@@ -106,7 +106,9 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       String nosuffix_file = start_uri.substring(prefix_dir.length(), start_uri.length() - 4);
       String service_path = String.format("%s/%s", relative_path, nosuffix_file);
       String service_name = String.format("%s%s", parent_name, nosuffix_file);
-      log.info("service_path = {}, service_name = {}", service_path, service_name);
+      if (log.isDebugEnabled()) {
+        log.debug("service_path = {}, service_name = {}", service_path, service_name);
+      }
       InputStream resource_ism = resource.getInputStream();
       try {
         SQLServiceDefinition def = this.doLoadSQLServiceDefinition(
