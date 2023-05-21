@@ -20,7 +20,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 		<start-class>com.snz1.jdbc.rest.Application</start-class>
-		<mysql.version>8.0.31</mysql.version>
+		<mysql.version>8.0.33</mysql.version>
 		<dameng.version>8.1.2.141</dameng.version>
 		<gbase.version>9.5.0.1</gbase.version>
 		<clickhouse.version>0.3.2-patch7</clickhouse.version>
