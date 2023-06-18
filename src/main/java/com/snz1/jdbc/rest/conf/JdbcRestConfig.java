@@ -13,15 +13,16 @@ import org.springframework.context.annotation.Configuration;
   "com.snz1.jdbc.rest.conf",
   "com.snz1.jdbc.rest.api",
 })
-@ConditionalOnMissingBean(com.snz1.jdbc.rest.Version.class)
 public class JdbcRestConfig {
 
   @Bean
+  @ConditionalOnMissingBean(com.snz1.jdbc.rest.Version.class)
   public com.snz1.jdbc.rest.Version jdbcRestVersion() {
     return new com.snz1.jdbc.rest.Version();
   }
 
   @Bean
+  @ConditionalOnMissingBean(com.snz1.jdbc.rest.RunConfig.class)
   public com.snz1.jdbc.rest.RunConfig jdbcRestRunConfig() {
     return new com.snz1.jdbc.rest.RunConfig();
   }

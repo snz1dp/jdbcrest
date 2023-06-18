@@ -20,6 +20,7 @@ import com.snz1.utils.Configurer;
 import com.snz1.utils.TimeZoneUtils;
 
 import gateway.api.NotExceptException;
+import gateway.sc.v2.PermissionDefinition;
 import gateway.sc.v2.ToolProvider;
 import gateway.sc.v2.config.LicenseSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -194,6 +195,11 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   @Override
   public String getDefaultTargetURL() {
     return runConfig.getDefaultTargetUrl();
+  }
+
+  @Override
+  public PermissionDefinition getPermissionDefinition() {
+    return runConfig.getPermissionDefinition();
   }
 
 }

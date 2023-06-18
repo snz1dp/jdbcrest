@@ -5,6 +5,7 @@ import java.util.Date;
 import com.snz1.jdbc.rest.Version;
 import com.snz1.jdbc.rest.data.LicenseMeta;
 
+import gateway.sc.v2.PermissionDefinition;
 import gateway.sc.v2.config.LicenseSupport;
 
 // 应用信息获取
@@ -69,5 +70,8 @@ public interface AppInfoResolver {
 
   // 获取缺省的目标地址
   String getDefaultTargetURL();
+
+  // 获取应用权限定义
+  PermissionDefinition getPermissionDefinition();
 
 }

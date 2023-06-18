@@ -18,77 +18,76 @@ public class Version implements Serializable {
   public static final int MINOR = 0;
 
   // 产品修订版本号
-  public static final int REVSION = 1;
+  public static final int REVSION = 2;
 
   // 产品编译版本号
-  public static final int BUILD = 317;
+  public static final int BUILD = 168;
 
   // 产品版本字符串
   public static final String VERSION = String.format("%d.%d.%d-%d", MAJOR, MINOR, REVSION, BUILD);
 
   // 产品代码
   @Value("${app.code:jdbcrest}")
-  private String PRODUCT_CODE = "jdbcrest";
+  private String product_code = "jdbcrest";
 
   // 产品名称
-  private String PRODUCT_NAME = "Jdbc转Rest服务";
+  @Value("${app.title:Jdbc\u8F6CRest\u670D\u52A1}")
+  private String product_name = "Jdbc转Rest服务";
 
   // 公司名称
-  private String COMPANY_NAME = "长沙慧码至一信息科技有限公司";
+  @Value("${app.company.name:Jdbc\u8F6CRest\u670D\u52A1}")
+  private String company_name = "长沙慧码至一信息科技有限公司";
 
   // 公司网站
-  private String COMPANY_URL = "https://snz1.cn";
+  @Value("${app.company.url:https://snz1.cn}")
+  private String company_url;
 
   // 联系地址
-  private String CONTACT_EMAIL = "snz1@qq.com";
+  @Value("${app.contact.email:snz1@qq.com}")
+  private String contact_email;
 
   // 产品描述
-  public static final String DESCRIPTION = "Jdbc转Rest服务";
+  @Value("${app.description:Jdbc\u8F6CRest\u670D\u52A1}")
+  public String description;
 
   // 版权
-  public static final String LEGAL_COPYRIGHT = "2023©慧码至一";
-
-  // 版权声明
-  public static final String PRODUCT_LICENSE = "长沙慧码至一信息科技有限公司";
+  @Value("${app.legal.copyright:2023\u00A9\u6167\u7801\u81F3\u4E00}")
+  public String legal_copyright;
 
   public String getProduct_code() {
-    return PRODUCT_CODE;
+    return product_code;
   }
 
   public String getProduct_name() {
-    return PRODUCT_NAME;
+    return product_name;
   }
 
   public void setProduct_name(String val) {
-    PRODUCT_NAME = val;
+    product_name = val;
   }
 
   public String getCompany_name() {
-    return COMPANY_NAME;
+    return company_name;
   }
 
   public String getCompany_url() {
-    return COMPANY_URL;
+    return company_url;
   }
 
   public String getContact_email() {
-    return CONTACT_EMAIL;
+    return contact_email;
   }
 
   public String getDescription() {
-    return DESCRIPTION;
+    return description;
   }
 
   public String getLegal_copyright() {
-    return LEGAL_COPYRIGHT + getCompany_name();
-  }
-
-  public String getProduct_license() {
-    return PRODUCT_LICENSE;
+    return legal_copyright + getCompany_name();
   }
 
   public String getProduct_title_with_version() {
-    return MessageFormat.format("{0} V{1}.{2}", PRODUCT_NAME, MAJOR, MINOR, REVSION, BUILD);
+    return MessageFormat.format("{0} V{1}.{2}-{3}", product_name, MAJOR, MINOR, REVSION, BUILD);
   }
 
   public String getProduct_version() {
