@@ -212,4 +212,9 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     return runConfig.getDefault_user_scope();
   }
 
+  @Override
+  public String getWebRoot() {
+    return runConfig.getWebroot();
+  }
+
 }

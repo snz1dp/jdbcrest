@@ -80,4 +80,8 @@ public interface AppInfoResolver {
   // 是否持久化配置
   boolean isPersistenceConfig();
 
+  // 获取应用上下文
+  String getWebRoot();
+
 }
+
