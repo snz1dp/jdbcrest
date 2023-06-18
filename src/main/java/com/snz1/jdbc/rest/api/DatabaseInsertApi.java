@@ -65,7 +65,7 @@ public class DatabaseInsertApi {
     return Return.wrap(result);
   }
 
-  @Operation(summary = "获取对象UUID")
+  @Operation(summary = "创建对象UUID")
   @RequestMapping(path = "/uuid", method = {
     org.springframework.web.bind.annotation.RequestMethod.POST,
     org.springframework.web.bind.annotation.RequestMethod.GET
