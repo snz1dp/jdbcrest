@@ -4,9 +4,7 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-@Component
 public class Version implements Serializable {
 
   private static final long serialVersionUID = -660884757648964031L;

@@ -88,7 +88,7 @@ public class AppPublishApi {
     HttpServletResponse response
   ) {
     ModelAndView mav = new ModelAndView();
-    String root_url = WebUtils.getPublishURLViaGateway(request, runConfig.getDefaultTargetUrl());
+    String root_url = WebUtils.getPublishURLViaGateway(request, appInfoResolver.getDefaultTargetURL());
     mav.setView(new RedirectView(root_url));
     return mav;
   }
@@ -144,7 +144,7 @@ public class AppPublishApi {
       Date end_time = CalendarUtils.add(first_run_time, TimeZoneUtils.getCurrent(), Calendar.MONTH, 3);
       ret.put("end", end_time);
     }
-    ret.put("start", runConfig.getFirstRunTime());
+    ret.put("start", appInfoResolver.getFirstRunTime());
     return Return.wrap(ret);
   }
 
@@ -166,10 +166,10 @@ public class AppPublishApi {
   @PreAuthorize("isAuthenticated")
   @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
   public Return<FunctionTreeNode[]> functions() {
-    if (runConfig.hasPermissionDefinition() &&
-      runConfig.getPermissionDefinition().getFunctions() != null
+    if (appInfoResolver.getPermissionDefinition() != null &&
+      appInfoResolver.getPermissionDefinition().getFunctions() != null
     ) {
-      FunctionTreeNode[] nodes = runConfig.getPermissionDefinition().getFunctions();
+      FunctionTreeNode[] nodes = appInfoResolver.getPermissionDefinition().getFunctions();
       if (nodes.length != 1) return Return.wrap(nodes);
       return Return.wrap(nodes[0].getChildren().toArray(new FunctionTreeNode[0]));
     } else {
@@ -182,10 +182,10 @@ public class AppPublishApi {
   @PreAuthorize("isAuthenticated")
   @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
   public Return<RoleGroup[]> groups() {
-    if (runConfig.hasPermissionDefinition() &&
-      runConfig.getPermissionDefinition().getGroups() != null
+    if (appInfoResolver.getPermissionDefinition() != null &&
+      appInfoResolver.getPermissionDefinition().getGroups() != null
     ) {
-      RoleGroup[] nodes = runConfig.getPermissionDefinition().getGroups();
+      RoleGroup[] nodes = appInfoResolver.getPermissionDefinition().getGroups();
       return Return.wrap(nodes);
     } else {
       return Return.wrap(EMPTY_GROUPS);

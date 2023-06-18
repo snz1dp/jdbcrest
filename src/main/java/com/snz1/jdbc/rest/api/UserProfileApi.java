@@ -38,7 +38,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 
@@ -60,9 +59,6 @@ public class UserProfileApi {
 
   @Autowired
   private AppInfoResolver appInfoResolver;
-
-  @Autowired
-  private RunConfig runConfig;
 
   public UserProfileApi () {
   }
@@ -182,7 +178,7 @@ public class UserProfileApi {
 		String appid
 	) {
     if (StringUtils.isBlank(appid)) {
-      appid = runConfig.getApplicationCode();
+      appid = appInfoResolver.getAppId();
     }
     User user = loggedUserContext.getLoggedUser();
 		Set<String> roles = new HashSet<>(userManager.getUserRoles(
@@ -199,10 +195,10 @@ public class UserProfileApi {
     Set<String> roles = new HashSet<>(userManager.getUserRoles(user.getUserid(), IdType.id, false, appInfoResolver.getAppId()));
     List<String> function_codes = new LinkedList<>();
 
-    if (this.runConfig.hasPermissionDefinition() &&
-      this.runConfig.getPermissionDefinition().getFunctions() != null
+    if (this.appInfoResolver.getPermissionDefinition() != null &&
+      this.appInfoResolver.getPermissionDefinition().getFunctions() != null
     ) {
-      for (FunctionTreeNode node : this.runConfig.getPermissionDefinition().getFunctions()) {
+      for (FunctionTreeNode node : this.appInfoResolver.getPermissionDefinition().getFunctions()) {
         Page<FunctionNode> node_page = null;
         int offset = 0;
         do {

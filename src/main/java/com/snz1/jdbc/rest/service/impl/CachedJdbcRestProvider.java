@@ -15,7 +15,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.Cache.ValueWrapper;
 
 import com.snz1.jdbc.rest.Constants;
-import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
@@ -26,6 +25,7 @@ import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition.SQLFragment;
 import com.snz1.jdbc.rest.provider.SQLDialectProvider;
+import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.SQLServiceRegistry;
 import com.snz1.utils.JsonUtils;
@@ -39,7 +39,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   private CacheManager cacheManager;
 
   @Resource
-  private RunConfig runConfig;
+  private AppInfoResolver appInfoResolver;
 
   @Resource
   private SQLServiceRegistry serviceRegistry;
@@ -84,7 +84,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
     JdbcQueryResponse<List<Object>> ret = this.resolveCached(
-      String.format("%s:meta", runConfig.getApplicationCode()),
+      String.format("%s:meta", appInfoResolver.getAppId()),
       Constants.SCHEMAS_CACHE,
       () -> super.getSchemas()
     );
@@ -96,7 +96,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
     JdbcQueryResponse<List<Object>> ret = this.resolveCached(
-      String.format("%s:meta", runConfig.getApplicationCode()),
+      String.format("%s:meta", appInfoResolver.getAppId()),
       Constants.CATALOGS_CACHE,
       () -> super.getCatalogs()
     );
@@ -119,7 +119,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
       }
     }
     JdbcQueryResponse<Page<Object>> ret = this.resolveCached(
-      String.format("%s:meta", runConfig.getApplicationCode()),
+      String.format("%s:meta", appInfoResolver.getAppId()),
       cbuf.toString(),
       () -> super.getTables(return_meta, catalog, schema_pattern,
         table_name_pattern, offset, limit, types)
@@ -139,7 +139,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     if (table_query.hasTable_meta()) return table_query.getTable_meta();
     try {
       return this.resolveCached(
-        String.format("%s:meta", runConfig.getApplicationCode()),
+        String.format("%s:meta", appInfoResolver.getAppId()),
         String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFullTableName()),
         () -> super.doFetchResultSetMeta(table_query, sql_dialect_provider)
       );
@@ -199,7 +199,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   ) {
     try {
       JdbcQueryResponse<?> ret = this.resolveCached(
-        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getFullTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFullTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "list:"),
         () -> super.doQueryListResult(table_query, sql_dialect_provider)
       );
@@ -215,7 +215,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     try {
       return this.resolveCached(
-        String.format("%s:%s", runConfig.getApplicationCode(), table_query.getFullTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFullTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "total:"),
         () -> super.doQueryTotalResult(table_query, sql_dialect_provider)
       );
@@ -231,7 +231,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), insert_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), insert_request.getFullTableName()));
     return ret;
   }
 
@@ -242,7 +242,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), update_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), update_request.getFullTableName()));
     return ret;
   }
 
@@ -253,7 +253,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), delete_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), delete_request.getFullTableName()));
     return ret;
   }
 
@@ -278,7 +278,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Object doSQLServiceSelect(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     try {
       return this.resolveCached(
-        String.format("%s:%s", runConfig.getApplicationCode(), sql_request.getDefinition().getService_path()),
+        String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()),
         this.buildSQLServiceCacheKey(sql_fragment, input_data),
         () -> super.doSQLServiceSelect(session, sql_request, sql_fragment, input_data)
       );
@@ -290,37 +290,37 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   protected Object doSQLServiceInsert(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), sql_request.getDefinition().getService_path()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
     return ret;
   }
 
   @Override
   protected Object doSQLServiceUpdate(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), sql_request.getDefinition().getService_path()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
     return ret;
   }
 
   @Override
   protected Object doSQLServiceDelete(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), sql_request.getDefinition().getService_path()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
     return ret;
   }
 
   @Override
   public void clearMetaCaches() {
-    this.evitAllCache(String.format("%s:meta", runConfig.getApplicationCode()));
+    this.evitAllCache(String.format("%s:meta", appInfoResolver.getAppId()));
   }
 
   @Override
   public void clearTableCaches(String table_name) {
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), table_name));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), table_name));
   }
 
   @Override
   public void clearServiceCaches(String service_path) {
-    this.evitAllCache(String.format("%s:%s", runConfig.getApplicationCode(), service_path));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), service_path));
   }
 
   @Override

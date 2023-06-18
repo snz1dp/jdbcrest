@@ -42,10 +42,10 @@ public class ConfigSetupApi {
 		@RequestParam("license")
 		String license
 	) {
-    Validate.isTrue(runConfig.isPersistenceConfig(), "当前运行配置不支持动态设置授权代码");
+    Validate.isTrue(appInfoResolver.isPersistenceConfig(), "当前运行配置不支持动态设置授权代码");
     LicenseSupport support = toolProvider.decodeLicense(license);
     if (runConfig.getStrict_license()) {
-      if (!StringUtils.equals(support.getProduct_code(), runConfig.getApplicationCode())) {
+      if (!StringUtils.equals(support.getProduct_code(), appInfoResolver.getAppId())) {
         throw new IllegalStateException("无效的服务授权代码");
       }
       if (!StringUtils.equals(support.getDeployment_id(), appInfoResolver.getDeploymentId())) {

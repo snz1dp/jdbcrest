@@ -26,7 +26,7 @@ public class RunConfig {
   private String webroot;
 
   @Value("${app.default_url:/swagger-ui/index.html}")
-	private String defaultTargetUrl;
+	private String default_target_url;
 
   @Value("${app.code}")
   private String applicationCode;
@@ -91,25 +91,28 @@ public class RunConfig {
   @Value("${app.license.strict:false}")
   private Boolean strict_license;
 
+  @Value("${app.user.scope:employee}")
+  private String default_user_scope;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
     return webroot;
   }
 
-  public boolean isGlobalReadonly() {
+  public boolean isGlobal_readonly() {
     return global_readonly;
   }
 
-  public String getDefaultTargetUrl() {
-    return defaultTargetUrl;
+  public String getDefault_target_url() {
+    return default_target_url;
   }
 
-  public String getApplicationCode() {
+  public String getApplication_code() {
     return applicationCode;
   }
 
-  public Version getAppVerison() {
+  public Version getApp_verison() {
     return appVerison;
   }
 
@@ -117,12 +120,12 @@ public class RunConfig {
     return this.strict_mode;
   }
 
-  public PermissionDefinition getPermissionDefinition() {
+  public PermissionDefinition getPermission_definition() {
     return permissionDefinition;
   }
 
-  public boolean hasPermissionDefinition() {
-    return this.getPermissionDefinition() != null;
+  public boolean hasPermission_definition() {
+    return this.getPermission_definition() != null;
   }
 
   public String getSql_location() {
@@ -141,12 +144,12 @@ public class RunConfig {
     return deployment_id;
   }
 
-  public boolean isPersistenceConfig() {
+  public boolean isPersistence_config() {
     return !StringUtils.equals(this.config_type, "none");
   }
 
-  public Date getFirstRunTime() {
-    if (this.isPersistenceConfig()) {
+  public Date getFirst_run_time() {
+    if (this.isPersistence_config()) {
       String installed_time = Configurer.getAppProperty("first_run_time", null);
       if (installed_time == null) {
         Configurer.setAppProperty("first_run_time", JsonUtils.toJson(this.firstRunTime));
@@ -210,6 +213,10 @@ public class RunConfig {
 
   public Boolean getStrict_license() {
     return strict_license;
+  }
+
+  public String getDefault_user_scope() {
+    return default_user_scope;
   }
 
 }

@@ -74,4 +74,10 @@ public interface AppInfoResolver {
   // 获取应用权限定义
   PermissionDefinition getPermissionDefinition();
 
+  // 获取缺省组织域
+  String getDefaultUserScope();
+
+  // 是否持久化配置
+  boolean isPersistenceConfig();
+
 }

@@ -47,12 +47,12 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public String getAppId() {
-    return runConfig.getApplicationCode();
+    return runConfig.getApplication_code();
   }
 
   @Override
   public Version getVersion() {
-    return runConfig.getAppVerison();
+    return runConfig.getApp_verison();
   }
 
   public boolean hasLicense() {
@@ -61,7 +61,7 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public boolean isGlobalReadonly() {
-    return runConfig.isGlobalReadonly();
+    return runConfig.isGlobal_readonly();
   }
 
   @Override
@@ -70,9 +70,14 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   }
 
   @Override
+  public boolean isPersistenceConfig() {
+    return runConfig.isPersistence_config();
+  }
+
+  @Override
   public LicenseSupport getLicenseSupport() {
     String lic = null;
-    if (runConfig.isPersistenceConfig()) {
+    if (this.isPersistenceConfig()) {
       lic = Configurer.getAppProperty(Constants.LICENSE_CODE_ARG, runConfig.getLicense_code());
     } else {
       lic = runConfig.getLicense_code();
@@ -95,7 +100,7 @@ public class AppInfoResolverImpl implements AppInfoResolver {
   @Override
   public String getDeploymentId() {
     String deployment_id = null;
-    if (runConfig.isPersistenceConfig()) {
+    if (this.isPersistenceConfig()) {
       deployment_id = Configurer.getAppProperty(Constants.DEPLOYMENT_ID_ARG, null);
       if (StringUtils.isBlank(deployment_id)) {
         Configurer.setAppProperty(Constants.DEPLOYMENT_ID_ARG, deployment_id = StringUtils.replace(
@@ -111,7 +116,7 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public LicenseMeta getLicenseMeta() {
-    Date first_run_time  = runConfig.getFirstRunTime();
+    Date first_run_time  = this.getFirstRunTime();
     LicenseSupport license_support = this.getLicenseSupport();
     LicenseMeta ret = null;
     if (license_support != null) {
@@ -189,17 +194,22 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public Date getFirstRunTime() {
-    return runConfig.getFirstRunTime();
+    return runConfig.getFirst_run_time();
   }
 
   @Override
   public String getDefaultTargetURL() {
-    return runConfig.getDefaultTargetUrl();
+    return runConfig.getDefault_target_url();
   }
 
   @Override
   public PermissionDefinition getPermissionDefinition() {
-    return runConfig.getPermissionDefinition();
+    return runConfig.getPermission_definition();
+  }
+
+  @Override
+  public String getDefaultUserScope() {
+    return runConfig.getDefault_user_scope();
   }
 
 }
