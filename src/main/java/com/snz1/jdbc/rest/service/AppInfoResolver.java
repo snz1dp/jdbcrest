@@ -67,4 +67,7 @@ public interface AppInfoResolver {
   // 获取开始运行时间
   Date getFirstRunTime();
 
+  // 获取缺省的目标地址
+  String getDefaultTargetURL();
+
 }

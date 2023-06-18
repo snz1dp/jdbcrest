@@ -191,4 +191,9 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     return runConfig.getFirstRunTime();
   }
 
+  @Override
+  public String getDefaultTargetURL() {
+    return runConfig.getDefaultTargetUrl();
+  }
+
 }
