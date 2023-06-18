@@ -16,10 +16,14 @@ public interface LoggedUserContext {
   // 用户是否登录
   boolean isUserLogged();
 
-  // 获取登录ID
+  // 获取登录用户ID
+  String getLoggedUsername();
+
+  // 获取登录用户标识
   String getLoggedIdByType(IdType idtype);
 
-  // 获取登录名
+  // 获取登录用户姓名
   String getLoggedName();
+  
 
 }

@@ -42,6 +42,11 @@ public class LoggedUserContextImpl implements LoggedUserContext {
   }
 
   @Override
+  public String getLoggedUsername() {
+    return this.getLoggedIdByType(IdType.uname);
+  }
+
+  @Override
   public String getLoggedName() {
     User logged_user = getLoggedUser();
     if (logged_user == null) return null;
