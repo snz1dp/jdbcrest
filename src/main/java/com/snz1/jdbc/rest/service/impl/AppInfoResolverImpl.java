@@ -66,7 +66,7 @@ public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Override
   public boolean isStrictMode() {
-    return runConfig.isStrictMode();
+    return runConfig.isStrict_mode();
   }
 
   @Override

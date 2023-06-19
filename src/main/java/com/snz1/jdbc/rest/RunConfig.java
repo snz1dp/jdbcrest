@@ -116,7 +116,7 @@ public class RunConfig {
     return appVerison;
   }
 
-  public boolean isStrictMode() {
+  public boolean isStrict_mode() {
     return this.strict_mode;
   }
 
