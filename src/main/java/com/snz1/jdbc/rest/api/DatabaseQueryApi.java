@@ -58,12 +58,13 @@ public class DatabaseQueryApi {
     String table_name,
     HttpServletRequest request
   ) throws SQLException {
-    return doQueryTable(table_name, request);
+    return doQueryTable(table_name, request, "table");
   }
 
   private Return<?> doQueryTable(
     String table_name,
-    HttpServletRequest request
+    HttpServletRequest request,
+    String...exclude_args
   ) throws SQLException {
     TableMeta result_meta = restProvider.queryResultMeta(JdbcQueryRequest.of(table_name, request));
 
@@ -77,7 +78,7 @@ public class DatabaseQueryApi {
     JdbcQueryRequest table_query = new JdbcQueryRequest(); 
     table_query.copyTableMeta(result_meta);
 
-    RequestUtils.fetchJdbcQueryRequest(request, table_query);
+    RequestUtils.fetchJdbcQueryRequest(request, table_query, exclude_args);
 
     if (table_query.hasWhere()) {
       JdbcQueryRequest metaquery = table_query.clone();

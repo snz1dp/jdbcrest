@@ -6,10 +6,12 @@ import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -272,10 +274,15 @@ public abstract class RequestUtils {
   }
 
   // 从请求中提取条件描述
-  public static List<WhereCloumn> fetchQueryRequestWhereCondition(HttpServletRequest request, List<WhereCloumn> where_condition) {
+  public static List<WhereCloumn> fetchQueryRequestWhereCondition(HttpServletRequest request, List<WhereCloumn> where_condition, String ...exclude_args) {
+    Set<String> exclude_arg_set = new HashSet<>();
+    if (exclude_args != null && exclude_args.length > 0) {
+      exclude_arg_set.addAll(Arrays.asList(exclude_args));
+    }
     Enumeration<String> param_names = request.getParameterNames();
     while(param_names.hasMoreElements()) {
       String param_name = param_names.nextElement();
+      if (exclude_arg_set.contains(param_name)) continue;
       if (StringUtils.startsWith(param_name, "_")) continue;
       if (StringUtils.equals(param_name, Constants.OFFSET_ARG)) continue;
       if (StringUtils.equals(param_name, Constants.LIMIT_ARG)) continue;
@@ -348,11 +355,11 @@ public abstract class RequestUtils {
   }
 
   // 从请求中获取查询应答描述
-  public static JdbcQueryRequest fetchJdbcQueryRequest(HttpServletRequest request, JdbcQueryRequest query) {
+  public static JdbcQueryRequest fetchJdbcQueryRequest(HttpServletRequest request, JdbcQueryRequest query, String ...exclude_args) {
     fetchQueryRequestSelect(request, query.getSelect());
     fetchQueryRequestJoin(request, query.getJoin());
     fetchQueryRequestGroupBy(request, query.getGroup_by());
-    fetchQueryRequestWhereCondition(request, query.getWhere());
+    fetchQueryRequestWhereCondition(request, query.getWhere(), exclude_args);
     fetchQueryRequestOrderBy(request, query.getOrder_by());
     fetchQueryRequestResultMeta(request, query.getResult());
     return query;
