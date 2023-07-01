@@ -332,6 +332,17 @@
 		</repository>
 	</repositories>
 
+	<distributionManagement>
+		<repository>
+			<id>snz1-releases</id>
+			<url>https://snz1.cn/nexus/repository/maven-releases/</url>
+		</repository>
+		<snapshotRepository>
+			<id>snz1-snapshots</id>
+			<url>https://snz1.cn/nexus/repository/maven-snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 	<profiles>
 		<profile>
 			<id>default</id>
