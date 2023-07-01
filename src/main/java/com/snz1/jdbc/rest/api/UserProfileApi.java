@@ -96,8 +96,8 @@ public class UserProfileApi {
 		}
   }
 
-  @GetMapping(path = "/user/profile")
   @Operation(summary = "当前用户信息")
+  @GetMapping(path = "/user/profile")
   @PreAuthorize("isAuthenticated()")
   public Return<gateway.sc.v2.User> userinfo() {
     User logged_user = loggedUserContext.getLoggedUser();
@@ -107,7 +107,7 @@ public class UserProfileApi {
     return Return.wrap(user_data);
   }
 
-  @Operation(description = "修改人员帐号")
+  @Operation(summary = "修改人员帐号")
 	@PostMapping("/user/profile")
   @PreAuthorize("isAuthenticated()")
 	public Return<gateway.sc.v2.User> updateUser(
