@@ -79,6 +79,9 @@ public class AppInfoResolverImpl implements AppInfoResolver {
     String lic = null;
     if (this.isPersistenceConfig()) {
       lic = Configurer.getAppProperty(Constants.LICENSE_CODE_ARG, runConfig.getLicense_code());
+      if (StringUtils.equals(lic, "<NOT SUPPORT>") && !StringUtils.equals(lic, runConfig.getLicense_code())) {
+        Configurer.setAppProperty(Constants.LICENSE_CODE_ARG, lic = runConfig.getLicense_code());
+      }
     } else {
       lic = runConfig.getLicense_code();
     }
