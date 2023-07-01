@@ -320,7 +320,7 @@
 		<repository>
 			<id>snz1</id>
 			<name>snz1</name>
-			<url>https://gitlab.snz1.cn:9289/nexus/repository/maven-public/</url>
+			<url>https://snz1.cn/nexus/repository/maven-public/</url>
 			<releases>
 			</releases>
 			<snapshots>
