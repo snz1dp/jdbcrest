@@ -43,7 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RestController
+@RestController("jdbcrest::AppPublishApi")
 @Tag(name = "应用信息")
 @RequestMapping
 public class AppPublishApi {

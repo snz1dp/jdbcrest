@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Configuration
+@Configuration("jdbcrest::SchemaConfig")
 @ConditionalOnProperty(prefix = "spring.datascheme", name = "enabled", havingValue = "true", matchIfMissing = false)
 @com.snz1.annotation.EnableAutoScheme //启用自动构建数据库
 public class SchemaConfig {

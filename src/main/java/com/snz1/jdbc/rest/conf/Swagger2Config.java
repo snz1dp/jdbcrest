@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
  * 通过@ApiImplicitParams、@ApiImplicitParam注解来给参数增加说明。
  *
  */
-@Configuration
+@Configuration("jdbcrest::Swagger2Config")
 public class Swagger2Config {
 
   @Autowired

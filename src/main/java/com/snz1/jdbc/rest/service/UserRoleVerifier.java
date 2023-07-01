@@ -2,6 +2,7 @@ package com.snz1.jdbc.rest.service;
 
 import com.snz1.web.security.User;
 
+// 用户角色验证器
 public interface UserRoleVerifier {
 
   // 是否有任何权限

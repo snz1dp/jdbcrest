@@ -31,7 +31,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseQueryApi")
 @Tag(name = "数据查询")
 @RequestMapping
 public class DatabaseQueryApi {

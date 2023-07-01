@@ -14,7 +14,7 @@ import com.snz1.web.security.AbstractUserDetailsService;
 import com.snz1.web.security.UserDetails;
 
 @AutoConfigureBefore
-@Configuration
+@Configuration("jdbcrest::SecurityConfig")
 public class SecurityConfig {
 
   @Bean

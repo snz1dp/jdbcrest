@@ -4,6 +4,7 @@ import com.snz1.web.security.User;
 
 import gateway.sc.v2.User.IdType;
 
+// 登录用户上下文
 public interface LoggedUserContext {
 
   /**

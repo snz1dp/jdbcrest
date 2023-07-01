@@ -33,7 +33,7 @@ import com.snz1.utils.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
+@Service("jdbcrest::SQLServiceRegistry")
 public class SQLServiceRegistryImpl implements SQLServiceRegistry {
 
   private ResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();

@@ -5,7 +5,7 @@ import java.sql.JDBCType;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("jdbcrest::IntConverter")
 public class IntConverter extends AbstractConverter {
 
   public IntConverter() {

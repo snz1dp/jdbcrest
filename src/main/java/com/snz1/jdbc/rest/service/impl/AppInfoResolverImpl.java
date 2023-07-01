@@ -26,7 +26,7 @@ import gateway.sc.v2.config.LicenseSupport;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
+@Component("jdbcrest::AppInfoResolver")
 public class AppInfoResolverImpl implements AppInfoResolver {
 
   @Autowired

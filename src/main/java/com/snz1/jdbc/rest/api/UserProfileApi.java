@@ -42,7 +42,7 @@ import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 
 @Tag(name = "用户帐户")
-@RestController
+@RestController("jdbcrest::UserProfileApi")
 @ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
 public class UserProfileApi {
 

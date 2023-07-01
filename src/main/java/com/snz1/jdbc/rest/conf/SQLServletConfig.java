@@ -9,7 +9,7 @@ import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.servlet.SQLServiceCacheDeleteServlet;
 import com.snz1.jdbc.rest.servlet.SQLServiceRequestExecuteServlet;
 
-@Configuration
+@Configuration("jdbcrest::SQLServletConfig")
 public class SQLServletConfig {
 
   @Bean

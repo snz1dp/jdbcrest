@@ -20,7 +20,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseCacheApi")
 @Tag(name = "数据缓存")
 @RequestMapping
 public class DatabaseCacheApi {

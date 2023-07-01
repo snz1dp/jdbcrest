@@ -27,7 +27,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseDeleteApi")
 @Tag(name = "数据删除")
 @RequestMapping
 public class DatabaseDeleteApi {

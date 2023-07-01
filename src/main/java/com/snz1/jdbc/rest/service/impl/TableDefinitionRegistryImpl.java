@@ -29,7 +29,7 @@ import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
+@Service("jdbcrest::TableDefinitionRegistry")
 public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
 
   private ResourceLoader resourceLoader = new PathMatchingResourcePatternResolver();

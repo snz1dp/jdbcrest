@@ -30,7 +30,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseMetaApi")
 @Tag(name = "数据信息")
 @RequestMapping
 public class DatabaseMetaApi {

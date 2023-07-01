@@ -22,7 +22,7 @@ import gateway.sc.v2.FunctionManager;
 import gateway.sc.v2.FunctionNode;
 import gateway.api.Page;
 
-@Component
+@Component("jdbcrest::UserRoleVerifier")
 public class UserRoleVerifierImpl implements UserRoleVerifier {
 
   @Resource

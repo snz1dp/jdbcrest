@@ -3,7 +3,7 @@ package com.snz1.jdbc.rest.service.converter;
 import java.sql.JDBCType;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("jdbcrest::StringConverter")
 public class StringConverter extends AbstractConverter {
 
   public StringConverter() {

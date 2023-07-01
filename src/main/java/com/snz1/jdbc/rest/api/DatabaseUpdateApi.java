@@ -27,7 +27,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseUpdateApi")
 @Tag(name = "数据更新")
 @RequestMapping
 public class DatabaseUpdateApi {

@@ -12,7 +12,7 @@ import com.snz1.jdbc.rest.stats.CacheStatisticsCollector;
 
 import gateway.sc.v2.config.CacheStatistics;
 
-@Configuration
+@Configuration("jdbcrest::CacheConfig")
 public class CacheConfig {
   
   @Bean

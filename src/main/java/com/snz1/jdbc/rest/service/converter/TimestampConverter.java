@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.snz1.utils.JsonUtils;
 
-@Component
+@Component("jdbcrest::TimestampConverter")
 public class TimestampConverter extends AbstractConverter {
 
   public TimestampConverter() {

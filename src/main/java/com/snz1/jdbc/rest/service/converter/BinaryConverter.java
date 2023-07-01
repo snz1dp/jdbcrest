@@ -6,7 +6,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 
-@Component
+@Component("jdbcrest::BinaryConverter")
 public class BinaryConverter extends AbstractConverter {
 
   public BinaryConverter() {

@@ -6,7 +6,7 @@ import java.text.DecimalFormat;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("jdbcrest::DecimalConverter")
 public class DecimalConverter extends AbstractConverter {
 
   public DecimalConverter() {

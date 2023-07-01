@@ -23,7 +23,7 @@ import gateway.api.Return;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
+@RestController("jdbcrest::DatabaseDMLApi")
 @Tag(name = "高级功能")
 @RequestMapping
 public class DatabaseDMLApi {

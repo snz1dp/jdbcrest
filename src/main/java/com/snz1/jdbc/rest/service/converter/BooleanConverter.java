@@ -4,7 +4,7 @@ import java.sql.JDBCType;
 
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("jdbcrest::BooleanConverter")
 public class BooleanConverter extends AbstractConverter {
 
   public BooleanConverter() {

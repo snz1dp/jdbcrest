@@ -14,6 +14,7 @@ import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 
+// JDBC转Rest接口提供器
 public interface JdbcRestProvider {
 
   // 获取元信息

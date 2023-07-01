@@ -7,7 +7,7 @@ import java.util.Date;
 
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("jdbcrest::DateConverter")
 public class DateConverter extends AbstractConverter {
 
   public DateConverter() {
