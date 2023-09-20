@@ -16,10 +16,10 @@ public class Version implements Serializable {
   public static final int MINOR = 0;
 
   // 产品修订版本号
-  public static final int REVSION = 3;
+  public static final int REVSION = 2;
 
   // 产品编译版本号
-  public static final int BUILD = 919;
+  public static final int BUILD = 920;
 
   // 产品版本字符串
   public static final String VERSION = String.format("%d.%d.%d-%d", MAJOR, MINOR, REVSION, BUILD);
