@@ -34,7 +34,6 @@ import org.apache.ibatis.scripting.defaults.RawSqlSource;
 import org.apache.ibatis.session.Configuration;
 import org.postgresql.jdbc.PgArray;
 
-import com.esotericsoftware.yamlbeans.YamlException;
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
 import com.snz1.jdbc.rest.data.JdbcProviderMeta;
@@ -88,7 +87,7 @@ public abstract class JdbcUtils extends org.springframework.jdbc.support.JdbcUti
     return ret;
   }
 
-  private static Map<String, JdbcProviderMeta> doLoadDatabseProviders(InputStream provider_file) throws YamlException, FileNotFoundException {
+  private static Map<String, JdbcProviderMeta> doLoadDatabseProviders(InputStream provider_file) throws FileNotFoundException {
     InputStream finput = provider_file;
     try {
       JdbcProviderMeta[] dabase_idnames = YamlUtils.fromYaml(finput, JdbcProviderMeta[].class);

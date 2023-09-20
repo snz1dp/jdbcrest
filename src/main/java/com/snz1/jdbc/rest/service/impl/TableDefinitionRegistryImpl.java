@@ -2,7 +2,6 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,11 +19,10 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
-import com.esotericsoftware.yamlbeans.YamlException;
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.snz1.jdbc.rest.RunConfig;
 import com.snz1.jdbc.rest.data.TableDefinition;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
+import com.snz1.jdbc.rest.utils.YamlUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,13 +60,7 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     }
 
     // 读取配置
-    YamlReader yamlReader = new YamlReader(new InputStreamReader(tdf_ism));
-    TableDefinition[] table_definitions;
-    try {
-      table_definitions = yamlReader.read(TableDefinition[].class);
-    } catch (YamlException e) {
-			throw new IllegalStateException(String.format("读取数据表配置文件%s出错: %s", def_location, e.getMessage()), e);
-    }
+    TableDefinition[] table_definitions = YamlUtils.fromYaml(tdf_ism, TableDefinition[].class);
 
     if (table_definitions == null || table_definitions.length == 0) {
       log.warn("数据表配置文件 {} 中无任何配置内容", def_location);

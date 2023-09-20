@@ -4,13 +4,13 @@
 	<groupId>com.snz1</groupId>
 	<artifactId>jdbcrest</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<url>http://maven.apache.org</url>
 
 	<parent>
 		<groupId>com.snz1</groupId>
 		<artifactId>spring-boot2-app</artifactId>
-		<version>2.4.2</version>
+		<version>2.4.3</version>
 	</parent>
 
 	<properties>
@@ -28,14 +28,28 @@
 		<postgis.version>2.5.0</postgis.version>
 		<mssql.version>8.2.0.jre8</mssql.version>
 		<trino.version>410</trino.version>
-		<oracle.version>12.2.0.1</oracle.version>
+		<oracle.version>21.5.0.0</oracle.version>
 		<mariadb.version>2.4.3</mariadb.version>
 		<jaybird.version>4.0.0.java8</jaybird.version>
 		<opensearch.version>1.2.0.0</opensearch.version>
 		<taos.version>3.1.0</taos.version>
+		<guava.version>32.1.2-jre</guava.version>
+		<checker-qual.version>3.33.0</checker-qual.version>
 	</properties>
 
 	<dependencies>
+
+		<dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+
+		<dependency>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
+			<version>${checker-qual.version}</version>
+    </dependency>
 
 		<!-- Junit -->
 		<dependency>
@@ -48,6 +62,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>objenesis</artifactId>
+					<groupId>org.objenesis</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- 自动生成MyBatis映射 -->
@@ -109,6 +129,12 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<exclusions>
+				<exclusion>
+					<artifactId>checker-qual</artifactId>
+					<groupId>org.checkerframework</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- GSON -->
@@ -265,11 +291,17 @@
 			</exclusions>
 		</dependency>
 
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.oracle.database.xml</groupId>
 			<artifactId>xdb6</artifactId>
 			<version>${oracle.version}</version>
-		</dependency>
+			<exclusions>
+				<exclusion>
+					<groupId>com.oracle.database.xml</groupId>
+					<artifactId>xdb6</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency> -->
 
 		<!-- firebirdsql -->
 		<dependency>
@@ -290,6 +322,12 @@
 			<groupId>com.taosdata.jdbc</groupId>
 			<artifactId>taos-jdbcdriver</artifactId>
 			<version>${taos.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>guava</artifactId>
+					<groupId>com.google.guava</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Utility -->
