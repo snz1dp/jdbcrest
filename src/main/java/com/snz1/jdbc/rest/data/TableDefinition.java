@@ -34,20 +34,12 @@ public class TableDefinition implements Serializable {
   // 发布
   private Boolean publish = true;
 
-  public boolean isReadonly() {
+  public boolean testReadonly() {
     return this.readonly != null && this.readonly;
   }
 
-  public void setReadony(boolean readonly) {
-    this.readonly = readonly;
-  }
-
-  public boolean isPublish() {
+  public boolean testPublish() {
     return this.publish == null || this.publish;
-  }
-
-  public void setPublish(boolean pub) {
-    this.publish = pub;
   }
 
   // 是否有别名

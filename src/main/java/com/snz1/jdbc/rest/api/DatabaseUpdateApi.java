@@ -79,8 +79,8 @@ public class DatabaseUpdateApi {
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
-        !result_meta.getDefinition().isReadonly()
-        && result_meta.getDefinition().isPublish(),
+        !result_meta.getDefinition().testReadonly()
+        && result_meta.getDefinition().testPublish(),
         "不允许对%s进行操作", table_name
       );
     }
@@ -132,8 +132,8 @@ public class DatabaseUpdateApi {
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
-        !result_meta.getDefinition().isReadonly()
-        && result_meta.getDefinition().isPublish(),
+        !result_meta.getDefinition().testReadonly()
+        && result_meta.getDefinition().testPublish(),
         "不允许对%s进行操作", table_name
       );
     }

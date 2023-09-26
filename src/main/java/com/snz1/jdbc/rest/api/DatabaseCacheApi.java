@@ -44,7 +44,7 @@ public class DatabaseCacheApi {
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
-        result_meta.getDefinition().isPublish(),
+        result_meta.getDefinition().testPublish(),
         "%s不存在", result_meta.getFullTableName()
       );
     }

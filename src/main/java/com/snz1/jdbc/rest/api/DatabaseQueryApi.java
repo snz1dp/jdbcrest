@@ -70,7 +70,7 @@ public class DatabaseQueryApi {
 
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
-        result_meta.getDefinition().isPublish(),
+        result_meta.getDefinition().testPublish(),
         "%s不存在", table_name
       );
     }

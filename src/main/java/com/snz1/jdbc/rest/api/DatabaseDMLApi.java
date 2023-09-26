@@ -62,7 +62,7 @@ public class DatabaseDMLApi {
           if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
             TableDefinition tdf  = tableDefinitionRegistry.getTableDefinition(table_name);
             Validate.isTrue(
-              !tdf.isReadonly() && tdf.isPublish(),
+              !tdf.testReadonly() && tdf.testPublish(),
               "不允许对%s进行操作", table_name);
           }
         }
@@ -81,7 +81,7 @@ public class DatabaseDMLApi {
           if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
             TableDefinition tdf  = tableDefinitionRegistry.getTableDefinition(table_name);
             Validate.isTrue(
-              !tdf.isReadonly() && tdf.isPublish(),
+              !tdf.testReadonly() && tdf.testPublish(),
               "不允许对%s进行操作", table_name);
           }
         }
@@ -100,7 +100,7 @@ public class DatabaseDMLApi {
           if (tableDefinitionRegistry.hasTableDefinition(table_name)) {
             TableDefinition tdf  = tableDefinitionRegistry.getTableDefinition(table_name);
             Validate.isTrue(
-              !tdf.isReadonly() && tdf.isPublish(),
+              !tdf.testReadonly() && tdf.testPublish(),
               "不允许对%s进行操作", table_name);
           }
         }
