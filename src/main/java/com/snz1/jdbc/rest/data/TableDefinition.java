@@ -38,8 +38,16 @@ public class TableDefinition implements Serializable {
     return this.readonly != null && this.readonly;
   }
 
+  public void setReadony(boolean readonly) {
+    this.readonly = readonly;
+  }
+
   public boolean isPublish() {
     return this.publish == null || this.publish;
+  }
+
+  public void setPublish(boolean pub) {
+    this.publish = pub;
   }
 
   // 是否有别名
