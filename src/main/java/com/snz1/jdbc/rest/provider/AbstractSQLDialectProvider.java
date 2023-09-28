@@ -249,7 +249,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       if (insert_request.hasColumns()) {
         insert_request.getColumns().forEach(v -> {
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
-          sql.VALUES(v.getName(), "?");
+          sql.VALUES("\"" + v.getName() + "\"", "?");
         });
       } else {
         Map<String, Object> input_line0 = null;
@@ -259,7 +259,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           input_line0 = (Map<String, Object>)insert_request.getInput_data();
         }
         for (String key : input_line0.keySet()){
-          sql.VALUES(key, "?");
+          sql.VALUES("\"" + key + "\"", "?");
         }
       }
       return sql.toString();
@@ -287,8 +287,8 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           Map<String, Object> input_map = update_request.getInput_map();
           if (!input_map.containsKey(k)) continue;
           if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
-          if (table_definition != null && table_definition.inColumn(v.getName())) continue;
-          sql.SET(String.format("\"%s\" = ?", v.getName()));
+          if (table_definition != null && table_definition.inColumn(k)) continue;
+          sql.SET(String.format("\"%s\" = ?", k));
         }
       } else { // 主键更新
         update_request.getColumns().forEach(v -> {
