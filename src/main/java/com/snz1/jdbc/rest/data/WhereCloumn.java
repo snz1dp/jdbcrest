@@ -94,11 +94,11 @@ public class WhereCloumn implements Serializable, Cloneable {
     if (this.condition != null) {
       ConditionOperation operation = this.condition.getOperation();
       if (operation.parameter_count() == 0) {
-        return String.format("%s %s", this.column, operation.operator());
+        return String.format("\"%s\" %s", this.column, operation.operator());
       } else if (operation.parameter_count() == 1) {
-        return String.format("%s %s ?", this.column, operation.operator());
+        return String.format("\"%s\" %s ?", this.column, operation.operator());
       } else if (operation.parameter_count() == 2) {
-        return String.format("%s %s ? and ?", this.column, operation.operator());
+        return String.format("\"%s\" %s ? and ?", this.column, operation.operator());
       } else {
         condition.setArray(factory.convertArray(condition.getValue(), this.type));
         StringBuffer parambuf = new StringBuffer();
@@ -111,7 +111,7 @@ public class WhereCloumn implements Serializable, Cloneable {
           }
           parambuf.append("?");
         }
-        return String.format("%s %s (%s)", this.column, operation.operator(), parambuf.toString());
+        return String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString());
       }
     } else {
       StringBuffer sqlbuf = new StringBuffer("");
@@ -132,11 +132,11 @@ public class WhereCloumn implements Serializable, Cloneable {
           column_name = condition.getColumn();
         }
         if (operation.parameter_count() == 0) {
-          sqlbuf.append(String.format("%s %s", column_name, operation.operator()));
+          sqlbuf.append(String.format("\"%s\" %s", column_name, operation.operator()));
         } else if (operation.parameter_count() == 1) {
-          sqlbuf.append(String.format("%s %s ?", column_name, operation.operator()));
+          sqlbuf.append(String.format("\"%s\" %s ?", column_name, operation.operator()));
         } else if (operation.parameter_count() == 2) {
-          sqlbuf.append(String.format("%s %s ? and ?", column_name, operation.operator()));
+          sqlbuf.append(String.format("\"%s\" %s ? and ?", column_name, operation.operator()));
         } else {
           if (condition.getArray() == null) {
             condition.setArray(factory.convertArray(condition.getValue(), this.type));
@@ -151,7 +151,7 @@ public class WhereCloumn implements Serializable, Cloneable {
             }
             parambuf.append("?");
           }
-          sqlbuf.append(String.format("%s %s (%s)", column_name, operation.operator(), parambuf.toString()));
+          sqlbuf.append(String.format("\"%s\" %s (%s)", column_name, operation.operator(), parambuf.toString()));
         }
       }
       sqlbuf.append("");

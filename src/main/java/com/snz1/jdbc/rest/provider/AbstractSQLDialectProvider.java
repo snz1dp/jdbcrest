@@ -95,9 +95,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         }
         if (table_query.getSelect().hasCount()) {
           if (StringUtils.equals(table_query.getSelect().getCount(), "*") && this.supportCountAnyColumns()) {
-            sql.SELECT(String.format("count(%s)", table_query.getSelect().getCount()));
+            sql.SELECT(String.format("count(\"%s\")", table_query.getSelect().getCount()));
           } else {
-            sql.SELECT(String.format("count(%s)", table_query.getTable_meta().getColumns().get(0).getName()));
+            sql.SELECT(String.format("count(\"%s\")", table_query.getTable_meta().getColumns().get(0).getName()));
           }
         } else if (this.supportCountAnyColumns()) {
           sql.SELECT("count(*)");
@@ -115,20 +115,20 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           if (c.hasFunction()) {
             if (c.hasAs()) {
               if (table_query.getSelect().isDistinct()) {
-                sql.SELECT_DISTINCT(String.format("%s(%s) AS %s", c.getFunction(), c.getColumn(), c.getAs()));
+                sql.SELECT_DISTINCT(String.format("%s(\"%s\") AS %s", c.getFunction(), c.getColumn(), c.getAs()));
               } else {
-                sql.SELECT(String.format("%s(%s) AS %s", c.getFunction(), c.getColumn(), c.getAs()));
+                sql.SELECT(String.format("%s(\"%s\") AS %s", c.getFunction(), c.getColumn(), c.getAs()));
               }
             } else if (table_query.getSelect().isDistinct()) {
-              sql.SELECT_DISTINCT(String.format("%s(%s)", c.getFunction(), c.getColumn()));
+              sql.SELECT_DISTINCT(String.format("%s(\"%s\")", c.getFunction(), c.getColumn()));
             } else {
-              sql.SELECT(String.format("%s(%s)", c.getFunction(), c.getColumn()));
+              sql.SELECT(String.format("%s(\"%s\")", c.getFunction(), c.getColumn()));
             }
           } else if (c.hasAs()) {
             if (table_query.getSelect().isDistinct()) {
-              sql.SELECT_DISTINCT(String.format("%s AS %s", c.getColumn(), c.getAs()));
+              sql.SELECT_DISTINCT(String.format("\"%s\" AS %s", c.getColumn(), c.getAs()));
             } else {
-              sql.SELECT(String.format("%s AS %s", c.getColumn(), c.getAs()));
+              sql.SELECT(String.format("\"%s\" AS %s", c.getColumn(), c.getAs()));
             }
           } else if (table_query.getSelect().isDistinct()) {
             sql.SELECT_DISTINCT(c.getColumn());
@@ -141,7 +141,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       if (table_query.hasJoin()) {
         table_query.getJoin().forEach(j -> {
           sql.LEFT_OUTER_JOIN(String.format(
-            "%s on %s.%s = %s.%s",
+            "%s on %s.\"%s\" = %s.\"%s\"",
             j.getFullTableName(),
             j.getFullTableName(),
             j.getJoin_column(),
@@ -181,7 +181,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         } else {
           where_append = true;
         }
-        sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
+        sql.WHERE(String.format("\"%s\".\"%s\" = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
         if (loggedUserContext.isUserLogged()) { 
           parameters.add(loggedUserContext.getLoggedIdByType(table_definition.getOwner_id_column().getIdtype()));
         } else {
@@ -288,28 +288,28 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           if (!input_map.containsKey(k)) continue;
           if (v.getAuto_increment() != null && v.getAuto_increment()) continue;
           if (table_definition != null && table_definition.inColumn(v.getName())) continue;
-          sql.SET(String.format("%s = ?", v.getName()));
+          sql.SET(String.format("\"%s\" = ?", v.getName()));
         }
       } else { // 主键更新
         update_request.getColumns().forEach(v -> {
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
           if (update_request.testRow_key(v.getName())) return;
           if (table_definition != null && table_definition.inColumn(v.getName())) return;
-          sql.SET(String.format("%s = ?", v.getName()));
+          sql.SET(String.format("\"%s\" = ?", v.getName()));
         });
       }
 
       if (table_definition != null) {
         if (table_definition.hasUpdated_time_column()) {
-          sql.SET(String.format("%s = ?", table_definition.getUpdated_time_column()));
+          sql.SET(String.format("\"%s\" = ?", table_definition.getUpdated_time_column()));
         }
 
         if (table_definition.hasMender_id_column()) {
-          sql.SET(String.format("%s = ?", table_definition.getMender_id_column().getName()));
+          sql.SET(String.format("\"%s\" = ?", table_definition.getMender_id_column().getName()));
         }
 
         if (table_definition.hasMender_name_column()) {
-          sql.SET(String.format("%s = ?", table_definition.getMender_name_column()));
+          sql.SET(String.format("\"%s\" = ?", table_definition.getMender_name_column()));
         }
       }
 
@@ -333,10 +333,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
             } else {
               where_append = true;
             }
-            sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+            sql.WHERE(String.format("\"%s\" = ?", row_keys.get(i)));
           }
         } else {
-          sql.WHERE(String.format("%s = ?", rowkey));
+          sql.WHERE(String.format("\"%s\" = ?", rowkey));
         }
       }
 
@@ -346,7 +346,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         } else {
           where_append = true;
         }
-        sql.WHERE(String.format("%s.%s = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
+        sql.WHERE(String.format("\"%s\".\"%s\" = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
 
       if (table_definition != null && table_definition.hasDefault_where()) {
@@ -399,10 +399,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
             } else {
               where_append = true;
             }
-            sql.WHERE(String.format("%s = ?", row_keys.get(i)));
+            sql.WHERE(String.format("\"%s\" = ?", row_keys.get(i)));
           }
         } else {
-          sql.WHERE(String.format("%s = ?", rowkey));
+          sql.WHERE(String.format("\"%s\" = ?", rowkey));
         }
       }
 
@@ -414,7 +414,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         } else {
           where_append = true;
         }
-        sql.WHERE(String.format("%s.%s = ?", table_definition.getName(), table_definition.getOwner_id_column().getName()));
+        sql.WHERE(String.format("\"%s\".\"%s\" = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
 
       if (table_definition != null && table_definition.hasDefault_where()) {
