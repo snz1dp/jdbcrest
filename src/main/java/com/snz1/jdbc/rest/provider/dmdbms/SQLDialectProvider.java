@@ -70,7 +70,6 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
           }
           ignore_sql.append("\"").append(val).append("\"");
         }
-        ignore_sql.append(insert_request.getPrimary_key());
       } else {
         ignore_sql.append("\"").append(insert_request.getPrimary_key()).append("\"");
       }
