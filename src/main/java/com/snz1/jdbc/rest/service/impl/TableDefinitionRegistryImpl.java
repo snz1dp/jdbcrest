@@ -87,6 +87,9 @@ public class TableDefinitionRegistryImpl implements TableDefinitionRegistry {
     // 加载定义
     this.tableDefinitionMap = new HashMap<>(table_definitions.length);
     for (TableDefinition table_def : table_definitions) {
+      if (StringUtils.isBlank(table_def.getCatalog()) && StringUtils.isBlank(table_def.getSchema())) {
+        table_def.setSchema(runConfig.getDefault_database_schema());
+      }
       this.tableDefinitionMap.put(table_def.getName(), table_def);
     }
 

@@ -94,10 +94,17 @@ public class RunConfig {
   @Value("${app.user.scope:employee}")
   private String default_user_scope;
 
+  @Value("${spring.database.schema:}")
+  private String default_database_schema;
+
   private Date firstRunTime = new Date();
 
   public String getWebroot() {
     return webroot;
+  }
+
+  public String getDefault_database_schema() {
+    return this.default_database_schema;
   }
 
   public boolean isGlobal_readonly() {
