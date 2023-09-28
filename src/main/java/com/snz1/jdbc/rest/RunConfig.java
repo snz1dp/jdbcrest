@@ -94,7 +94,7 @@ public class RunConfig {
   @Value("${app.user.scope:employee}")
   private String default_user_scope;
 
-  @Value("${spring.database.schema:}")
+  @Value("${spring.database.schema:${DATABASE_SCHEMA:}}")
   private String default_database_schema;
 
   private Date firstRunTime = new Date();
