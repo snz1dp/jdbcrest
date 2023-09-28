@@ -87,10 +87,10 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
           } else {
             append = true;
           }
-          sqlbuf.append(keydata.get(i));
+          sqlbuf.append("\"").append(keydata.get(i)).append("\"");
         }
       } else {
-        sqlbuf.append(insert_request.getPrimary_key());
+        sqlbuf.append("\"").append(insert_request.getPrimary_key()).append("\"");
       }
       sqlbuf.append(") do nothing");
     }

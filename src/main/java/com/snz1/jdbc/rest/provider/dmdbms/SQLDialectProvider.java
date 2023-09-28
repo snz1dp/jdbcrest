@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -58,10 +59,22 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
       StringBuffer ignore_sql = new StringBuffer(" /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
-      ignore_sql.append(insert_request.getFullTableName())
-        .append("(")
-        .append(insert_request.getPrimary_key())
-        .append(")) */");
+      ignore_sql.append(insert_request.getFullTableName()).append("(");
+      if (insert_request.testComposite_key()) {
+        boolean append = false;
+        for (Object val : (List<?>)insert_request.getPrimary_key()) {
+          if (append) {
+            ignore_sql.append(",");
+          } else {
+            append = true;
+          }
+          ignore_sql.append("\"").append(val).append("\"");
+        }
+        ignore_sql.append(insert_request.getPrimary_key());
+      } else {
+        ignore_sql.append("\"").append(insert_request.getPrimary_key()).append("\"");
+      }
+      ignore_sql.append(")) */");
       sqlbuf.insert(6, ignore_sql.toString()); // 在insert后插入ignore
     }
     return conn.prepareStatement(sqlbuf.toString());
