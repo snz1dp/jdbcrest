@@ -239,7 +239,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     if (insert_request.hasPrimary_key()) {
       // 添加冲突处理, TODO: 未验证
       StringBuffer ignore_sql = new StringBuffer(" /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
-      ignore_sql.append(insert_request.getTable_name()).append("(");
+      ignore_sql.append("\"").append(insert_request.getTable_name()).append("\"").append("(");
       if (insert_request.testComposite_key()) {
         boolean append = false;
         for (Object val : (List<?>)insert_request.getPrimary_key()) {
