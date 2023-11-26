@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,7 +72,7 @@ public class DatabaseInsertApi {
     org.springframework.web.bind.annotation.RequestMethod.GET
   })
   public Return<String> createObjectId() {
-    return Return.wrap(UUID.randomUUID().toString());
+    return Return.wrap(StringUtils.remove(UUID.randomUUID().toString(), "-"));
   }
 
 }
