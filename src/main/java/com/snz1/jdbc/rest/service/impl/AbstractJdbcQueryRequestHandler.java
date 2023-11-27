@@ -147,8 +147,8 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         rows.add(row_map);
       } else {
         try {
-          rows.add(ObjectUtils.mapToObject(row_map, return_meta.getEntity_class().getDeclaredConstructor()));
-        } catch (NoSuchMethodException e) {
+          rows.add(ObjectUtils.mapToObject(row_map, return_meta.getEntity_class().getDeclaredConstructor().newInstance()));
+        } catch (Throwable e) {
           throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
         }
       }
