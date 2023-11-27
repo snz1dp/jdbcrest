@@ -43,6 +43,7 @@ import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.service.UserRoleVerifier;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
+import com.snz1.jdbc.rest.utils.ObjectUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -635,9 +636,10 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   }
 
   @Override
-  public Object executeSQLService(SQLServiceRequest sql_request) {
+  @SuppressWarnings("unchecked")
+  public <T> T executeSQLService(SQLServiceRequest sql_request) {
     SqlSession session = this.sessionFactory.openSession();
-    List<Object> output_list = new LinkedList<>();
+    List<T> output_list = new LinkedList<>();
     try {
       for (Map<String, Object> input_data : sql_request.getInput_list()) {
         Object last_output = null;
@@ -653,23 +655,24 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
           }
           last_output = doExecuteSQLService(session, sql_request, sql_fragment, input_wrap);
         }
-        output_list.add(last_output);
+        output_list.add((T)last_output);
       }
     } finally {
       session.close();
     }
     if (sql_request.testSignletonData()) {
       if (output_list.size() > 0) {
-        return output_list.get(0);
+        return output_list.get(output_list.size() - 1);
       } else {
         return null;
       }
     } else {
-      return output_list;
+      return (T)output_list;
     }
   }
 
-  public Object doExecuteSQLService(
+  @SuppressWarnings("unchecked")
+  public <T> T doExecuteSQLService(
     SqlSession session,
     SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
@@ -686,11 +689,11 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       case SELECT:
         return doSQLServiceSelect(session, sql_request, sql_fragment, input_data);
       case INSERT:
-        return doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
+        return (T)doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
       case UPDATE:
-        return doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
+        return (T)doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
       case DELETE:
-        return doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
+        return (T)doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
       default:
         throw new IllegalStateException("无效SQL语句");
       }
@@ -759,7 +762,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   }
 
   @SuppressWarnings("unchecked")
-  protected Object doSQLServiceSelect(
+  protected <T> T doSQLServiceSelect(
     SqlSession session,
     SQLServiceRequest sql_request,
     SQLServiceDefinition.SQLFragment sql_fragment,
@@ -778,12 +781,32 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
         }
         Map<String, Object> map = (Map<String, Object>)result.get(0);
         if (sql_fragment.getResult().isColumn_compact()) {
-          return map.get(map.keySet().iterator().next());
+          return (T)map.get(map.keySet().iterator().next());
+        } else if (sql_request.getDefinition() == null || sql_request.getDefinition().getEntity_class() == null ||
+          Objects.equals(sql_request.getDefinition().getEntity_class(), Map.class)
+        ) {
+          return (T)map;
         } else {
-          return map;
+          try {
+            return (T)ObjectUtils.mapToObject(map, sql_request.getDefinition().getEntity_class().getDeclaredConstructor().newInstance());
+          } catch (Throwable e) {
+            throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
+          }
         }
+      } else if (sql_request.getDefinition() == null || sql_request.getDefinition().getEntity_class() == null ||
+        Objects.equals(sql_request.getDefinition().getEntity_class(), Map.class)
+      ) {
+        return (T)result;
       } else {
-        return result;
+        List<T> list = new ArrayList<T>(result.size());
+        for (Object obj : result) {
+          try {
+            list.add((T)ObjectUtils.mapToObject((Map<String, Object>)obj, sql_request.getDefinition().getEntity_class().getDeclaredConstructor().newInstance()));
+          } catch (Throwable e) {
+            throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
+          }
+        }
+        return (T)list;
       }
     } finally {
       if (log.isDebugEnabled()) {

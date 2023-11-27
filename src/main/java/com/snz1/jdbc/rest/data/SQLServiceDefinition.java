@@ -22,6 +22,9 @@ public class SQLServiceDefinition implements Serializable {
   // 服务路径，从SQL文件名中获取
   private String service_path;
 
+  // 返回类型，默认为Map
+  private Class<?> entity_class;
+
   // 文件位置
   @JsonIgnore
   private String file_location;

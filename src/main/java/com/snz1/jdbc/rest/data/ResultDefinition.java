@@ -42,7 +42,7 @@ public class ResultDefinition implements Serializable {
   private long limit;
 
   // 返回类型，默认为Map
-  private Class<?> entity_class = Map.class;
+  private Class<?> entity_class;
 
   // 列
   @Data

@@ -85,7 +85,7 @@ public interface JdbcRestProvider {
   ) throws SQLException;
 
   // 执行SQL服务
-  Object executeSQLService(
+  <T> T executeSQLService(
     SQLServiceRequest sql_request
   );
 

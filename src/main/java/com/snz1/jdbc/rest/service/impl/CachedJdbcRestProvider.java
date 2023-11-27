@@ -275,7 +275,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   }
 
   @Override
-  protected Object doSQLServiceSelect(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
+  protected <T> T doSQLServiceSelect(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     try {
       return this.resolveCached(
         String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()),
