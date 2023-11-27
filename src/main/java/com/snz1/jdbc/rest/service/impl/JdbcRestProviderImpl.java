@@ -10,9 +10,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 
 import javax.annotation.Resource;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
@@ -42,6 +45,10 @@ import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.service.TableDefinitionRegistry;
 import com.snz1.jdbc.rest.service.UserRoleVerifier;
+import com.snz1.jdbc.rest.service.converter.ListConverter;
+import com.snz1.jdbc.rest.service.converter.MapConverter;
+import com.snz1.jdbc.rest.service.converter.PropertiesConverter;
+import com.snz1.jdbc.rest.service.converter.SetConverter;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.jdbc.rest.utils.ObjectUtils;
 import com.snz1.utils.WebUtils;
@@ -53,6 +60,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, InitializingBean {
+
+  static {
+    registConverter();
+  }
 
   protected JdbcMetaData jdbcMetaData;
 
@@ -864,6 +875,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       this.clearServiceCaches();
       this.clearMetaCaches();
     }
+  }
+
+  private static void registConverter() {
+    BeanUtilsBean.getInstance().getConvertUtils().register(new MapConverter(), Map.class);
+    BeanUtilsBean.getInstance().getConvertUtils().register(new PropertiesConverter(), Properties.class);
+    BeanUtilsBean.getInstance().getConvertUtils().register(new ListConverter(), List.class);
+    BeanUtilsBean.getInstance().getConvertUtils().register(new SetConverter(), Set.class);
   }
 
 }
