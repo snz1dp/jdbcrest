@@ -27,6 +27,7 @@ import com.snz1.jdbc.rest.service.AppInfoResolver;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
 import com.snz1.jdbc.rest.service.LoggedUserContext;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
+import com.snz1.jdbc.rest.utils.ObjectUtils;
 import com.snz1.utils.JsonUtils;
 
 import lombok.Data;
@@ -61,7 +62,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
     TableDefinition table_definition,
     Long offset,
     Long limit
-  ) throws SQLException {
+  ) throws SQLException, SecurityException {
     boolean onepack = true; 
     boolean meta = false;
     boolean objlist = false;
@@ -142,8 +143,14 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         rows.add(row_data);
       } else if (objlist) {
         rows.add(row_list);
-      } else {
+      } else if (return_meta.getEntity_class() == null || Objects.equals(return_meta.getEntity_class(), Map.class)) {
         rows.add(row_map);
+      } else {
+        try {
+          rows.add(ObjectUtils.mapToObject(row_map, return_meta.getEntity_class().getDeclaredConstructor()));
+        } catch (NoSuchMethodException e) {
+          throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
+        }
       }
     }
     JdbcQueryResponse<List<Object>> ret = new JdbcQueryResponse<>();

@@ -69,7 +69,7 @@ public class TableMeta implements Serializable {
   @Getter
   @Setter
   private TableDefinition definition;
-  
+
   public boolean hasDefinition() {
     return this.definition != null;
   }
@@ -290,8 +290,8 @@ public class TableMeta implements Serializable {
   ) throws SQLException {
     TableMeta metadata = new TableMeta();
     metadata.setPrimary_key(primary_key);
-    int col_count = 0;
 
+    int col_count = 0;
     while (rs_meta != null && rs_meta.next()) {
       if (metadata.getCatalog_name() == null) {
         metadata.setCatalog_name(rs_meta.getString("TABLE_CAT"));

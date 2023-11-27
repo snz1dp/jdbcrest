@@ -41,6 +41,9 @@ public class ResultDefinition implements Serializable {
   // 返回限制
   private long limit;
 
+  // 返回类型，默认为Map
+  private Class<?> entity_class = Map.class;
+
   // 列
   @Data
   public static class ResultColumn implements Serializable, Cloneable {
