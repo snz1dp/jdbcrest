@@ -782,26 +782,26 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
         Map<String, Object> map = (Map<String, Object>)result.get(0);
         if (sql_fragment.getResult().isColumn_compact()) {
           return (T)map.get(map.keySet().iterator().next());
-        } else if (sql_request.getDefinition() == null || sql_request.getDefinition().getEntity_class() == null ||
-          Objects.equals(sql_request.getDefinition().getEntity_class(), Map.class)
+        } else if (sql_request.getResult_class() == null ||
+          Objects.equals(sql_request.getResult_class(), Map.class)
         ) {
           return (T)map;
         } else {
           try {
-            return (T)ObjectUtils.mapToObject(map, sql_request.getDefinition().getEntity_class().getDeclaredConstructor().newInstance());
+            return (T)ObjectUtils.mapToObject(map, sql_request.getResult_class().getDeclaredConstructor().newInstance());
           } catch (Throwable e) {
             throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
           }
         }
-      } else if (sql_request.getDefinition() == null || sql_request.getDefinition().getEntity_class() == null ||
-        Objects.equals(sql_request.getDefinition().getEntity_class(), Map.class)
+      } else if (sql_request.getResult_class() == null ||
+        Objects.equals(sql_request.getResult_class(), Map.class)
       ) {
         return (T)result;
       } else {
         List<T> list = new ArrayList<T>(result.size());
         for (Object obj : result) {
           try {
-            list.add((T)ObjectUtils.mapToObject((Map<String, Object>)obj, sql_request.getDefinition().getEntity_class().getDeclaredConstructor().newInstance()));
+            list.add((T)ObjectUtils.mapToObject((Map<String, Object>)obj, sql_request.getResult_class().getDeclaredConstructor().newInstance()));
           } catch (Throwable e) {
             throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
           }

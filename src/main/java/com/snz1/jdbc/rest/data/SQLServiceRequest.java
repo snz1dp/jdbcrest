@@ -24,6 +24,12 @@ public class SQLServiceRequest implements Serializable {
   @Getter
   private SQLServiceDefinition definition;
 
+  // 返回类型，默认为Map
+  @JsonIgnore
+  @Getter
+  @Setter
+  private Class<?> result_class;
+
   // 输入数据
   @Setter
   @Getter
