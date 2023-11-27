@@ -139,11 +139,11 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         }
       }
 
-      if (onepack && result_meta.getColumn_count() == 1) {
+      if (onepack && result_meta != null && result_meta.getColumn_count() == 1) {
         rows.add(row_data);
       } else if (objlist) {
         rows.add(row_list);
-      } else if (return_meta.getEntity_class() == null || Objects.equals(return_meta.getEntity_class(), Map.class)) {
+      } else if (return_meta == null || return_meta.getEntity_class() == null || Objects.equals(return_meta.getEntity_class(), Map.class)) {
         rows.add(row_map);
       } else {
         try {
