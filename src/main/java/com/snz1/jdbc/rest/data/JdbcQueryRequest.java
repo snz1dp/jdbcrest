@@ -111,8 +111,12 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
     private Sort sort;
 
     public static OrderBy of(String column) {
+      String order_cols[] = StringUtils.split(column, " ", 2);
       OrderBy orderby = new OrderBy();
-      orderby.setColumn(column);
+      orderby.setColumn(order_cols[0]);
+      if (order_cols.length > 1) {
+        orderby.setSort(Sort.valueOf(order_cols[1]));
+      }
       return orderby;
     }
 
