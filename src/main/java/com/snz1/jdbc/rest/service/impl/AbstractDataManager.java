@@ -1,9 +1,12 @@
 package com.snz1.jdbc.rest.service.impl;
 
+import java.lang.reflect.Array;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Iterator;
+
 import javax.annotation.Resource;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.snz1.jdbc.rest.data.ConditionOperation;
@@ -68,16 +71,16 @@ public abstract class AbstractDataManager {
     restProvider.insertTableData(insert_request);
   }
 
-  protected <T> T getDataObject(TableMeta table_meta, String id) throws SQLException {
+  protected <T> T getDataObject(TableMeta table_meta, Object id) throws SQLException {
     return this.getDataObject(table_meta, id, null);
   }
 
-  protected <T> T getDataObject(TableMeta table_meta, String id, Class<T> entity_class) throws SQLException {
+  protected <T> T getDataObject(TableMeta table_meta, Object id, Class<T> entity_class) throws SQLException {
     return this.getDataObject(table_meta, id, null, entity_class);
   }
 
   @SuppressWarnings("unchecked")
-  protected <T> T getDataObject(TableMeta table_meta, String id, String primary_col, Class<T> entity_class) throws SQLException {
+  protected <T> T getDataObject(TableMeta table_meta, Object id, Object primary_col, Class<T> entity_class) throws SQLException {
     // 获取表元信息
     JdbcQueryRequest table_query = new JdbcQueryRequest();
     table_query.setTable_name(table_meta.getTable_name());
@@ -88,17 +91,43 @@ public abstract class AbstractDataManager {
     }
 
     WhereCloumn where_col = null;
-    if (StringUtils.isBlank(primary_col)) {
-      where_col = WhereCloumn.of((String)table_meta.getPrimary_key());
+    if (primary_col == null) {
+      primary_col = table_meta.getPrimary_key();
+    }
+
+    if (primary_col instanceof String) {
+      where_col = WhereCloumn.of((String)primary_col);
+      TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
+      if (col != null) {
+        where_col.setType(col.getJdbc_type());
+      }
+      where_col.addCondition(ConditionOperation.$eq, id);
+      table_query.getWhere().add(where_col);
+    } else if (primary_col instanceof Array) {
+      for (int i = 0; i < Array.getLength(primary_col); i++) {
+        Object col = Array.get(primary_col, i);
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = table_query.getTable_meta().findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, Array.get(id, i));
+        table_query.getWhere().add(where_col);
+      }
+    } else if (primary_col instanceof Collection) {
+      Iterator<?> idata = ((Collection<?>)id).iterator();
+      for (Object col : (Collection<?>)primary_col) {
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = table_query.getTable_meta().findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, idata.next());
+        table_query.getWhere().add(where_col);
+      }
     } else {
-      where_col = WhereCloumn.of(primary_col);
+      throw new SQLException("主键类型不支持");
     }
-    TableColumn col = table_query.getTable_meta().findColumn(where_col.getColumn());
-    if (col != null) {
-      where_col.setType(col.getJdbc_type());
-    }
-    where_col.addCondition(ConditionOperation.$eq, id);
-    table_query.getWhere().add(where_col);
 
     table_query.getResult().setSignleton(true);
     JdbcQueryResponse<?> ret = restProvider.querySignletonResult(table_query);
