@@ -103,7 +103,7 @@ public abstract class AbstractDataManager {
       }
       where_col.addCondition(ConditionOperation.$eq, id);
       table_query.getWhere().add(where_col);
-    } else if (primary_col instanceof Array) {
+    } else if (primary_col.getClass().isArray()) {
       for (int i = 0; i < Array.getLength(primary_col); i++) {
         Object col = Array.get(primary_col, i);
         where_col = WhereCloumn.of((String)col);
