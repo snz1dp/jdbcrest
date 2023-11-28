@@ -202,10 +202,54 @@ public abstract class AbstractDataManager {
    * @throws SQLException
    */
   protected void updateDataObject(TableMeta result_meta, Object input_key, Object input_data, boolean patch) throws SQLException {
+    this.updateDataObject(result_meta, input_key, null, input_data, patch);
+  }
+
+  protected void updateDataObject(TableMeta result_meta, Object input_key, Object primary_col, Object input_data, boolean patch) throws SQLException {
     ManipulationRequest update_request = this.createDataObjectManipulationRequest(
       result_meta, input_key, input_data, patch
     );
     update_request.setPatch_update(patch);
+
+    WhereCloumn where_col = null;
+    if (primary_col == null) {
+      primary_col = result_meta.getPrimary_key();
+    }
+
+    if (primary_col instanceof String) {
+      where_col = WhereCloumn.of((String)primary_col);
+      TableColumn col = result_meta.findColumn(where_col.getColumn());
+      if (col != null) {
+        where_col.setType(col.getJdbc_type());
+      }
+      where_col.addCondition(ConditionOperation.$eq, input_key);
+      update_request.getWhere().add(where_col);
+    } else if (primary_col.getClass().isArray()) {
+      for (int i = 0; i < Array.getLength(primary_col); i++) {
+        Object col = Array.get(primary_col, i);
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = result_meta.findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, Array.get(input_key, i));
+        update_request.getWhere().add(where_col);
+      }
+    } else if (primary_col instanceof Collection) {
+      Iterator<?> idata = ((Collection<?>)input_key).iterator();
+      for (Object col : (Collection<?>)primary_col) {
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = result_meta.findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, idata.next());
+        update_request.getWhere().add(where_col);
+      }
+    } else {
+      throw new SQLException("主键类型不支持");
+    }
+
     restProvider.updateTableData(update_request);
   }
 
@@ -216,8 +260,50 @@ public abstract class AbstractDataManager {
    * @throws SQLException
    */
   protected void deleteDataObject(TableMeta result_meta, Object input_key) throws SQLException {
+    this.deleteDataObject(result_meta, input_key, null);
+  }
+
+  protected void deleteDataObject(TableMeta result_meta, Object input_key, Object primary_col) throws SQLException {
     ManipulationRequest delete_request = this.createDataObjectManipulationRequest(
       result_meta, input_key, null, false);
+    WhereCloumn where_col = null;
+    if (primary_col == null) {
+      primary_col = result_meta.getPrimary_key();
+    }
+
+    if (primary_col instanceof String) {
+      where_col = WhereCloumn.of((String)primary_col);
+      TableColumn col = result_meta.findColumn(where_col.getColumn());
+      if (col != null) {
+        where_col.setType(col.getJdbc_type());
+      }
+      where_col.addCondition(ConditionOperation.$eq, input_key);
+      delete_request.getWhere().add(where_col);
+    } else if (primary_col.getClass().isArray()) {
+      for (int i = 0; i < Array.getLength(primary_col); i++) {
+        Object col = Array.get(primary_col, i);
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = result_meta.findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, Array.get(input_key, i));
+        delete_request.getWhere().add(where_col);
+      }
+    } else if (primary_col instanceof Collection) {
+      Iterator<?> idata = ((Collection<?>)input_key).iterator();
+      for (Object col : (Collection<?>)primary_col) {
+        where_col = WhereCloumn.of((String)col);
+        TableColumn col_meta = result_meta.findColumn(where_col.getColumn());
+        if (col_meta != null) {
+          where_col.setType(col_meta.getJdbc_type());
+        }
+        where_col.addCondition(ConditionOperation.$eq, idata.next());
+        delete_request.getWhere().add(where_col);
+      }
+    } else {
+      throw new SQLException("主键类型不支持");
+    }
     restProvider.deleteTableData(delete_request);
   }
 
