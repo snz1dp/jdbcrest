@@ -63,12 +63,12 @@ public abstract class AbstractDataManager {
   }
 
   // 创建数据对象
-  protected <T> void createDataObject(TableMeta result_meta, T input_data) throws SQLException {
+  protected <T> Object createDataObject(TableMeta result_meta, T input_data) throws SQLException {
     ManipulationRequest insert_request = new ManipulationRequest();
     insert_request.setTable_name(result_meta.getTable_name());
     insert_request.copyTableMeta(result_meta);
     insert_request.setInput_data(ObjectUtils.objectToMap(input_data));
-    restProvider.insertTableData(insert_request);
+    return restProvider.insertTableData(insert_request);
   }
 
   protected <T> T getDataObject(TableMeta table_meta, Object id) throws SQLException {
