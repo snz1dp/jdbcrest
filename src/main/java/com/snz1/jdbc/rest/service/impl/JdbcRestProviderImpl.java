@@ -49,6 +49,7 @@ import com.snz1.jdbc.rest.service.converter.ListConverter;
 import com.snz1.jdbc.rest.service.converter.MapConverter;
 import com.snz1.jdbc.rest.service.converter.PropertiesConverter;
 import com.snz1.jdbc.rest.service.converter.SetConverter;
+import com.snz1.jdbc.rest.service.converter.StringLocaleConverter;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.jdbc.rest.utils.ObjectUtils;
 import com.snz1.utils.WebUtils;
@@ -878,6 +879,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   }
 
   private static void registConverter() {
+    BeanUtilsBean.getInstance().getConvertUtils().register(new StringLocaleConverter(), String.class);
     BeanUtilsBean.getInstance().getConvertUtils().register(new MapConverter(), Map.class);
     BeanUtilsBean.getInstance().getConvertUtils().register(new PropertiesConverter(), Properties.class);
     BeanUtilsBean.getInstance().getConvertUtils().register(new ListConverter(), List.class);
