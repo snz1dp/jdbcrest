@@ -5,9 +5,7 @@ import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.apache.commons.beanutils.locale.BaseLocaleConverter;
 
@@ -36,11 +34,8 @@ public class StringLocaleConverter extends BaseLocaleConverter {
       final SimpleDateFormat dateFormat = new SimpleDateFormat(JsonUtils.JsonDateFormat, locale);
 
       result = dateFormat.format(value);
-    } else if (value instanceof Map ||
-      value instanceof List ||
-      value.getClass().isArray()
-    ) {
-      result = JsonUtils.toJson(value);
+    } else if (value instanceof String) {
+      return value;
     } else {
       result = JsonUtils.toJson(value);
     }
