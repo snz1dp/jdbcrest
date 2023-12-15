@@ -42,7 +42,7 @@ public class StringLocaleConverter extends BaseLocaleConverter {
     ) {
       result = JsonUtils.toJson(value);
     } else {
-      result = value.toString();
+      result = JsonUtils.toJson(value);
     }
     return result;
   }
