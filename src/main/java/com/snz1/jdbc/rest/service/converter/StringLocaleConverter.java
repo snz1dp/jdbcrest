@@ -1,6 +1,5 @@
 package com.snz1.jdbc.rest.service.converter;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -37,12 +36,14 @@ public class StringLocaleConverter extends BaseLocaleConverter {
       final SimpleDateFormat dateFormat = new SimpleDateFormat(JsonUtils.JsonDateFormat, locale);
 
       result = dateFormat.format(value);
-    } else if (value instanceof Map || value instanceof Date || value instanceof List || value instanceof Array) {
+    } else if (value instanceof Map ||
+      value instanceof List ||
+      value.getClass().isArray()
+    ) {
       result = JsonUtils.toJson(value);
     } else {
       result = value.toString();
     }
-
     return result;
   }
 
