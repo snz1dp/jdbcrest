@@ -36,6 +36,8 @@ public class StringLocaleConverter extends BaseLocaleConverter {
       result = dateFormat.format(value);
     } else if (value instanceof String) {
       return value;
+    } else if (value.getClass().isEnum() || value.getClass().isPrimitive()) {
+      return value.toString();
     } else {
       result = JsonUtils.toJson(value);
     }
