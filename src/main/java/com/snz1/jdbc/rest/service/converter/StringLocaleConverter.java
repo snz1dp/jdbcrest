@@ -2,8 +2,6 @@ package com.snz1.jdbc.rest.service.converter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,9 +13,6 @@ import org.apache.commons.beanutils.locale.BaseLocaleConverter;
 
 import com.snz1.utils.JsonUtils;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class StringLocaleConverter extends BaseLocaleConverter {
 
   public StringLocaleConverter() {
@@ -32,12 +27,12 @@ public class StringLocaleConverter extends BaseLocaleConverter {
         (value instanceof Byte) ||
         (value instanceof Short)) {
 
-      result = getDecimalFormat(locale, pattern).format(((Number) value).longValue());
+      result = value + "";
     } else if ((value instanceof Double) ||
         (value instanceof BigDecimal) ||
         (value instanceof Float)) {
 
-      result = getDecimalFormat(locale, pattern).format(((Number) value).doubleValue());
+      result = value + "";
     } else if (value instanceof Date) { // java.util.Date, java.sql.Date, java.sql.Time, java.sql.Timestamp
 
       final SimpleDateFormat dateFormat = new SimpleDateFormat(JsonUtils.JsonDateFormat, locale);
@@ -50,22 +45,6 @@ public class StringLocaleConverter extends BaseLocaleConverter {
     }
 
     return result;
-  }
-
-  private DecimalFormat getDecimalFormat(final Locale locale, final String pattern) {
-    final DecimalFormat numberFormat = (DecimalFormat) NumberFormat.getInstance(locale);
-    // if some constructors default pattern to null, it makes only sense to handle
-    // null pattern gracefully
-    if (pattern != null) {
-      if (locPattern) {
-        numberFormat.applyLocalizedPattern(pattern);
-      } else {
-        numberFormat.applyPattern(pattern);
-      }
-    } else {
-      log.debug("No pattern provided, using default.");
-    }
-    return numberFormat;
   }
 
 }
