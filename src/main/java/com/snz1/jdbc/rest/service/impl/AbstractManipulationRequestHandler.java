@@ -1,5 +1,7 @@
 package com.snz1.jdbc.rest.service.impl;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
+
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
@@ -22,9 +24,10 @@ public abstract class AbstractManipulationRequestHandler<T> extends AbstractRequ
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory,
     LoggedUserContext loggedUserContext,
-    AppInfoResolver appInfoResolver
+    AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils
   ) {
-    super(sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
+    super(sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver, bean_utils);
     this.request = request;
   }
 

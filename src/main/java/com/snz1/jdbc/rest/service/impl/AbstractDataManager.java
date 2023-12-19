@@ -67,7 +67,7 @@ public abstract class AbstractDataManager {
     ManipulationRequest insert_request = new ManipulationRequest();
     insert_request.setTable_name(result_meta.getTable_name());
     insert_request.copyTableMeta(result_meta);
-    insert_request.setInput_data(ObjectUtils.objectToMap(input_data));
+    insert_request.setInput_data(ObjectUtils.objectToMap(getRestProvider().getBeanUtils(), input_data));
     return restProvider.insertTableData(insert_request);
   }
 
@@ -176,7 +176,7 @@ public abstract class AbstractDataManager {
     update_request.setTable_name(result_meta.getTable_name());
     update_request.copyTableMeta(result_meta);
     if (input_data != null) {
-      update_request.setInput_data(ObjectUtils.objectToMap(input_data, patch));
+      update_request.setInput_data(ObjectUtils.objectToMap(this.getRestProvider().getBeanUtils(), input_data, patch));
     }
     update_request.setInput_key(input_key);
     return update_request;

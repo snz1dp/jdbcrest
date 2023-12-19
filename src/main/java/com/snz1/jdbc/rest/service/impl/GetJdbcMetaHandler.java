@@ -3,6 +3,7 @@ package com.snz1.jdbc.rest.service.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -19,8 +20,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class GetJdbcMetaHandler extends AbstractJdbcQueryRequestHandler<JdbcMetaData> {
 
-  public GetJdbcMetaHandler(AppInfoResolver appInfoResolver) {
-    super(null, null, null, null, appInfoResolver);
+  public GetJdbcMetaHandler(AppInfoResolver appInfoResolver, BeanUtilsBean bean_utils) {
+    super(null, null, null, null, appInfoResolver, bean_utils);
   }
 
   @Override

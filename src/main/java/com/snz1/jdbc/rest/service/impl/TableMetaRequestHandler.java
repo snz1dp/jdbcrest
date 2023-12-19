@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
@@ -27,9 +28,10 @@ public class TableMetaRequestHandler extends AbstractJdbcQueryRequestHandler<Tab
   public TableMetaRequestHandler(
     JdbcQueryRequest request,
     SQLDialectProvider sql_dialect_provider,
-    AppInfoResolver appInfoResolver
+    AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils
   ) {
-    super(request, sql_dialect_provider, null, null, appInfoResolver);
+    super(request, sql_dialect_provider, null, null, appInfoResolver, bean_utils);
   }
 
   @Override

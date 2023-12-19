@@ -62,10 +62,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, InitializingBean {
 
-  static {
-    registConverter();
-  }
-
   protected JdbcMetaData jdbcMetaData;
 
   @Resource
@@ -88,6 +84,21 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
 
   @Resource
   private UserRoleVerifier userRoleVerifier;
+
+  private BeanUtilsBean beanUtilsBean = new BeanUtilsBean();
+
+  @Override
+  public BeanUtilsBean getBeanUtils() {
+    return beanUtilsBean;
+  }
+
+  public JdbcRestProviderImpl() {
+    this.getBeanUtils().getConvertUtils().register(new StringLocaleConverter(), String.class);
+    this.getBeanUtils().getConvertUtils().register(new MapConverter(), Map.class);
+    this.getBeanUtils().getConvertUtils().register(new PropertiesConverter(), Properties.class);
+    this.getBeanUtils().getConvertUtils().register(new ListConverter(), List.class);
+    this.getBeanUtils().getConvertUtils().register(new SetConverter(), Set.class);
+  }
 
   @Override
   public void afterPropertiesSet() {
@@ -116,19 +127,19 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
 
   // 获取Schemas
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
-    return jdbcTemplate.execute(new GetSchemasHandler(this.appInfoResolver));
+    return jdbcTemplate.execute(new GetSchemasHandler(this.appInfoResolver, this.beanUtilsBean));
   }
 
   // 获取目录
   public JdbcQueryResponse<List<Object>> getCatalogs() throws SQLException {
-    return jdbcTemplate.execute(new GetCatalogsHandler(this.appInfoResolver));
+    return jdbcTemplate.execute(new GetCatalogsHandler(this.appInfoResolver, this.beanUtilsBean));
   }
 
   // 获取数据库元信息
   @Override
   public JdbcMetaData getMetaData() throws SQLException {
     if (this.jdbcMetaData != null) return this.jdbcMetaData;
-    return this.jdbcMetaData = jdbcTemplate.execute(new GetJdbcMetaHandler(this.appInfoResolver));
+    return this.jdbcMetaData = jdbcTemplate.execute(new GetJdbcMetaHandler(this.appInfoResolver, this.beanUtilsBean));
   }
 
   // 获取表类表
@@ -146,7 +157,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     long start_time = System.currentTimeMillis();
     try {
       return jdbcTemplate.execute(new GetTablesHandler(
-        this.appInfoResolver, return_meta, catalog,
+        this.appInfoResolver, this.beanUtilsBean, return_meta, catalog,
         schema_pattern, table_name_pattern,
         offset, limit, types
       ));
@@ -168,7 +179,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     long start_time = System.currentTimeMillis();
     try {
       return Objects.equals(Boolean.TRUE, jdbcTemplate.execute(new TestTableExistedHandler(
-        sql_dialect_provider, this.appInfoResolver, catalog_name, schema_name, table_name, types
+        sql_dialect_provider, this.appInfoResolver, this.beanUtilsBean, catalog_name, schema_name, table_name, types
       )));
     } finally {
       if (log.isDebugEnabled()) {
@@ -182,7 +193,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     if (table_query.hasTable_meta()) {
       return table_query.getTable_meta();
     }
-    return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider, this.appInfoResolver));
+    return jdbcTemplate.execute(new TableMetaRequestHandler(table_query, sql_dialect_provider, this.appInfoResolver, this.beanUtilsBean));
   }
 
   // 元信息
@@ -273,7 +284,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     try {
       // 获取列表数据
       JdbcQueryResponse<List<Object>> datalist = jdbcTemplate.execute(new ListQueryRequestHandler(
-        table_query, sql_dialect_provider, this.appInfoResolver
+        table_query, sql_dialect_provider, this.appInfoResolver, this.beanUtilsBean
       ));
       return datalist;
     } finally {
@@ -394,7 +405,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     return jdbcTemplate.execute(new InsertRequestHandler(
       insert_request, sql_dialect_provider,
       type_converter_factory, this.loggedUserContext,
-      this.appInfoResolver
+      this.appInfoResolver, this.beanUtilsBean
     ));
   }
 
@@ -407,7 +418,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     return jdbcTemplate.execute(new UpdateRequestHandler(
       update_request, sql_dialect_provider,
       type_converter_factory, this.loggedUserContext,
-      this.appInfoResolver
+      this.appInfoResolver, this.beanUtilsBean
     ));
   }
 
@@ -420,7 +431,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     return jdbcTemplate.execute(new DeleteRequestHandler(
       delete_request, sql_dialect_provider,
       type_converter_factory, this.loggedUserContext,
-      this.appInfoResolver
+      this.appInfoResolver, this.beanUtilsBean
     ));
   }
 
@@ -800,7 +811,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
           return (T)map;
         } else {
           try {
-            return (T)ObjectUtils.mapToObject(map, sql_request.getResult_class().getDeclaredConstructor().newInstance());
+            return (T)ObjectUtils.mapToObject(this.getBeanUtils(), map, sql_request.getResult_class().getDeclaredConstructor().newInstance());
           } catch (Throwable e) {
             throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
           }
@@ -813,7 +824,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
         List<T> list = new ArrayList<T>(result.size());
         for (Object obj : result) {
           try {
-            list.add((T)ObjectUtils.mapToObject((Map<String, Object>)obj, sql_request.getResult_class().getDeclaredConstructor().newInstance()));
+            list.add((T)ObjectUtils.mapToObject(this.getBeanUtils(), (Map<String, Object>)obj, sql_request.getResult_class().getDeclaredConstructor().newInstance()));
           } catch (Throwable e) {
             throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
           }
@@ -876,14 +887,6 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       this.clearServiceCaches();
       this.clearMetaCaches();
     }
-  }
-
-  private static void registConverter() {
-    BeanUtilsBean.getInstance().getConvertUtils().register(new StringLocaleConverter(), String.class);
-    BeanUtilsBean.getInstance().getConvertUtils().register(new MapConverter(), Map.class);
-    BeanUtilsBean.getInstance().getConvertUtils().register(new PropertiesConverter(), Properties.class);
-    BeanUtilsBean.getInstance().getConvertUtils().register(new ListConverter(), List.class);
-    BeanUtilsBean.getInstance().getConvertUtils().register(new SetConverter(), Set.class);
   }
 
 }

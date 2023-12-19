@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -31,10 +32,11 @@ public class TestTableExistedHandler extends AbstractJdbcQueryRequestHandler<Boo
   public TestTableExistedHandler(
     SQLDialectProvider sql_dialect_provider,
     AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils,
     String catalog_name, String schema_name,
     String table_name, String ...types
   ) {
-    super(null, sql_dialect_provider, null, null, appInfoResolver);
+    super(null, sql_dialect_provider, null, null, appInfoResolver, bean_utils);
     this.table_name = table_name;
     this.catalog_name = catalog_name;
     this.schema_name = schema_name;

@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -37,9 +38,10 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory,
     LoggedUserContext loggedUserContext,
-    AppInfoResolver appInfoResolver
+    AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils
   ) {
-    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
+    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver, bean_utils);
   }
 
   // 构建

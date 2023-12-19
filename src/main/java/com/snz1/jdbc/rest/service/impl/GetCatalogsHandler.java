@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -22,8 +23,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class GetCatalogsHandler extends AbstractJdbcQueryRequestHandler<JdbcQueryResponse<List<Object>>> {
 
-  public GetCatalogsHandler(AppInfoResolver appInfoResolver) {
-    super(null, null, null, null, appInfoResolver);
+  public GetCatalogsHandler(AppInfoResolver appInfoResolver, BeanUtilsBean bean_utils) {
+    super(null, null, null, null, appInfoResolver, bean_utils);
   }
 
   @Override

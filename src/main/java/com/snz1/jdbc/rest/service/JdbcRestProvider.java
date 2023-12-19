@@ -3,6 +3,8 @@ package com.snz1.jdbc.rest.service;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
+
 import com.snz1.jdbc.rest.data.JdbcDMLRequest;
 import com.snz1.jdbc.rest.data.JdbcDMLResponse;
 import com.snz1.jdbc.rest.data.JdbcMetaData;
@@ -16,6 +18,8 @@ import com.snz1.jdbc.rest.data.TableMeta;
 
 // JDBC转Rest接口提供器
 public interface JdbcRestProvider {
+
+  BeanUtilsBean getBeanUtils();
 
   // 获取元信息
   JdbcMetaData getMetaData() throws SQLException;

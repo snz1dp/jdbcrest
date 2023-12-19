@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -35,9 +36,10 @@ public class DeleteRequestHandler extends AbstractManipulationRequestHandler<Int
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory,
     LoggedUserContext loggedUserContext,
-    AppInfoResolver appInfoResolver
+    AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils
   ) {
-    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
+    super(update_request, sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver, bean_utils);
   }
 
   @Override

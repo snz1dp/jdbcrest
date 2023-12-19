@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
@@ -40,12 +41,13 @@ public class GetTablesHandler extends AbstractJdbcQueryRequestHandler<JdbcQueryR
 
   public GetTablesHandler(
     AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils,
     ResultDefinition return_meta,
     String catalog, String schema_pattern,
     String table_name_pattern,
     Long offset, Long limit, String...types
   ) {
-    super(null, null, null, null, appInfoResolver);
+    super(null, null, null, null, appInfoResolver, bean_utils);
     this.catalog = catalog;
     this.return_meta = return_meta;
     this.catalog = catalog;

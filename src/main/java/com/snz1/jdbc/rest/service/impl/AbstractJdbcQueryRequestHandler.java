@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.codec.binary.Base64;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
@@ -147,7 +148,7 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         rows.add(row_map);
       } else {
         try {
-          rows.add(ObjectUtils.mapToObject(row_map, return_meta.getEntity_class().getDeclaredConstructor().newInstance()));
+          rows.add(ObjectUtils.mapToObject(this.getBean_utils(), row_map, return_meta.getEntity_class().getDeclaredConstructor().newInstance()));
         } catch (Throwable e) {
           throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
         }
@@ -267,9 +268,10 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
     SQLDialectProvider sql_dialect_provider,
     JdbcTypeConverterFactory type_converter_factory,
     LoggedUserContext loggedUserContext,
-    AppInfoResolver appInfoResolver
+    AppInfoResolver appInfoResolver,
+    BeanUtilsBean bean_utils
   ) {
-    super(sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver);
+    super(sql_dialect_provider, type_converter_factory, loggedUserContext, appInfoResolver, bean_utils);
     this.request = request;
   }
 
