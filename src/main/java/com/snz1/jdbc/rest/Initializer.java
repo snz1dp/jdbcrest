@@ -58,8 +58,10 @@ public class Initializer implements SpringApplicationRunListener {
       databasePassword = environment.getProperty("spring.datasource.password");
     }
     
-    String databaseJdbcURL = environment.getProperty("spring.datasource.url", "");
+    String databaseJdbcURL = environment.getProperty("spring.datasource.create.jdbcurl", "");
+    if (StringUtils.isBlank(databaseJdbcURL)) return;
     String databaseName = environment.getProperty("spring.datasource.create.database", "");
+    if (StringUtils.isBlank(databaseName)) return;
 
     Connection conn;
     try {
@@ -73,7 +75,7 @@ public class Initializer implements SpringApplicationRunListener {
       }
       conn = jdbc_driver.connect(databaseJdbcURL, user_and_password);
     } catch (SQLException e) {
-      throw new IllegalStateException("创建数据库连接失败: " + e.getMessage(), e);
+      throw new IllegalStateException("连接数据库管理连接失败: " + e.getMessage(), e);
     }
 
     try {
