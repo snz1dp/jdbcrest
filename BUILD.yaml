@@ -7,7 +7,7 @@ name: jdbcrest
 # 镜像编译参数
 docker:
   # 镜像名称
-  image: gitlab.snz1.cn:9288/database/jdbcrest
+  image: snz1.cn/database/jdbcrest
   # 镜像编译文件(默认：Dockerfile)
   file: Dockerfile
   # 目标平台
