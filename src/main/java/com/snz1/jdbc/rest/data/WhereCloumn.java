@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
@@ -26,6 +27,26 @@ public class WhereCloumn implements Serializable, Cloneable {
 
   private List<WhereCloumn.Condition> conditions;
 
+  private List<WhereCloumn> childrens;
+
+  public WhereCloumn addChild(WhereCloumn where) {
+    if (this.childrens == null) {
+      this.childrens = new LinkedList<>();
+    }
+    this.childrens.add(where);
+    return this;
+  }
+
+  public WhereCloumn Or() {
+    this.setOr(true);
+    return this;
+  }
+
+  public WhereCloumn And() {
+    this.setOr(false);
+    return this;
+  }
+
   public static WhereCloumn of(String name) {
     WhereCloumn where_column = new WhereCloumn();
     where_column.setColumn(name);
@@ -36,6 +57,13 @@ public class WhereCloumn implements Serializable, Cloneable {
     WhereCloumn where_column = new WhereCloumn();
     where_column.setColumn(name);
     where_column.addCondition(operation, val);
+    return where_column;
+  }
+
+  public static WhereCloumn of(String name, ConditionOperation operation) {
+    WhereCloumn where_column = new WhereCloumn();
+    where_column.setColumn(name);
+    where_column.addCondition(operation, null);
     return where_column;
   }
 
@@ -98,65 +126,43 @@ public class WhereCloumn implements Serializable, Cloneable {
   }
 
   public String toWhereSQL(JdbcTypeConverterFactory factory) {
-    String column_name_all = StringUtils.replace(this.column, ",", "|");
-    column_name_all = StringUtils.replace(column_name_all, ";", "|");
-    String column_names[] = StringUtils.split(column_name_all, "|");
-    StringBuffer sqlbuf = new StringBuffer();
-    for (int xi = 0; xi < column_names.length; xi++) {
-      if (xi > 0) {
-        sqlbuf.append(" or ");
-      }
-      String column = column_names[xi];
-      if (this.condition != null) {
-        ConditionOperation operation = this.condition.getOperation();
-        if (operation.parameter_count() == 0) {
-          sqlbuf.append("(").append(String.format("\"%s\" %s", column, operation.operator())).append(")");
-        } else if (operation.parameter_count() == 1) {
-          sqlbuf.append("(").append(String.format("\"%s\" %s ?", column, operation.operator())).append(")");
-        } else if (operation.parameter_count() == 2) {
-          sqlbuf.append("(").append(String.format("\"%s\" %s ? and ?", column, operation.operator())).append(")");
+    if (StringUtils.isBlank(this.column)) {
+      Validate.isTrue(this.childrens != null && this.childrens.size() > 0, "子条件不能为空");
+      StringBuffer sqlbuf = new StringBuffer();
+      boolean where_append = false;
+      for (WhereCloumn where : this.childrens) {
+        if (where_append) {
+          if (this.testOr()) {
+            sqlbuf.append(" or ");
+          } else {
+            sqlbuf.append(" and ");
+          }
         } else {
-          condition.setArray(factory.convertArray(condition.getValue(), this.type));
-          StringBuffer parambuf = new StringBuffer();
-          boolean paramappend = false;
-          for (int i = 0; i < condition.getArray_length(); i++) {
-            if (paramappend) {
-              parambuf.append(", ");
-            } else {
-              paramappend = true;
-            }
-            parambuf.append("?");
-          }
-          sqlbuf.append("(").append(String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString())).append(")");
+          where_append = true;
         }
-      } else {
-        sqlbuf.append("(");
-        boolean where_append = false;
-        for (WhereCloumn.Condition condition : this.conditions) {
-          if (where_append) {
-            if (this.testOr()) {
-              sqlbuf.append(" or ");
-            } else {
-              sqlbuf.append(" and ");
-            }
-          } else {
-            where_append = true;
-          }
-          ConditionOperation operation = condition.getOperation();
-          String column_name = this.column;
-          if (condition.hasColumn()) {
-            column_name = condition.getColumn();
-          }
+        sqlbuf.append("(").append(where.toWhereSQL(factory)).append(")");
+      }
+      return sqlbuf.toString();
+    } else {
+      String column_name_all = StringUtils.replace(this.column, ",", "|");
+      column_name_all = StringUtils.replace(column_name_all, ";", "|");
+      String column_names[] = StringUtils.split(column_name_all, "|");
+      StringBuffer sqlbuf = new StringBuffer();
+      for (int xi = 0; xi < column_names.length; xi++) {
+        if (xi > 0) {
+          sqlbuf.append(" or ");
+        }
+        String column = column_names[xi];
+        if (this.condition != null) {
+          ConditionOperation operation = this.condition.getOperation();
           if (operation.parameter_count() == 0) {
-            sqlbuf.append(String.format("\"%s\" %s", column_name, operation.operator()));
+            sqlbuf.append("(").append(String.format("\"%s\" %s", column, operation.operator())).append(")");
           } else if (operation.parameter_count() == 1) {
-            sqlbuf.append(String.format("\"%s\" %s ?", column_name, operation.operator()));
+            sqlbuf.append("(").append(String.format("\"%s\" %s ?", column, operation.operator())).append(")");
           } else if (operation.parameter_count() == 2) {
-            sqlbuf.append(String.format("\"%s\" %s ? and ?", column_name, operation.operator()));
+            sqlbuf.append("(").append(String.format("\"%s\" %s ? and ?", column, operation.operator())).append(")");
           } else {
-            if (condition.getArray() == null) {
-              condition.setArray(factory.convertArray(condition.getValue(), this.type));
-            }
+            condition.setArray(factory.convertArray(condition.getValue(), this.type));
             StringBuffer parambuf = new StringBuffer();
             boolean paramappend = false;
             for (int i = 0; i < condition.getArray_length(); i++) {
@@ -167,38 +173,68 @@ public class WhereCloumn implements Serializable, Cloneable {
               }
               parambuf.append("?");
             }
-            sqlbuf.append(String.format("\"%s\" %s (%s)", column_name, operation.operator(), parambuf.toString()));
+            sqlbuf.append("(").append(String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString())).append(")");
           }
+        } else {
+          sqlbuf.append("(");
+          boolean where_append = false;
+          for (WhereCloumn.Condition condition : this.conditions) {
+            if (where_append) {
+              if (this.testOr()) {
+                sqlbuf.append(" or ");
+              } else {
+                sqlbuf.append(" and ");
+              }
+            } else {
+              where_append = true;
+            }
+            ConditionOperation operation = condition.getOperation();
+            String column_name = this.column;
+            if (condition.hasColumn()) {
+              column_name = condition.getColumn();
+            }
+            if (operation.parameter_count() == 0) {
+              sqlbuf.append(String.format("\"%s\" %s", column_name, operation.operator()));
+            } else if (operation.parameter_count() == 1) {
+              sqlbuf.append(String.format("\"%s\" %s ?", column_name, operation.operator()));
+            } else if (operation.parameter_count() == 2) {
+              sqlbuf.append(String.format("\"%s\" %s ? and ?", column_name, operation.operator()));
+            } else {
+              if (condition.getArray() == null) {
+                condition.setArray(factory.convertArray(condition.getValue(), this.type));
+              }
+              StringBuffer parambuf = new StringBuffer();
+              boolean paramappend = false;
+              for (int i = 0; i < condition.getArray_length(); i++) {
+                if (paramappend) {
+                  parambuf.append(", ");
+                } else {
+                  paramappend = true;
+                }
+                parambuf.append("?");
+              }
+              sqlbuf.append(String.format("\"%s\" %s (%s)", column_name, operation.operator(), parambuf.toString()));
+            }
+          }
+          sqlbuf.append(")");
         }
-        sqlbuf.append(")");
       }
+      return sqlbuf.toString();
     }
-    return sqlbuf.toString();
   }
 
   public void buildParameters(List<Object> parameters, JdbcTypeConverterFactory factory) {
-    String column_name_all = StringUtils.replace(this.column, ",", "|");
-    column_name_all = StringUtils.replace(column_name_all, ";", "|");
-    String column_names[] = StringUtils.split(column_name_all, "|");
-    for (int xi = 0; xi < column_names.length; xi++) {
-      if (this.condition != null) {
-        ConditionOperation operation = condition.getOperation();
-        if (operation.parameter_count() == 1) {
-          parameters.add(factory.convertObject(condition.getValue(), this.type));
-        } else if (operation.parameter_count() == 2) {
-          Object data = factory.convertArray(condition.getValue(), this.type);
-          parameters.add(Array.get(data, 0));
-          parameters.add(Array.get(data, 0));
-        } else if (operation.parameter_count() == 3) {
-          if (condition.getArray() == null) {
-            condition.setArray(factory.convertArray(condition.getValue(), this.type));
-          }
-          for (int i = 0; i < condition.getArray_length(); i++) {
-            parameters.add(Array.get(condition.getArray(), i));
-          }
-        }
-      } else {
-        for (WhereCloumn.Condition condition : this.conditions) {
+    if (StringUtils.isBlank(this.column)) {
+      Validate.isTrue(this.childrens != null && this.childrens.size() > 0, "子条件不能为空");
+      for (WhereCloumn where : this.childrens) {
+        where.buildParameters(parameters, factory);
+      }
+    } else {
+      String column_name_all = StringUtils.replace(this.column, ",", "|");
+      column_name_all = StringUtils.replace(column_name_all, ";", "|");
+      String column_names[] = StringUtils.split(column_name_all, "|");
+      for (int xi = 0; xi < column_names.length; xi++) {
+        if (this.condition != null) {
           ConditionOperation operation = condition.getOperation();
           if (operation.parameter_count() == 1) {
             parameters.add(factory.convertObject(condition.getValue(), this.type));
@@ -212,6 +248,24 @@ public class WhereCloumn implements Serializable, Cloneable {
             }
             for (int i = 0; i < condition.getArray_length(); i++) {
               parameters.add(Array.get(condition.getArray(), i));
+            }
+          }
+        } else {
+          for (WhereCloumn.Condition condition : this.conditions) {
+            ConditionOperation operation = condition.getOperation();
+            if (operation.parameter_count() == 1) {
+              parameters.add(factory.convertObject(condition.getValue(), this.type));
+            } else if (operation.parameter_count() == 2) {
+              Object data = factory.convertArray(condition.getValue(), this.type);
+              parameters.add(Array.get(data, 0));
+              parameters.add(Array.get(data, 0));
+            } else if (operation.parameter_count() == 3) {
+              if (condition.getArray() == null) {
+                condition.setArray(factory.convertArray(condition.getValue(), this.type));
+              }
+              for (int i = 0; i < condition.getArray_length(); i++) {
+                parameters.add(Array.get(condition.getArray(), i));
+              }
             }
           }
         }
