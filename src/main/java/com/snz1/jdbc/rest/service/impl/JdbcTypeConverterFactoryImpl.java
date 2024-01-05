@@ -182,15 +182,20 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
       if (input == null) return null;
     }
 
-    for (JdbcTypeConverter converter : this.jdbcTypeConverters) {
-      if (!converter.supportType(type)) continue;
-      if (log.isDebugEnabled()) {
-        log.debug("类型转换: {}=>{}, 输入: {}", type, converter.getClass().getName(), input);
+    if (type != null) {
+      for (JdbcTypeConverter converter : this.jdbcTypeConverters) {
+        if (!converter.supportType(type)) continue;
+        if (log.isDebugEnabled()) {
+          log.debug("类型转换: {}=>{}, 输入: {}", type, converter.getClass().getName(), input);
+        }
+        return converter.convertObject(input);
       }
-      return converter.convertObject(input);
+      if (log.isDebugEnabled()) {
+        log.debug("支持{}类型转换: {}", type, input);
+      }
     }
-    if (log.isDebugEnabled()) {
-      log.debug("支持{}类型转换: {}", type, input);
+    if (input instanceof Enum) {
+      return input.toString();
     }
     return input;
   }
