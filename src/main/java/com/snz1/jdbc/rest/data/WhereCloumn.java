@@ -140,7 +140,7 @@ public class WhereCloumn implements Serializable, Cloneable {
         } else {
           where_append = true;
         }
-        sqlbuf.append("(").append(where.toWhereSQL(factory)).append(")");
+        sqlbuf.append(where.toWhereSQL(factory));
       }
       return sqlbuf.toString();
     } else {
@@ -156,11 +156,11 @@ public class WhereCloumn implements Serializable, Cloneable {
         if (this.condition != null) {
           ConditionOperation operation = this.condition.getOperation();
           if (operation.parameter_count() == 0) {
-            sqlbuf.append("(").append(String.format("\"%s\" %s", column, operation.operator())).append(")");
+            sqlbuf.append(String.format("\"%s\" %s", column, operation.operator()));
           } else if (operation.parameter_count() == 1) {
-            sqlbuf.append("(").append(String.format("\"%s\" %s ?", column, operation.operator())).append(")");
+            sqlbuf.append(String.format("\"%s\" %s ?", column, operation.operator()));
           } else if (operation.parameter_count() == 2) {
-            sqlbuf.append("(").append(String.format("\"%s\" %s ? and ?", column, operation.operator())).append(")");
+            sqlbuf.append(String.format("\"%s\" %s ? and ?", column, operation.operator()));
           } else {
             condition.setArray(factory.convertArray(condition.getValue(), this.type));
             StringBuffer parambuf = new StringBuffer();
@@ -173,7 +173,7 @@ public class WhereCloumn implements Serializable, Cloneable {
               }
               parambuf.append("?");
             }
-            sqlbuf.append("(").append(String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString())).append(")");
+            sqlbuf.append(String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString()));
           }
         } else {
           sqlbuf.append("(");
