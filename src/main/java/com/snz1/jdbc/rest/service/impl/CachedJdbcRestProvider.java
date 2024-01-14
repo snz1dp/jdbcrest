@@ -140,7 +140,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     try {
       return this.resolveCached(
         String.format("%s:meta", appInfoResolver.getAppId()),
-        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFullTableName()),
+        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFlatTableName()),
         () -> super.doFetchResultSetMeta(table_query, sql_dialect_provider)
       );
     } catch (SQLException e) {
@@ -199,7 +199,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   ) {
     try {
       JdbcQueryResponse<?> ret = this.resolveCached(
-        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFullTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlatTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "list:"),
         () -> super.doQueryListResult(table_query, sql_dialect_provider)
       );
@@ -215,7 +215,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     try {
       return this.resolveCached(
-        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFullTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlatTableName()),
         this.buildJdbcQueryRequestCacheKey(table_query, "total:"),
         () -> super.doQueryTotalResult(table_query, sql_dialect_provider)
       );
@@ -231,7 +231,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), insert_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), insert_request.getFlatTableName()));
     return ret;
   }
 
@@ -242,7 +242,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), update_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), update_request.getFlatTableName()));
     return ret;
   }
 
@@ -253,7 +253,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), delete_request.getFullTableName()));
+    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), delete_request.getFlatTableName()));
     return ret;
   }
 
@@ -351,8 +351,15 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
       if (StringUtils.containsIgnoreCase(type_val, "TABLE")) {
         String table_name = (String)objmap.get("TABLE_NAME");
         String schema_name = (String)objmap.get("TABLE_SCHEM");
+        String catelog_name = (String)objmap.get("TABLE_CAT");
         this.clearTableCaches(table_name);
-        this.clearTableCaches(String.format("%s.%s", schema_name, table_name));
+        if (StringUtils.isNotBlank(catelog_name) && StringUtils.isNotBlank(schema_name)) {
+          this.clearTableCaches(String.format("%s.%s.%s", catelog_name, schema_name, table_name));
+        } else if (StringUtils.isNotBlank(catelog_name)) {
+          this.clearTableCaches(String.format("%s.%s", catelog_name, table_name));
+        } else if (StringUtils.isNotBlank(schema_name)) {
+          this.clearTableCaches(String.format("%s.%s", schema_name, table_name));
+        }
       }
     }
   }

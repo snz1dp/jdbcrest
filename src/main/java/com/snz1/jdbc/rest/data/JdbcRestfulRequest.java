@@ -62,6 +62,20 @@ public abstract class JdbcRestfulRequest implements Serializable, Cloneable {
     }
   }
 
+  public String getFlatTableName() {
+    if (StringUtils.isBlank(this.catalog_name)) {
+      if (StringUtils.isBlank(this.schema_name)) {
+        return this.table_name;
+      } else {
+        return String.format("%s.%s", this.schema_name, this.table_name);
+      }
+    } else if (StringUtils.isBlank(this.schema_name)) {
+      return String.format("%s.%s", this.catalog_name, this.table_name);
+    } else {
+      return String.format("%s.%s.%s", this.catalog_name, this.schema_name, this.table_name);
+    }
+  }
+
   // 克隆
   public JdbcRestfulRequest clone() {
     try {
