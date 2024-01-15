@@ -60,6 +60,14 @@ public class WhereCloumn implements Serializable, Cloneable {
     return where_column;
   }
 
+  public static WhereCloumn of(String name, ConditionOperation operation, Object val, JDBCType type) {
+    WhereCloumn where_column = new WhereCloumn();
+    where_column.setColumn(name);
+    where_column.addCondition(operation, val);
+    where_column.setType(type);
+    return where_column;
+  }
+
   public static WhereCloumn of(String name, ConditionOperation operation) {
     WhereCloumn where_column = new WhereCloumn();
     where_column.setColumn(name);
