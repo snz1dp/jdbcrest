@@ -184,6 +184,12 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
       dbuf.append(this.getLoggedUserContext().getLoggedUser().getUserid());
     }
 
+    dbuf.append(table_query.getResult().getOffset())
+        .append(table_query.getResult().getLimit());
+    if (table_query.getResult().getClass() != null) {
+      dbuf.append(table_query.getResult().getEntity_class().getName());
+    }
+
     cbuf.append(DigestUtils.sha256Hex(dbuf.toString()));
     String ret = cbuf.toString();
     if (log.isDebugEnabled()) {
