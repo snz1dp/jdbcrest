@@ -16,7 +16,7 @@ import gateway.sc.v2.config.CacheStatistics;
 public class CacheConfig {
   
   @Bean
-  @ConditionalOnProperty(prefix = "spring.cache", name = "type", havingValue = "none", matchIfMissing = false)
+  @ConditionalOnProperty(prefix = "app.jdbcrest.cache", name = "type", havingValue = "none", matchIfMissing = false)
   public JdbcRestProviderImpl defaultJdbcRestProvider() {
     return new JdbcRestProviderImpl();
   }
