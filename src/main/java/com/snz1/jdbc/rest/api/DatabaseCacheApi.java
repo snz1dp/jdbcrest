@@ -48,6 +48,7 @@ public class DatabaseCacheApi {
         "%s不存在", result_meta.getFullTableName()
       );
     }
+    restProvider.clearTableCaches(result_meta.getTable_name());
     restProvider.clearTableCaches(result_meta.getFullTableName());
     return Return.success();
   }

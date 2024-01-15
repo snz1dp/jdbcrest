@@ -81,6 +81,13 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     }
   }
 
+  private void evitRequestTableCache(String appid, ManipulationRequest insert_request) {
+    String cache_name = String.format("%s:%s", appid, insert_request.getTable_name());
+    this.evitAllCache(cache_name);
+    cache_name = String.format("%s:%s", appid, insert_request.getFlatTableName());
+    this.evitAllCache(cache_name);
+  }
+
   @Override
   public JdbcQueryResponse<List<Object>> getSchemas() throws SQLException {
     JdbcQueryResponse<List<Object>> ret = this.resolveCached(
@@ -184,8 +191,21 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
       dbuf.append(this.getLoggedUserContext().getLoggedUser().getUserid());
     }
 
-    dbuf.append(table_query.getResult().getOffset())
-        .append(table_query.getResult().getLimit());
+    if (table_query.getResult().hasColumn()) {
+      table_query.getResult().getColumns().forEach((k, v) -> {
+        dbuf.append(k).append(v);
+      });
+    }
+
+    dbuf.append(table_query.getResult().getRow_struct())
+        .append(table_query.getResult().isAll_column())
+        .append(table_query.getResult().isRow_total())
+        .append(table_query.getResult().isSignleton())
+        .append(table_query.getResult().getOffset())
+        .append(table_query.getResult().getLimit())
+        .append(table_query.getResult().isColumn_compact())
+        .append(table_query.getResult().isContain_meta());
+
     if (table_query.getResult().getClass() != null) {
       dbuf.append(table_query.getResult().getEntity_class().getName());
     }
@@ -237,7 +257,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), insert_request.getFlatTableName()));
+    this.evitRequestTableCache(appInfoResolver.getAppId(), insert_request);
     return ret;
   }
 
@@ -248,7 +268,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), update_request.getFlatTableName()));
+    this.evitRequestTableCache(appInfoResolver.getAppId(), update_request);
     return ret;
   }
 
@@ -259,7 +279,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), delete_request.getFlatTableName()));
+    this.evitRequestTableCache(appInfoResolver.getAppId(), delete_request);
     return ret;
   }
 

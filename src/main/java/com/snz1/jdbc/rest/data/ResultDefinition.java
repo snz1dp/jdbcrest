@@ -20,7 +20,7 @@ public class ResultDefinition implements Serializable {
   private Map<String, ResultDefinition.ResultColumn> columns = new HashMap<String, ResultDefinition.ResultColumn>();
 
   public boolean hasColumn() {
-    return this.columns != null;
+    return this.columns != null && columns.size() > 0;
   }
 
   // 是否包含元信息
