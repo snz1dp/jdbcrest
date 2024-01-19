@@ -344,8 +344,9 @@ public abstract class RequestUtils {
         }
         String join_catalog = request.getParameter(Constants.JOIN_ARG + "." + join_field_data[0] + ".catalog");
         String join_schema = request.getParameter(Constants.JOIN_ARG + "." + join_field_data[0] + ".schema");
+        String join_type = request.getParameter(Constants.JOIN_ARG + "." + join_field_data[0] + ".type");
         JdbcQueryRequest.Join join_col = JdbcQueryRequest.Join.of(
-          join_catalog, join_schema, join_field_data[0], join_field_data[1], join_field_data[2]
+          join_type, join_catalog, join_schema, join_field_data[0], join_field_data[1], join_field_data[2]
         );
         join.add(join_col);
       }

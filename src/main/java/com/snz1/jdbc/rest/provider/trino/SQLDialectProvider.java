@@ -1,8 +1,6 @@
 package com.snz1.jdbc.rest.provider.trino;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +38,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
   }
 
   @Override
-  public PreparedStatement preparePageSelect(Connection conn, JdbcQueryRequest table_query) throws SQLException {
+  public JdbcQueryStatement preparePageSelect(JdbcQueryRequest table_query) {
     JdbcQueryStatement base_query = this.createQueryRequestBaseSQL(table_query, false);
     StringBuffer sqlbuf = new StringBuffer();
     sqlbuf.append(base_query.getSql())
@@ -48,24 +46,20 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
           .append(table_query.getResult().getOffset())
           .append(" LIMIT ")
           .append(table_query.getResult().getLimit());
-    PreparedStatement ps = conn.prepareStatement(sqlbuf.toString());
-    if (base_query.hasParameter()) {
-      for (int i = 0; i < base_query.getParameters().size(); i++) {
-        Object param = base_query.getParameters().get(i);
-        ps.setObject(i + 1, param);
-      };
-    }
-    return ps;
+    base_query.setSql(sqlbuf.toString());
+    return base_query;
   }
 
-  public PreparedStatement prepareDataInsert(Connection conn, ManipulationRequest insert_request) throws SQLException {
-    StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
+  public JdbcQueryStatement prepareDataInsert(ManipulationRequest insert_request) {
+    JdbcQueryStatement base_query = super.prepareDataInsert(insert_request);
     if (insert_request.hasPrimary_key()) { // 添加冲突处理
-    // TODO: 冲突处理未验证
+      StringBuffer sqlbuf = new StringBuffer(base_query.getSql());
+      // TODO: 冲突处理未验证
       StringBuffer ignore_sql = new StringBuffer(" OVERWRITE");
       sqlbuf.delete(7, 10).insert(6, ignore_sql.toString());
+      base_query.setSql(sqlbuf.toString());
     }
-    return conn.prepareStatement(sqlbuf.toString());
+    return base_query;
   }
 
 }

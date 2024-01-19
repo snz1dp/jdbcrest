@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.JdbcQueryResponse;
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.TableIndexs;
 import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 import com.snz1.jdbc.rest.service.AppInfoResolver;
@@ -58,8 +59,15 @@ public class ListQueryRequestHandler extends AbstractJdbcQueryRequestHandler<Jdb
     }
 
     SQLDialectProvider sql_dialect_provider = this.getSqlDialectProvider();
-    PreparedStatement ps = sql_dialect_provider.preparePageSelect(conn, table_query);
+    JdbcQueryStatement sts = sql_dialect_provider.preparePageSelect(table_query);
+    PreparedStatement ps = null;
     try {
+      ps = conn.prepareStatement(sts.getSql());
+      int i = 1;
+      for (Object param : sts.getParameters()) {
+        ps.setObject(i, param);
+        i = i + 1;
+      }
       ResultSet rs = null;
       try {
         rs = ps.executeQuery();

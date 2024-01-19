@@ -106,7 +106,8 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         String col_name = col_item.getName();
         Object col_obj = JdbcUtils.getResultSetValue(rs, col_item.getIndex() + 1);
         if (col_obj != null) {
-          ResultDefinition.ResultColumn coldef = return_meta != null ? return_meta.getColumns().get(col_item.getName()) : null;
+          ResultDefinition.ResultColumn coldef = return_meta != null ?
+            return_meta.getColumns().get(col_item.getName()) : null;
           if (coldef != null && !Objects.equals(coldef.getType(), ResultDefinition.ResultType.raw)) {
             if (Objects.equals(coldef.getType(), ResultDefinition.ResultType.list)) {
               if (col_item.getJdbc_type() == JDBCType.BLOB) {
@@ -144,11 +145,14 @@ public abstract class AbstractJdbcQueryRequestHandler<T> extends AbstractRequest
         rows.add(row_data);
       } else if (objlist) {
         rows.add(row_list);
-      } else if (return_meta == null || return_meta.getEntity_class() == null || Objects.equals(return_meta.getEntity_class(), Map.class)) {
+      } else if (return_meta == null || return_meta.getEntity_class() == null ||
+        Objects.equals(return_meta.getEntity_class(), Map.class)
+      ) {
         rows.add(row_map);
       } else {
         try {
-          rows.add(ObjectUtils.mapToObject(this.getBean_utils(), row_map, return_meta.getEntity_class().getDeclaredConstructor().newInstance()));
+          rows.add(ObjectUtils.mapToObject(this.getBean_utils(), row_map,
+            return_meta.getEntity_class().getDeclaredConstructor().newInstance()));
         } catch (Throwable e) {
           throw new IllegalStateException("类型转换失败：" + e.getMessage(), e);
         }

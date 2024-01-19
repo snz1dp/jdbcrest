@@ -1,16 +1,14 @@
 package com.snz1.jdbc.rest.provider;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.lang.Override;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.jdbc.SQL;
 
 import com.snz1.jdbc.rest.data.JdbcQueryStatement;
-import com.alibaba.druid.util.StringUtils;
 import com.snz1.jdbc.rest.data.ConditionOperation;
 import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
@@ -40,6 +38,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     this.typeConverterFactory = typeConverterFactory;
   }
 
+  public JdbcTypeConverterFactory getTypeConverterFactory() {
+    return typeConverterFactory;
+  }
+
   public void setUserRoleVerifier(UserRoleVerifier userRoleVerifier) {
     this.userRoleVerifier = userRoleVerifier;
   }
@@ -58,6 +60,26 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   public boolean supportCountAnyColumns() {
     return true;
   }
+
+  // 准备数据查询
+  @Override
+  public JdbcQueryStatement prepareQuerySelect(JdbcQueryRequest table_query) {
+    long start_time = System.currentTimeMillis();
+    JdbcQueryStatement base_query = null;
+    try {
+      base_query = this.createQueryRequestBaseSQL(table_query, false);
+      return base_query;
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug(
+          "构建统计查询SQL耗时{}毫秒, SQL:\n{}",
+          (System.currentTimeMillis() - start_time),
+          base_query != null ? base_query.getSql() : "构建失败"
+        );
+      }
+    }
+  }
+
 
   // 获取查询的合计
   @Override
@@ -79,11 +101,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     }
   }
 
-  // 查询对象
-  protected JdbcQueryStatement createQueryRequestBaseSQL(JdbcQueryRequest table_query, boolean docount) {
+  protected String buildQueryRequestBaseSQL(JdbcQueryRequest table_query, boolean docount, List<Object> parameters) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
-    List<Object> parameters = new LinkedList<Object>();
     try {
       sql.FROM(table_query.getFullTableName());
 
@@ -140,14 +160,52 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
 
       if (table_query.hasJoin()) {
         table_query.getJoin().forEach(j -> {
-          sql.LEFT_OUTER_JOIN(String.format(
-            "%s on %s.\"%s\" = %s.\"%s\"",
-            j.getFullTableName(),
-            j.getFullTableName(),
-            j.getJoin_column(),
-            table_query.getFullTableName(),
-            j.getOuter_column()
-          ));
+          if (StringUtils.isBlank(j.getJoin_type())) {
+            sql.JOIN(String.format(
+              "%s on %s.\"%s\" = %s.\"%s\"",
+              j.getFullTableName(),
+              j.getFullTableName(),
+              j.getJoin_column(),
+              table_query.getFullTableName(),
+              j.getOuter_column()
+            ));
+          } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "inner")) {
+            sql.INNER_JOIN(String.format(
+              "%s on %s.\"%s\" = %s.\"%s\"",
+              j.getFullTableName(),
+              j.getFullTableName(),
+              j.getJoin_column(),
+              table_query.getFullTableName(),
+              j.getOuter_column()
+            ));
+          } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "outer")) {
+            sql.OUTER_JOIN(String.format(
+              "%s on %s.\"%s\" = %s.\"%s\"",
+              j.getFullTableName(),
+              j.getFullTableName(),
+              j.getJoin_column(),
+              table_query.getFullTableName(),
+              j.getOuter_column()
+            ));
+          } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "right outer")) {
+            sql.RIGHT_OUTER_JOIN(String.format(
+              "%s on %s.\"%s\" = %s.\"%s\"",
+              j.getFullTableName(),
+              j.getFullTableName(),
+              j.getJoin_column(),
+              table_query.getFullTableName(),
+              j.getOuter_column()
+            ));
+          } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "left outer")) {
+            sql.LEFT_OUTER_JOIN(String.format(
+              "%s on %s.\"%s\" = %s.\"%s\"",
+              j.getFullTableName(),
+              j.getFullTableName(),
+              j.getJoin_column(),
+              table_query.getFullTableName(),
+              j.getOuter_column()
+            ));
+          }
         });
       }
 
@@ -169,8 +227,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
-          w.buildParameters(parameters, this.typeConverterFactory);
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
         };
       }
 
@@ -197,8 +256,9 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
-          w.buildParameters(parameters, this.typeConverterFactory);
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
         };
       }
 
@@ -211,9 +271,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         for (String appcode : userRoleVerifier.getUserOwnerAppcodes(loggedUserContext.getLoggedUser())) {
           w.addCondition(table_definition.getOwner_app_column(), ConditionOperation.$eq, appcode);
         }
-        sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
-        w.buildParameters(parameters, this.typeConverterFactory);
-      }
+        JdbcQueryStatement sts = w.buildSQLStatement(this);
+        sql.WHERE(sts.getSql());
+        parameters.addAll(sts.getParameters());
+    }
 
       if (!docount && table_query.hasOrder_by()) {
         boolean order_append = false;
@@ -235,8 +296,14 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         );
       }
     }
+    return sql.toString();
+  }
 
-    return new JdbcQueryStatement(sql.toString(), parameters);
+  // 查询对象
+  protected JdbcQueryStatement createQueryRequestBaseSQL(JdbcQueryRequest table_query, boolean docount) {
+    List<Object> parameters = new LinkedList<Object>();
+    String sql = this.buildQueryRequestBaseSQL(table_query, docount, parameters);
+    return new JdbcQueryStatement(sql, parameters);
   }
 
   // 插入数据
@@ -275,13 +342,14 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 更新数据
-  protected String createUpdateRequestBaseSQL(ManipulationRequest update_request) {
+  protected JdbcQueryStatement createUpdateRequestBaseSQL(ManipulationRequest update_request) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
+    List<Object> parameters = new LinkedList<Object>();
     try {
       TableDefinition table_definition = update_request.getDefinition();
       sql.UPDATE(update_request.getFullTableName());
-      if (update_request.hasWhere() || update_request.isPatch_update()) { // 条件更新或补丁更新
+      if (update_request.isPatch_update()) { // 条件更新或补丁更新
         for (TableColumn v : update_request.getColumns()) {
           String k = v.getName();
           Map<String, Object> input_map = update_request.getInput_map();
@@ -314,6 +382,20 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
       }
 
       boolean where_append = false;
+      if (table_definition != null && table_definition.hasDefault_where()) {
+        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
+        for (WhereCloumn w : append_wehre) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
+        };
+      }
+
       if (update_request.hasWhere()) { // 有查询条件的更新
         for (int i = 0; i < update_request.getWhere().size(); i++) {
           if (where_append) {
@@ -321,7 +403,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.typeConverterFactory));
+          WhereCloumn w = update_request.getWhere().get(i);
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
         }
       } else { // 主键更新
         Object rowkey = update_request.getRow_key();
@@ -349,19 +434,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         sql.WHERE(String.format("\"%s\".\"%s\" = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
 
-      if (table_definition != null && table_definition.hasDefault_where()) {
-        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
-        for (WhereCloumn w : append_wehre) {
-          if (where_append) {
-            sql.AND();
-          } else {
-            where_append = true;
-          }
-          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
-        };
-      }
-
-      return sql.toString();
+      return new JdbcQueryStatement(sql.toString(), parameters);
     } finally {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -374,12 +447,29 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 删除数据
-  protected String createDeleteRequestBaseSQL(ManipulationRequest update_request) {
+  protected JdbcQueryStatement createDeleteRequestBaseSQL(ManipulationRequest update_request) {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
+    List<Object> parameters = new LinkedList<Object>();
     try {
       sql.DELETE_FROM(update_request.getFullTableName());
+      TableDefinition table_definition = update_request.getDefinition();
       boolean where_append = false;
+
+      if (table_definition != null && table_definition.hasDefault_where()) {
+        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
+        for (WhereCloumn w : append_wehre) {
+          if (where_append) {
+            sql.AND();
+          } else {
+            where_append = true;
+          }
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
+        };
+      }
+
       if (update_request.hasWhere()) { // 有查询条件的更新
         for (int i = 0; i < update_request.getWhere().size(); i++) {
           if (where_append) {
@@ -387,7 +477,10 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           } else {
             where_append = true;
           }
-          sql.WHERE(update_request.getWhere().get(i).toWhereSQL(this.typeConverterFactory));
+          WhereCloumn w = update_request.getWhere().get(i);
+          JdbcQueryStatement sts = w.buildSQLStatement(this);
+          sql.WHERE(sts.getSql());
+          parameters.addAll(sts.getParameters());
         }
       } else { // 主键删除
         Object rowkey = update_request.getRow_key();
@@ -406,8 +499,6 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         }
       }
 
-      TableDefinition table_definition = update_request.getDefinition();
-
       if (table_definition != null && table_definition.hasOwner_id_column()) {
         if (where_append) {
           sql.AND();
@@ -417,19 +508,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
         sql.WHERE(String.format("\"%s\".\"%s\" = ?", table_definition.resolveName(), table_definition.getOwner_id_column().getName()));
       }
 
-      if (table_definition != null && table_definition.hasDefault_where()) {
-        List<WhereCloumn> append_wehre = table_definition.copyDefault_where();
-        for (WhereCloumn w : append_wehre) {
-          if (where_append) {
-            sql.AND();
-          } else {
-            where_append = true;
-          }
-          sql.WHERE(w.toWhereSQL(this.typeConverterFactory));
-        };
-      }
-
-      return sql.toString();
+      return new JdbcQueryStatement(sql.toString(), parameters);
     } finally {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -442,21 +521,24 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
   }
 
   // 准备更新数据
-  public PreparedStatement prepareDataUpdate(
-    Connection conn,
+  public JdbcQueryStatement prepareDataUpdate(
     ManipulationRequest update_request
-  ) throws SQLException {
-    StringBuffer sqlbuf = new StringBuffer(this.createUpdateRequestBaseSQL(update_request));
-    return conn.prepareStatement(sqlbuf.toString());
+  ) {
+    return this.createUpdateRequestBaseSQL(update_request);
   }
 
   // 准备删除数据
-  public PreparedStatement prepareDataDelete(
-    Connection conn,
+  @Override
+  public JdbcQueryStatement prepareDataDelete(
     ManipulationRequest delete_request
-  ) throws SQLException {
-    StringBuffer sqlbuf = new StringBuffer(this.createDeleteRequestBaseSQL(delete_request));
-    return conn.prepareStatement(sqlbuf.toString());
+  ) {
+    return this.createDeleteRequestBaseSQL(delete_request);
+  }
+
+  @Override
+  public JdbcQueryStatement prepareDataInsert(ManipulationRequest insert_request) {
+    StringBuffer sqlbuf = new StringBuffer(this.createInsertRequestBaseSQL(insert_request));
+    return new JdbcQueryStatement(sqlbuf.toString(), null);
   }
 
 }

@@ -22,5 +22,5 @@ public class JdbcQueryStatement implements Serializable {
   public boolean hasParameter() {
     return this.parameters != null && this.parameters.size() > 0;
   }
-  
+
 }

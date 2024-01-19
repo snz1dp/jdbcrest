@@ -240,6 +240,8 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
 
     private String outer_column;
 
+    private String join_type;
+
     @JsonIgnore
     public String getFullTableName() {
       if (StringUtils.isBlank(this.catalog_name)) {
@@ -255,8 +257,9 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
       }
     }
 
-    public static Join of(String catalog_name, String schema_name, String table_name, String join_column, String right_column) {
+    public static Join of(String join_type, String catalog_name, String schema_name, String table_name, String join_column, String right_column) {
       Join join = new Join();
+      join.setJoin_type(join_type);
       if (StringUtils.isNotBlank(catalog_name)) {
         join.setCatalog_name(catalog_name);
       }

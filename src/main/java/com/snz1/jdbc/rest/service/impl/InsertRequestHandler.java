@@ -13,6 +13,7 @@ import org.apache.commons.beanutils.BeanUtilsBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 
+import com.snz1.jdbc.rest.data.JdbcQueryStatement;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.TableColumn;
 import com.snz1.jdbc.rest.data.TableDefinition;
@@ -90,9 +91,11 @@ public class InsertRequestHandler extends AbstractManipulationRequestHandler<Obj
 
     SQLDialectProvider sqlDialectProvider = this.getSqlDialectProvider();
     JdbcTypeConverterFactory converterFactory = this.getConverterFactory();
+    JdbcQueryStatement base_query = sqlDialectProvider.prepareDataInsert(insertRequest);
+    PreparedStatement ps = null;
 
-    PreparedStatement ps = sqlDialectProvider.prepareDataInsert(conn, insertRequest);
     try {
+      ps = conn.prepareStatement(base_query.getSql());
       List<Map<String, Object>> input_datas = insertRequest.getInput_list();
       for (Map<String, Object> input_data : input_datas) {
         input_data = doBuildInsertRequestInputData(input_data);

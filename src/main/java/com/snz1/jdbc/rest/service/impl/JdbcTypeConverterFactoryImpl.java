@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import javax.annotation.Resource;
 
@@ -211,6 +210,7 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Object convertArray(Object input, JDBCType type) {
     if (input == null) return null;
     if (input instanceof String) {
@@ -221,10 +221,12 @@ public class JdbcTypeConverterFactoryImpl implements JdbcTypeConverterFactory {
         List<String> list = Arrays.asList(StringUtils.split((String)input, ','));
         return this.convertList(list, type);
       }
-    } else if (input instanceof Set) {
-      return this.convertList(new LinkedList<>((Set<?>)input), type);
-    } else if (input instanceof List) {
-      return this.convertList((List<?>)input, type);
+    } else if (input instanceof Iterable) {
+      List<Object> input_list = new LinkedList<>();
+      ((Iterable<Object>)input).forEach(item -> {
+        input_list.add(item);
+      });
+      return this.convertList(input_list, type);
     } else if (input.getClass().isArray()) {
       List<Object> input_list = new LinkedList<>();
       for (int i = 0; i < Array.getLength(input); i++) {

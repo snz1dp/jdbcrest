@@ -5,12 +5,13 @@ import java.lang.reflect.Array;
 import java.sql.JDBCType;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.snz1.jdbc.rest.service.JdbcTypeConverterFactory;
+import com.snz1.jdbc.rest.provider.SQLDialectProvider;
 
 import lombok.Data;
 
@@ -133,10 +134,120 @@ public class WhereCloumn implements Serializable, Cloneable {
     return this.getOr() != null && this.getOr();
   }
 
-  public String toWhereSQL(JdbcTypeConverterFactory factory) {
+  private static void buildOneParams(SQLDialectProvider provider, String column, WhereCloumn.Condition condition, ConditionOperation operation, JDBCType type, StringBuffer sqlbuf, List<Object> parameters) {
+    sqlbuf.append("\"").append(column).append("\" ").append(operation.operator()).append(" ");
+    if (condition.getValue() instanceof JdbcQueryRequest) {
+      JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)condition.getValue());
+      sqlbuf.append("(");
+      sqlbuf.append(sts.getSql());
+      sqlbuf.append(")");
+      if (sts.hasParameter()) {
+        parameters.addAll(sts.getParameters());
+      }
+    } else {
+      sqlbuf.append("?");
+      parameters.add(provider.getTypeConverterFactory().convertObject(condition.getValue(), type));
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void buildTwoParams(SQLDialectProvider provider, String column, WhereCloumn.Condition condition, ConditionOperation operation, JDBCType type, StringBuffer sqlbuf, List<Object> parameters) {
+    sqlbuf.append("\"").append(column).append("\" ").append(operation.operator()).append(" ");
+    Object input = condition.getValue();
+    if (input instanceof Iterable) {
+      AtomicBoolean and_append = new AtomicBoolean(false);
+      ((Iterable<Object>)input).forEach(item -> {
+        if (and_append.get()) {
+          sqlbuf.append(" and ");
+        } else {
+          and_append.set(true);
+        }
+        if (item instanceof JdbcQueryRequest) {
+          JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)item);
+          sqlbuf.append("(").append(sts.getSql()).append(")");
+          if (sts.hasParameter()) {
+            parameters.addAll(sts.getParameters());
+          }
+        } else {
+          sqlbuf.append("?");
+          parameters.add(provider.getTypeConverterFactory().convertObject(item, type));
+        }
+      });
+    } else if (input.getClass().isArray()) {
+      for (int idx_input = 0; idx_input < Array.getLength(input); idx_input++) {
+        if (idx_input > 0) {
+          sqlbuf.append(" and ");
+        }
+        Object item = Array.get(input, idx_input);
+        if (item instanceof JdbcQueryRequest) {
+          JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)item);
+          sqlbuf.append("(").append(sts.getSql()).append(")");
+          if (sts.hasParameter()) {
+            parameters.addAll(sts.getParameters());
+          }
+        } else {
+          sqlbuf.append("?");
+          parameters.add(provider.getTypeConverterFactory().convertObject(item, type));
+        }
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void buildMoreParams(SQLDialectProvider provider, String column, WhereCloumn.Condition condition, ConditionOperation operation, JDBCType type, StringBuffer sqlbuf, List<Object> parameters) {
+    if (condition.getValue() instanceof JdbcQueryRequest) {
+      JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)condition.getValue());
+      sqlbuf.append("\"").append(column).append("\" ")
+        .append(operation.operator()).append(" (")
+        .append(sts.getSql()).append(")");
+    } else {
+      sqlbuf.append("\"").append(column).append("\" ").append(operation.operator()).append(" ");
+      Object input = condition.getValue();
+      if (input instanceof Iterable) {
+        AtomicBoolean and_append = new AtomicBoolean(false);
+        ((Iterable<Object>)input).forEach(item -> {
+          if (and_append.get()) {
+            sqlbuf.append(", ");
+          } else {
+            and_append.set(true);
+          }
+          if (item instanceof JdbcQueryRequest) {
+            JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)item);
+            sqlbuf.append("(").append(sts.getSql()).append(")");
+            if (sts.hasParameter()) {
+              parameters.addAll(sts.getParameters());
+            }
+          } else {
+            sqlbuf.append("?");
+            parameters.add(provider.getTypeConverterFactory().convertObject(item, type));
+          }
+        });
+      } else if (input.getClass().isArray()) {
+        for (int idx_input = 0; idx_input < Array.getLength(input); idx_input++) {
+          if (idx_input > 0) {
+            sqlbuf.append(", ");
+          }
+          Object item = Array.get(input, idx_input);
+          if (item instanceof JdbcQueryRequest) {
+            JdbcQueryStatement sts = provider.prepareQuerySelect((JdbcQueryRequest)item);
+            sqlbuf.append("(").append(sts.getSql()).append(")");
+            if (sts.hasParameter()) {
+              parameters.addAll(sts.getParameters());
+            }
+          } else {
+            sqlbuf.append("?");
+            parameters.add(provider.getTypeConverterFactory().convertObject(item, type));
+          }
+        }
+      }
+    }
+  }
+
+  public JdbcQueryStatement buildSQLStatement(SQLDialectProvider provider) {
+    StringBuffer sqlbuf = new StringBuffer();
+    List<Object> parameters = new LinkedList<>();
     if (StringUtils.isBlank(this.column)) {
       Validate.isTrue(this.childrens != null && this.childrens.size() > 0, "子条件不能为空");
-      StringBuffer sqlbuf = new StringBuffer();
       boolean where_append = false;
       for (WhereCloumn where : this.childrens) {
         if (where_append) {
@@ -148,14 +259,16 @@ public class WhereCloumn implements Serializable, Cloneable {
         } else {
           where_append = true;
         }
-        sqlbuf.append(where.toWhereSQL(factory));
+        JdbcQueryStatement sts = where.buildSQLStatement(provider);
+        sqlbuf.append(sts.getSql());
+        if (sts.hasParameter()) {
+          parameters.addAll(sts.getParameters());
+        }
       }
-      return sqlbuf.toString();
     } else {
       String column_name_all = StringUtils.replace(this.column, ",", "|");
       column_name_all = StringUtils.replace(column_name_all, ";", "|");
       String column_names[] = StringUtils.split(column_name_all, "|");
-      StringBuffer sqlbuf = new StringBuffer();
       for (int xi = 0; xi < column_names.length; xi++) {
         if (xi > 0) {
           sqlbuf.append(" or ");
@@ -164,24 +277,13 @@ public class WhereCloumn implements Serializable, Cloneable {
         if (this.condition != null) {
           ConditionOperation operation = this.condition.getOperation();
           if (operation.parameter_count() == 0) {
-            sqlbuf.append(String.format("\"%s\" %s", column, operation.operator()));
+            sqlbuf.append("\"").append(column).append("\" ").append(operation.operator());
           } else if (operation.parameter_count() == 1) {
-            sqlbuf.append(String.format("\"%s\" %s ?", column, operation.operator()));
+            buildOneParams(provider, column, condition, operation, type, sqlbuf, parameters);
           } else if (operation.parameter_count() == 2) {
-            sqlbuf.append(String.format("\"%s\" %s ? and ?", column, operation.operator()));
+            buildTwoParams(provider, column, condition, operation, type, sqlbuf, parameters);
           } else {
-            condition.setArray(factory.convertArray(condition.getValue(), this.type));
-            StringBuffer parambuf = new StringBuffer();
-            boolean paramappend = false;
-            for (int i = 0; i < condition.getArray_length(); i++) {
-              if (paramappend) {
-                parambuf.append(", ");
-              } else {
-                paramappend = true;
-              }
-              parambuf.append("?");
-            }
-            sqlbuf.append(String.format("\"%s\" %s (%s)", this.column, operation.operator(), parambuf.toString()));
+            buildMoreParams(provider, column, condition, operation, type, sqlbuf, parameters);
           }
         } else {
           sqlbuf.append("(");
@@ -197,89 +299,26 @@ public class WhereCloumn implements Serializable, Cloneable {
               where_append = true;
             }
             ConditionOperation operation = condition.getOperation();
-            String column_name = this.column;
             if (condition.hasColumn()) {
-              column_name = condition.getColumn();
+              column = condition.getColumn();
             }
             if (operation.parameter_count() == 0) {
-              sqlbuf.append(String.format("\"%s\" %s", column_name, operation.operator()));
+              sqlbuf.append("\"").append(column).append("\" ").append(operation.operator());
             } else if (operation.parameter_count() == 1) {
-              sqlbuf.append(String.format("\"%s\" %s ?", column_name, operation.operator()));
+              buildOneParams(provider, column, condition, operation, type, sqlbuf, parameters);
             } else if (operation.parameter_count() == 2) {
-              sqlbuf.append(String.format("\"%s\" %s ? and ?", column_name, operation.operator()));
+              buildTwoParams(provider, column, condition, operation, type, sqlbuf, parameters);
             } else {
-              if (condition.getArray() == null) {
-                condition.setArray(factory.convertArray(condition.getValue(), this.type));
-              }
-              StringBuffer parambuf = new StringBuffer();
-              boolean paramappend = false;
-              for (int i = 0; i < condition.getArray_length(); i++) {
-                if (paramappend) {
-                  parambuf.append(", ");
-                } else {
-                  paramappend = true;
-                }
-                parambuf.append("?");
-              }
-              sqlbuf.append(String.format("\"%s\" %s (%s)", column_name, operation.operator(), parambuf.toString()));
+              buildMoreParams(provider, column, condition, operation, type, sqlbuf, parameters);
             }
           }
           sqlbuf.append(")");
         }
       }
-      return sqlbuf.toString();
     }
+    return new JdbcQueryStatement(sqlbuf.toString(), parameters);
   }
 
-  public void buildParameters(List<Object> parameters, JdbcTypeConverterFactory factory) {
-    if (StringUtils.isBlank(this.column)) {
-      Validate.isTrue(this.childrens != null && this.childrens.size() > 0, "子条件不能为空");
-      for (WhereCloumn where : this.childrens) {
-        where.buildParameters(parameters, factory);
-      }
-    } else {
-      String column_name_all = StringUtils.replace(this.column, ",", "|");
-      column_name_all = StringUtils.replace(column_name_all, ";", "|");
-      String column_names[] = StringUtils.split(column_name_all, "|");
-      for (int xi = 0; xi < column_names.length; xi++) {
-        if (this.condition != null) {
-          ConditionOperation operation = condition.getOperation();
-          if (operation.parameter_count() == 1) {
-            parameters.add(factory.convertObject(condition.getValue(), this.type));
-          } else if (operation.parameter_count() == 2) {
-            Object data = factory.convertArray(condition.getValue(), this.type);
-            parameters.add(Array.get(data, 0));
-            parameters.add(Array.get(data, 0));
-          } else if (operation.parameter_count() == 3) {
-            if (condition.getArray() == null) {
-              condition.setArray(factory.convertArray(condition.getValue(), this.type));
-            }
-            for (int i = 0; i < condition.getArray_length(); i++) {
-              parameters.add(Array.get(condition.getArray(), i));
-            }
-          }
-        } else {
-          for (WhereCloumn.Condition condition : this.conditions) {
-            ConditionOperation operation = condition.getOperation();
-            if (operation.parameter_count() == 1) {
-              parameters.add(factory.convertObject(condition.getValue(), this.type));
-            } else if (operation.parameter_count() == 2) {
-              Object data = factory.convertArray(condition.getValue(), this.type);
-              parameters.add(Array.get(data, 0));
-              parameters.add(Array.get(data, 0));
-            } else if (operation.parameter_count() == 3) {
-              if (condition.getArray() == null) {
-                condition.setArray(factory.convertArray(condition.getValue(), this.type));
-              }
-              for (int i = 0; i < condition.getArray_length(); i++) {
-                parameters.add(Array.get(condition.getArray(), i));
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 
   @Data
   public static class Condition implements Serializable {
