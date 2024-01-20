@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.annotation.Resource;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.lang3.Validate;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
@@ -85,7 +86,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   @Resource
   private UserRoleVerifier userRoleVerifier;
 
-  private BeanUtilsBean beanUtilsBean = new BeanUtilsBean();
+  private BeanUtilsBean beanUtilsBean = new BeanUtilsBean(new ConvertUtilsBean(), new PropertyUtilsBean());
 
   @Override
   public BeanUtilsBean getBeanUtils() {

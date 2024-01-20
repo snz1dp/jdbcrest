@@ -30,9 +30,7 @@ public class StringLocaleConverter extends BaseLocaleConverter {
         (value instanceof Float)) {
       result = value + "";
     } else if (value instanceof Date) { // java.util.Date, java.sql.Date, java.sql.Time, java.sql.Timestamp
-
       final SimpleDateFormat dateFormat = new SimpleDateFormat(JsonUtils.JsonDateFormat, locale);
-
       result = dateFormat.format(value);
     } else if (value instanceof String) {
       return value;
