@@ -277,13 +277,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     }
 
       if (!docount && table_query.hasOrder_by()) {
-        boolean order_append = false;
         for (JdbcQueryRequest.OrderBy o : table_query.getOrder_by()) {
-          if (order_append) {
-            sql.AND();
-          } else {
-            order_append = true;
-          }
           sql.ORDER_BY(o.toOrderSQL());
         };
       }
