@@ -7,7 +7,7 @@ name: jdbcrest
 # 镜像编译参数
 docker:
   # 镜像名称
-  image: snz1.cn/database/jdbcrest
+  image: snz1dp/jdbcrest
   # 镜像编译文件(默认：Dockerfile)
   file: Dockerfile
   # 目标平台
@@ -37,7 +37,7 @@ service:
   - DB_EVICTION_TIME=60000
   - DB_IDLE_TIME=300000
   - DB_TEST_IDLE=true
-  - DB_TEST_BORROW=false
+  - DB_TEST_BORROW=true
   - DB_TEST_RETURN=false
   - CHECK_PROXY_SIGNATURE=false
   - PROXY_SIGNATURE_SALT=
