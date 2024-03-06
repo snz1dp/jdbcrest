@@ -297,9 +297,20 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     return ret;
   }
 
+  @SuppressWarnings("unchecked")
   private String buildSQLServiceCacheKey(SQLFragment sql_fragment, Object input_data) {
-    StringBuffer buf = new StringBuffer();
-    buf.append(sql_fragment.getMapped_id()).append(JsonUtils.toJson(input_data));
+    StringBuffer buf = new StringBuffer(sql_fragment.getMapped_id());
+    if (input_data instanceof Map) {
+      Map<String, Object> wrap_input = (Map<String, Object>)input_data;
+      if (wrap_input.containsKey("user")) {
+        wrap_input.remove("user");
+        wrap_input.put("user", this.getLoggedUserContext().getLoggedUser().getUserid());
+      }
+      wrap_input.remove("req");
+      buf.append(JsonUtils.toJson(wrap_input));
+    } else {
+      buf.append(JsonUtils.toJson(input_data));
+    }
     return DigestUtils.sha256Hex(buf.toString());
   }
 
