@@ -38,7 +38,7 @@ public class ConfigSetupApi {
   private AppInfoResolver appInfoResolver;
 
   @Operation(summary = "设置产品授权代码")
-	@PostMapping(path = "/config/license")
+	@PostMapping(path = "/configs/license")
 	public Return<LicenseSupport> update_product_license(
 		@Parameter(description = "授权代码")
 		@RequestParam("license")
