@@ -109,7 +109,10 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
         continue;
       }
 
-      String nosuffix_file = start_uri.substring(prefix_dir.length() + 1, start_uri.length() - 4);
+      String nosuffix_file = start_uri.substring(
+        StringUtils.lastIndexOf(start_uri, prefix_dir) + prefix_dir.length() + 1,
+        start_uri.length() - 4
+      );
       String service_path = String.format("%s/%s", relative_path, nosuffix_file);
       String service_name = String.format("%s%s", parent_name, nosuffix_file);
       if (log.isDebugEnabled()) {
