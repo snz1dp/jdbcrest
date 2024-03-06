@@ -412,6 +412,8 @@
 							<excludes>
 								<exclude>/com/snz1/jdbc/rest/JdbcRestApplication.class</exclude>
 								<exclude>/com/snz1/jdbc/rest/conf/JdbcRestConfig.class</exclude>
+								<exclude>/application-dev.properties</exclude>
+								<exclude>/application-test.properties</exclude>
 							</excludes>
 						</configuration>
 					</plugin>
