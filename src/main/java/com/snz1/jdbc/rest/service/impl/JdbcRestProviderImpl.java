@@ -208,13 +208,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       TableDefinition definition = tableDefinitionRegistry.getTableDefinition(table_query.getTable_name());
       table_query.setDefinition(definition);
     } else if (this.appInfoResolver.isStrictMode()) {
-      throw new NotFoundException(String.format("%s不存在", table_query.getFullTableName()));
+      throw new NotFoundException(String.format("%s不存在", table_query.getFull_table_name()));
     }
 
     if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(
       sql_dialect_provider, table_query.getCatalog_name(),
       table_query.getSchema_name(), table_query.getTable_name())) {
-      throw new NotFoundException(String.format("%s不存在", table_query.getFullTableName()));
+      throw new NotFoundException(String.format("%s不存在", table_query.getFull_table_name()));
     }
 
     return doFetchResultSetMeta(table_query, sql_dialect_provider);
@@ -223,7 +223,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   // 分页查询统计信息
   protected boolean doFetchQueryPageTotal(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider, JdbcQueryResponse<Page<Object>> pageret) {
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}分页查询统计...", table_query.getFullTableName());
+      log.debug("执行表{}分页查询统计...", table_query.getFull_table_name());
     }
     long start_time = System.currentTimeMillis();
     try {
@@ -255,7 +255,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       return has_data;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}分页查询统计耗时{}毫秒", table_query.getFull_table_name(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -263,7 +263,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}数据行统计...", table_query.getFullTableName());
+      log.debug("执行表{}数据行统计...", table_query.getFull_table_name());
     }
     try {
       // 获取统计
@@ -271,7 +271,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       return query_count;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}数据行统计耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}数据行统计耗时{}毫秒", table_query.getFull_table_name(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -280,7 +280,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   protected JdbcQueryResponse<?> doQueryListResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     long start_time = System.currentTimeMillis();
     if (log.isDebugEnabled()) {
-      log.debug("执行表{}数据行查询...", table_query.getFullTableName());
+      log.debug("执行表{}数据行查询...", table_query.getFull_table_name());
     }
     try {
       // 获取列表数据
@@ -290,7 +290,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       return datalist;
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getFullTableName(), (System.currentTimeMillis() - start_time));
+        log.debug("执行表{}数据行查询耗时{}毫秒", table_query.getFull_table_name(), (System.currentTimeMillis() - start_time));
       }
     }
   }
@@ -307,7 +307,7 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       if (sql_dialect_provider.checkTableExisted() && !doTestTableExisted(
         sql_dialect_provider, table_query.getCatalog_name(),
         table_query.getSchema_name(), table_query.getTable_name())) {
-        throw new NotFoundException(String.format("数据表%s不存在", table_query.getFullTableName()));
+        throw new NotFoundException(String.format("数据表%s不存在", table_query.getFull_table_name()));
       }
     }
 
@@ -505,9 +505,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
           String schema_name = insert_request.getSchema_name();
           String table_name = insert_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]插入请求未设置表名", i, j);
-          TableMeta table_meta = table_metas.get(insert_request.getFullTableName());
+          TableMeta table_meta = table_metas.get(insert_request.getFull_table_name());
           if (table_meta == null) {
-            table_metas.put(insert_request.getFullTableName(),
+            table_metas.put(insert_request.getFull_table_name(),
               table_meta = queryResultMeta(JdbcQueryRequest.of(
                 catalog_name, schema_name, table_name)));
           }
@@ -523,9 +523,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
           String table_name = update_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]更新请求未设置表名", i, j);
           Validate.isTrue(update_request.hasWhere(), "[%d-%d]更新请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(update_request.getFullTableName());
+          TableMeta table_meta = table_metas.get(update_request.getFull_table_name());
           if (table_meta == null) {
-            table_metas.put(update_request.getFullTableName(),
+            table_metas.put(update_request.getFull_table_name(),
               table_meta = queryResultMeta(JdbcQueryRequest.of(
                 catalog_name, schema_name, table_name)));
           }
@@ -541,9 +541,9 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
           String table_name = delete_request.getTable_name();
           Validate.notBlank(table_name, "[%d-%d]删除请求未设置表名", i, j);
           Validate.isTrue(delete_request.hasWhere(), "[%d-%d]删除请求未设置Where条件", i, j);
-          TableMeta table_meta = table_metas.get(delete_request.getFullTableName());
+          TableMeta table_meta = table_metas.get(delete_request.getFull_table_name());
           if (table_meta == null) {
-            table_metas.put(delete_request.getFullTableName(),
+            table_metas.put(delete_request.getFull_table_name(),
               table_meta = queryResultMeta(JdbcQueryRequest.of(
                 catalog_name, schema_name, table_name)));
           }

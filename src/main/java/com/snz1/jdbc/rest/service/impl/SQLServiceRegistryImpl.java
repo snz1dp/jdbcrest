@@ -2,8 +2,10 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.io.InputStream;
 import java.sql.JDBCType;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -209,6 +211,13 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
           result_wrapper.getTitle()
         )) {
           sql_def.setService_title(result_wrapper.getTitle());
+        }
+        if (result_wrapper.getTables() != null && result_wrapper.getTables().length > 0) {
+          if (command_type == SqlCommandType.SELECT) {
+            sql_def.setQuery_tables(new HashSet<>(Arrays.asList(result_wrapper.getTables())));
+          } else {
+            sql_def.setUpdate_tables(new HashSet<>(Arrays.asList(result_wrapper.getTables())));
+          }
         }
       }
 

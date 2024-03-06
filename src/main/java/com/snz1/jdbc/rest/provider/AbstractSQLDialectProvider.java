@@ -105,7 +105,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
-      sql.FROM(table_query.getFullTableName());
+      sql.FROM(table_query.getFull_table_name());
 
       if (table_query.getSelect().hasCount() || docount) {
         if (!docount && table_query.hasGroup_by()) {
@@ -163,46 +163,46 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
           if (StringUtils.isBlank(j.getJoin_type())) {
             sql.JOIN(String.format(
               "%s on %s.\"%s\" = %s.\"%s\"",
-              j.getFullTableName(),
-              j.getFullTableName(),
+              j.getFull_table_name(),
+              j.getFull_table_name(),
               j.getJoin_column(),
-              table_query.getFullTableName(),
+              table_query.getFull_table_name(),
               j.getOuter_column()
             ));
           } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "inner")) {
             sql.INNER_JOIN(String.format(
               "%s on %s.\"%s\" = %s.\"%s\"",
-              j.getFullTableName(),
-              j.getFullTableName(),
+              j.getFull_table_name(),
+              j.getFull_table_name(),
               j.getJoin_column(),
-              table_query.getFullTableName(),
+              table_query.getFull_table_name(),
               j.getOuter_column()
             ));
           } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "outer")) {
             sql.OUTER_JOIN(String.format(
               "%s on %s.\"%s\" = %s.\"%s\"",
-              j.getFullTableName(),
-              j.getFullTableName(),
+              j.getFull_table_name(),
+              j.getFull_table_name(),
               j.getJoin_column(),
-              table_query.getFullTableName(),
+              table_query.getFull_table_name(),
               j.getOuter_column()
             ));
           } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "right outer")) {
             sql.RIGHT_OUTER_JOIN(String.format(
               "%s on %s.\"%s\" = %s.\"%s\"",
-              j.getFullTableName(),
-              j.getFullTableName(),
+              j.getFull_table_name(),
+              j.getFull_table_name(),
               j.getJoin_column(),
-              table_query.getFullTableName(),
+              table_query.getFull_table_name(),
               j.getOuter_column()
             ));
           } else if (StringUtils.equalsIgnoreCase(j.getJoin_type(), "left outer")) {
             sql.LEFT_OUTER_JOIN(String.format(
               "%s on %s.\"%s\" = %s.\"%s\"",
-              j.getFullTableName(),
-              j.getFullTableName(),
+              j.getFull_table_name(),
+              j.getFull_table_name(),
               j.getJoin_column(),
-              table_query.getFullTableName(),
+              table_query.getFull_table_name(),
               j.getOuter_column()
             ));
           }
@@ -306,7 +306,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     long start_time = System.currentTimeMillis();
     SQL sql = new SQL();
     try {
-      sql.INSERT_INTO(insert_request.getFullTableName());
+      sql.INSERT_INTO(insert_request.getFull_table_name());
       if (insert_request.hasColumns()) {
         insert_request.getColumns().forEach(v -> {
           if (v.getAuto_increment() != null && v.getAuto_increment()) return;
@@ -342,7 +342,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     List<Object> parameters = new LinkedList<Object>();
     try {
       TableDefinition table_definition = update_request.getDefinition();
-      sql.UPDATE(update_request.getFullTableName());
+      sql.UPDATE(update_request.getFull_table_name());
       if (update_request.isPatch_update()) { // 条件更新或补丁更新
         for (TableColumn v : update_request.getColumns()) {
           String k = v.getName();
@@ -446,7 +446,7 @@ public abstract class AbstractSQLDialectProvider implements SQLDialectProvider {
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
     try {
-      sql.DELETE_FROM(update_request.getFullTableName());
+      sql.DELETE_FROM(update_request.getFull_table_name());
       TableDefinition table_definition = update_request.getDefinition();
       boolean where_append = false;
 

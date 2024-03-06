@@ -21,6 +21,7 @@ import com.snz1.jdbc.rest.data.JdbcQueryResponse;
 import com.snz1.jdbc.rest.data.ManipulationRequest;
 import com.snz1.jdbc.rest.data.Page;
 import com.snz1.jdbc.rest.data.ResultDefinition;
+import com.snz1.jdbc.rest.data.SQLServiceDefinition;
 import com.snz1.jdbc.rest.data.SQLServiceRequest;
 import com.snz1.jdbc.rest.data.TableMeta;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition.SQLFragment;
@@ -81,11 +82,11 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     }
   }
 
-  private void evitRequestTableCache(String appid, ManipulationRequest insert_request) {
-    String cache_name = String.format("%s:%s", appid, insert_request.getTable_name());
-    this.evitAllCache(cache_name);
-    cache_name = String.format("%s:%s", appid, insert_request.getFlatTableName());
-    this.evitAllCache(cache_name);
+  private void evitRequestTableCache(ManipulationRequest insert_request) {
+    this.clearTableCaches(insert_request.getTable_name());
+    this.clearTableCaches(insert_request.getFlat_table_name());
+    this.clearServiceCachesByTable(insert_request.getTable_name());
+    this.clearServiceCachesByTable(insert_request.getFlat_table_name());
   }
 
   @Override
@@ -147,7 +148,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     try {
       return this.resolveCached(
         String.format("%s:meta", appInfoResolver.getAppId()),
-        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFlatTableName()),
+        String.format("%s:%s", Constants.TABLEMETA_CACHE, table_query.getFlat_table_name()),
         () -> super.doFetchResultSetMeta(table_query, sql_dialect_provider)
       );
     } catch (SQLException e) {
@@ -225,7 +226,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   ) {
     try {
       JdbcQueryResponse<?> ret = this.resolveCached(
-        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlatTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlat_table_name()),
         this.buildJdbcQueryRequestCacheKey(table_query, "list:"),
         () -> super.doQueryListResult(table_query, sql_dialect_provider)
       );
@@ -241,7 +242,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Long doQueryTotalResult(JdbcQueryRequest table_query, SQLDialectProvider sql_dialect_provider) {
     try {
       return this.resolveCached(
-        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlatTableName()),
+        String.format("%s:%s", appInfoResolver.getAppId(), table_query.getFlat_table_name()),
         this.buildJdbcQueryRequestCacheKey(table_query, "total:"),
         () -> super.doQueryTotalResult(table_query, sql_dialect_provider)
       );
@@ -257,7 +258,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Object ret = super.doInsertTableData(insert_request, sql_dialect_provider, type_converter_factory);
-    this.evitRequestTableCache(appInfoResolver.getAppId(), insert_request);
+    this.evitRequestTableCache(insert_request);
     return ret;
   }
 
@@ -268,7 +269,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     int[] ret = super.doUpdateTableData(update_request, sql_dialect_provider, type_converter_factory);
-    this.evitRequestTableCache(appInfoResolver.getAppId(), update_request);
+    this.evitRequestTableCache(update_request);
     return ret;
   }
 
@@ -279,7 +280,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     JdbcTypeConverterFactory type_converter_factory
   ) throws SQLException {
     Integer ret = super.doDeleteTableData(delete_request, sql_dialect_provider, type_converter_factory);
-    this.evitRequestTableCache(appInfoResolver.getAppId(), delete_request);
+    this.evitRequestTableCache(delete_request);
     return ret;
   }
 
@@ -316,21 +317,24 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   protected Object doSQLServiceInsert(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
+    this.clearTableCachesByService(sql_request.getDefinition());
+    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
   @Override
   protected Object doSQLServiceUpdate(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
+    this.clearTableCachesByService(sql_request.getDefinition());
+    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
   @Override
   protected Object doSQLServiceDelete(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
-    this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), sql_request.getDefinition().getService_path()));
+    this.clearTableCachesByService(sql_request.getDefinition());
+    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
@@ -342,6 +346,23 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Override
   public void clearTableCaches(String table_name) {
     this.evitAllCache(String.format("%s:%s", appInfoResolver.getAppId(), table_name));
+    this.clearServiceCachesByTable(table_name);
+  }
+
+  // 根据服务清理表缓存
+  private void clearTableCachesByService(SQLServiceDefinition definition) {
+    definition.getUpdate_tables().forEach(t -> {
+      this.clearTableCaches(t);
+    });
+  }
+
+  // 根据查询表清理服务缓存
+  private void clearServiceCachesByTable(String table_name) {
+    serviceRegistry.getServices().forEach(s -> {
+      if (s.getQuery_tables().contains(table_name)) {
+        this.clearServiceCaches(s.getService_path());
+      }
+    });
   }
 
   @Override

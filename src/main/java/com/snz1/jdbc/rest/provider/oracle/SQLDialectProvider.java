@@ -45,7 +45,7 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
     SQL sql = new SQL();
     List<Object> parameters = new LinkedList<Object>();
     try {
-      sql.FROM(table_query.getFullTableName());
+      sql.FROM(table_query.getFull_table_name());
 
       if (table_query.getSelect().hasCount() || docount) {
         if (!docount && table_query.hasGroup_by()) {
@@ -61,9 +61,9 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
       } else if (!table_query.getSelect().hasColumns()) {
         sql.SELECT("ROWNUM AS ROWNUM__");
         if (table_query.getSelect().isDistinct()) {
-          sql.SELECT_DISTINCT(table_query.getFullTableName() + ".*");
+          sql.SELECT_DISTINCT(table_query.getFull_table_name() + ".*");
         } else {
-          sql.SELECT(table_query.getFullTableName() + ".*");
+          sql.SELECT(table_query.getFull_table_name() + ".*");
         }
       } else {
         sql.SELECT("ROWNUM AS ROWNUM__");
@@ -98,10 +98,10 @@ public class SQLDialectProvider extends AbstractSQLDialectProvider {
         table_query.getJoin().forEach(j -> {
           sql.LEFT_OUTER_JOIN(String.format(
             "%s on %s.%s = %s.%s",
-            j.getFullTableName(),
-            j.getFullTableName(),
+            j.getFull_table_name(),
+            j.getFull_table_name(),
             j.getJoin_column(),
-            table_query.getFullTableName(),
+            table_query.getFull_table_name(),
             j.getOuter_column()
           ));
         });

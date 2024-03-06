@@ -243,7 +243,7 @@ public class JdbcQueryRequest extends JdbcRestfulRequest {
     private String join_type;
 
     @JsonIgnore
-    public String getFullTableName() {
+    public String getFull_table_name() {
       if (StringUtils.isBlank(this.catalog_name)) {
         if (StringUtils.isBlank(this.schema_name)) {
           return this.table_name;

@@ -48,7 +48,7 @@ public abstract class JdbcRestfulRequest implements Serializable, Cloneable {
   }
 
   @JsonIgnore
-  public String getFullTableName() {
+  public String getFull_table_name() {
     if (StringUtils.isBlank(this.catalog_name)) {
       if (StringUtils.isBlank(this.schema_name)) {
         return this.table_name;
@@ -62,7 +62,7 @@ public abstract class JdbcRestfulRequest implements Serializable, Cloneable {
     }
   }
 
-  public String getFlatTableName() {
+  public String getFlat_table_name() {
     if (StringUtils.isBlank(this.catalog_name)) {
       if (StringUtils.isBlank(this.schema_name)) {
         return this.table_name;

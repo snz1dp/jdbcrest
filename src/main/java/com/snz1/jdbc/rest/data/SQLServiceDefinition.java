@@ -1,8 +1,10 @@
 package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -25,6 +27,14 @@ public class SQLServiceDefinition implements Serializable {
   // 文件位置
   @JsonIgnore
   private String file_location;
+
+  // 查询表
+  @JsonIgnore
+  private Set<String> query_tables = Collections.emptySet();
+
+  // 更新表
+  @JsonIgnore
+  private Set<String> update_tables = Collections.emptySet();
 
   // SQL片段列表
   @JsonIgnore
@@ -79,6 +89,9 @@ public class SQLServiceDefinition implements Serializable {
 
     // 字段
     private ResultDefinition.ResultColumn[] columns;
+
+    // 关联了哪些表
+    private String[] tables;
 
   }
 
