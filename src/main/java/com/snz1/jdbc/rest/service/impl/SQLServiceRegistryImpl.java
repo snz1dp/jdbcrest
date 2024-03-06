@@ -2,13 +2,12 @@ package com.snz1.jdbc.rest.service.impl;
 
 import java.io.InputStream;
 import java.sql.JDBCType;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -24,9 +23,12 @@ import org.springframework.stereotype.Service;
 
 import com.snz1.jdbc.rest.Constants;
 import com.snz1.jdbc.rest.RunConfig;
+import com.snz1.jdbc.rest.data.JdbcQueryRequest;
 import com.snz1.jdbc.rest.data.ResultDefinition;
 import com.snz1.jdbc.rest.data.SQLClauses;
 import com.snz1.jdbc.rest.data.SQLServiceDefinition;
+import com.snz1.jdbc.rest.data.TableMeta;
+import com.snz1.jdbc.rest.service.JdbcRestProvider;
 import com.snz1.jdbc.rest.service.SQLServiceRegistry;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.jdbc.rest.utils.YamlUtils;
@@ -45,6 +47,9 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
 
   @Resource
   private SqlSessionFactory sessionFactory;
+
+  @Resource
+  private JdbcRestProvider restProvider;
 
   private Map<String, SQLServiceDefinition> sqlServiceDefinitions;
 
@@ -184,39 +189,56 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
 
       // 检查SQL命令类型
       if (Objects.equals(SqlCommandType.UNKNOWN, command_type)) {
-        log.warn("SQL文件{}第[{}]段SQL有问题, SQL:\n{}", sql_file.toString(), i, sql_frag.getFrangment_sql());
-      } else {
-        if (log.isDebugEnabled()) {
-          log.warn("SQL文件{}第[{}]段SQL:\n{}", sql_file.toString(), i, sql_frag.getFrangment_sql());
-        }
-        // 分析返回类型
-        SQLServiceDefinition.ResultDefinitionYamlWrapper result_wrapper = YamlUtils.fromYaml(
-          sql_note, SQLServiceDefinition.ResultDefinitionYamlWrapper.class
-        );
-        if (result_wrapper == null) {
-          result_wrapper = new SQLServiceDefinition.ResultDefinitionYamlWrapper();
-        }
+          new IllegalStateException(String.format(
+            "SQL文件%d第[%s]段SQL有问题, SQL:\n%s", sql_file.toString(), i, sql_frag.getFrangment_sql()
+          ));
+      }
 
-        if (result_wrapper.getColumns() != null && result_wrapper.getColumns().length > 0) {
-          for (ResultDefinition.ResultColumn cl : result_wrapper.getColumns()) {
-            Validate.notBlank(cl.getName(), "字段名不能为空");
-            cl.setAlias(null);
-            sql_frag.getResult().getColumns().put(cl.getName(), cl);
+      if (log.isDebugEnabled()) {
+        log.warn("SQL文件{}第[{}]段SQL:\n{}", sql_file.toString(), i, sql_frag.getFrangment_sql());
+      }
+
+      // 分析返回类型
+      SQLServiceDefinition.ResultDefinitionYamlWrapper result_wrapper = YamlUtils.fromYaml(
+        sql_note, SQLServiceDefinition.ResultDefinitionYamlWrapper.class
+      );
+      if (result_wrapper == null) {
+        result_wrapper = new SQLServiceDefinition.ResultDefinitionYamlWrapper();
+      }
+
+      if (result_wrapper.getColumns() != null && result_wrapper.getColumns().length > 0) {
+        for (ResultDefinition.ResultColumn cl : result_wrapper.getColumns()) {
+          Validate.notBlank(cl.getName(), "字段名不能为空");
+          cl.setAlias(null);
+          sql_frag.getResult().getColumns().put(cl.getName(), cl);
+        }
+      }
+      sql_frag.getResult().setSignleton(result_wrapper.isSignleton());
+      sql_frag.getResult().setColumn_compact(result_wrapper.isColumn_compact());
+
+      if (StringUtils.isBlank(sql_def.getService_title()) && StringUtils.isNotBlank(
+        result_wrapper.getTitle()
+      )) {
+        sql_def.setService_title(result_wrapper.getTitle());
+      }
+
+      // 添加相关表
+      if (result_wrapper.getTables() != null && result_wrapper.getTables().length > 0) {
+        if (command_type == SqlCommandType.SELECT) {
+          Set<String> query_tables = sql_def.getQuery_tables();
+          for (String table_name : result_wrapper.getTables()) {
+            TableMeta table_meta = restProvider.queryResultMeta(
+              JdbcQueryRequest.of(table_name)
+            );
+            query_tables.add(table_meta.getFlat_table_name());
           }
-        }
-        sql_frag.getResult().setSignleton(result_wrapper.isSignleton());
-        sql_frag.getResult().setColumn_compact(result_wrapper.isColumn_compact());
-
-        if (StringUtils.isBlank(sql_def.getService_title()) && StringUtils.isNotBlank(
-          result_wrapper.getTitle()
-        )) {
-          sql_def.setService_title(result_wrapper.getTitle());
-        }
-        if (result_wrapper.getTables() != null && result_wrapper.getTables().length > 0) {
-          if (command_type == SqlCommandType.SELECT) {
-            sql_def.setQuery_tables(new HashSet<>(Arrays.asList(result_wrapper.getTables())));
-          } else {
-            sql_def.setUpdate_tables(new HashSet<>(Arrays.asList(result_wrapper.getTables())));
+        } else {
+          Set<String> update_tables = sql_def.getUpdate_tables();
+          for (String table_name : result_wrapper.getTables()) {
+            TableMeta table_meta = restProvider.queryResultMeta(
+              JdbcQueryRequest.of(table_name)
+            );
+            update_tables.add(table_meta.getFlat_table_name());
           }
         }
       }

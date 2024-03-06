@@ -896,4 +896,13 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
     }
   }
 
+  @Override
+  public boolean isThreadCacheEnabled() {
+    return false;
+  }
+
+  @Override
+  public void setThreadCacheEnabled(boolean cache_enabled) {
+  }
+
 }

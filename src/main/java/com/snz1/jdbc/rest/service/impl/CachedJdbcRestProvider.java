@@ -1,7 +1,6 @@
 package com.snz1.jdbc.rest.service.impl;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,11 +44,26 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   @Resource
   private SQLServiceRegistry serviceRegistry;
 
+  private static ThreadLocal<Boolean> IGNORE_CACHE_HOLDER = new ThreadLocal<>();
+
   public CachedJdbcRestProvider() {
+  }
+
+  @Override
+  public boolean isThreadCacheEnabled() {
+    return IGNORE_CACHE_HOLDER.get() == null || !IGNORE_CACHE_HOLDER.get();
+  }
+
+  @Override
+  public void setThreadCacheEnabled(boolean cache_enabled) {
+    IGNORE_CACHE_HOLDER.set(!cache_enabled);
   }
 
   @SuppressWarnings("unchecked")
   private <T> T resolveCached(String cache_name, String cache_key, ValueResolver<T> resolver) throws SQLException {
+    if (IGNORE_CACHE_HOLDER.get() != null && IGNORE_CACHE_HOLDER.get()) {
+      return resolver.resolve();
+    }
     Cache cache = cacheManager.getCache(cache_name);
     if (cache == null) {
       if (log.isDebugEnabled()) {
@@ -83,9 +97,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   }
 
   private void evitRequestTableCache(ManipulationRequest insert_request) {
-    this.clearTableCaches(insert_request.getTable_name());
     this.clearTableCaches(insert_request.getFlat_table_name());
-    this.clearServiceCachesByTable(insert_request.getTable_name());
     this.clearServiceCachesByTable(insert_request.getFlat_table_name());
   }
 
@@ -119,7 +131,8 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     String table_name_pattern, Long offset, Long limit, String... types
   ) throws SQLException {
     StringBuffer cbuf = new StringBuffer(Constants.CATALOGS_CACHE);
-    cbuf.append(":").append(catalog).append(":").append(schema_pattern).append(":").append(table_name_pattern)
+    cbuf.append(":").append(catalog).append(":")
+        .append(schema_pattern).append(":").append(table_name_pattern)
         .append(":").append(offset).append(":").append(limit);
     if (types != null && types.length > 0) {
       for (String type_name : types) {
@@ -284,21 +297,10 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
     return ret;
   }
 
-  @SuppressWarnings("unchecked")
   private String buildSQLServiceCacheKey(SQLFragment sql_fragment, Object input_data) {
-    if (input_data instanceof Map) { // 去掉上下文相关的
-      Map<String, Object> wrap_input = new HashMap<>((Map<String, Object>)input_data);
-      if (wrap_input.containsKey("user")) {
-        wrap_input.remove("user");
-        wrap_input.put("user", this.getLoggedUserContext().getLoggedUser().getUserid());
-      }
-      wrap_input.remove("req");
-      wrap_input.remove("lastout");
-      wrap_input.remove("output");
-      return DigestUtils.sha256Hex(JsonUtils.toJson(wrap_input));
-    } else {
-      return DigestUtils.sha256Hex(JsonUtils.toJson(input_data));
-    }
+    StringBuffer buf = new StringBuffer();
+    buf.append(sql_fragment.getMapped_id()).append(JsonUtils.toJson(input_data));
+    return DigestUtils.sha256Hex(buf.toString());
   }
 
   @Override
@@ -318,7 +320,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Object doSQLServiceInsert(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceInsert(session, sql_request, sql_fragment, input_data);
     this.clearTableCachesByService(sql_request.getDefinition());
-    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
@@ -326,7 +327,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Object doSQLServiceUpdate(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceUpdate(session, sql_request, sql_fragment, input_data);
     this.clearTableCachesByService(sql_request.getDefinition());
-    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
@@ -334,7 +334,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   protected Object doSQLServiceDelete(SqlSession session, SQLServiceRequest sql_request, SQLFragment sql_fragment, Object input_data) {
     Object ret = super.doSQLServiceDelete(session, sql_request, sql_fragment, input_data);
     this.clearTableCachesByService(sql_request.getDefinition());
-    this.clearServiceCaches(sql_request.getDefinition().getService_path());
     return ret;
   }
 
@@ -342,6 +341,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
   public void clearMetaCaches() {
     this.evitAllCache(String.format("%s:meta", appInfoResolver.getAppId()));
   }
+
 
   @Override
   public void clearTableCaches(String table_name) {
@@ -351,9 +351,9 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
 
   // 根据服务清理表缓存
   private void clearTableCachesByService(SQLServiceDefinition definition) {
-    definition.getUpdate_tables().forEach(t -> {
-      this.clearTableCaches(t);
-    });
+    for (String table_name : definition.getUpdate_tables()) {
+      this.clearTableCaches(table_name);
+    }
   }
 
   // 根据查询表清理服务缓存
@@ -399,7 +399,6 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
         String table_name = (String)objmap.get("TABLE_NAME");
         String schema_name = (String)objmap.get("TABLE_SCHEM");
         String catelog_name = (String)objmap.get("TABLE_CAT");
-        this.clearTableCaches(table_name);
         if (StringUtils.isNotBlank(catelog_name) && StringUtils.isNotBlank(schema_name)) {
           this.clearTableCaches(String.format("%s.%s.%s", catelog_name, schema_name, table_name));
         } else if (StringUtils.isNotBlank(catelog_name)) {

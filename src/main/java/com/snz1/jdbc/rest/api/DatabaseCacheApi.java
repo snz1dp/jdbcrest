@@ -47,11 +47,10 @@ public class DatabaseCacheApi {
     if (result_meta.hasDefinition()) {
       Validate.isTrue(
         result_meta.getDefinition().testPublish(),
-        "%s不存在", result_meta.getFullTableName()
+        "%s不存在", result_meta.getFull_table_name()
       );
     }
-    restProvider.clearTableCaches(result_meta.getTable_name());
-    restProvider.clearTableCaches(result_meta.getFullTableName());
+    restProvider.clearTableCaches(result_meta.getFlat_table_name());
     return Return.success();
   }
 

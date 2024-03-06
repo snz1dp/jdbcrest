@@ -108,4 +108,10 @@ public interface JdbcRestProvider {
   // 清理全部SQL服务缓存
   void clearServiceCaches();
 
+  // 判断是否启用缓存
+  boolean isThreadCacheEnabled();
+
+  // 判断上下文
+  void setThreadCacheEnabled(boolean cache_enabled);
+
 }

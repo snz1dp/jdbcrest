@@ -1,10 +1,10 @@
 package com.snz1.jdbc.rest.data;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -17,8 +17,10 @@ import lombok.Data;
 @Data
 public class SQLServiceDefinition implements Serializable {
 
+  // 服务名称   
   private String service_name;
 
+  // 服务标题
   private String service_title;
 
   // 服务路径，从SQL文件名中获取
@@ -30,11 +32,11 @@ public class SQLServiceDefinition implements Serializable {
 
   // 查询表
   @JsonIgnore
-  private Set<String> query_tables = Collections.emptySet();
+  private Set<String> query_tables = new HashSet<>();
 
   // 更新表
   @JsonIgnore
-  private Set<String> update_tables = Collections.emptySet();
+  private Set<String> update_tables = new HashSet<>();
 
   // SQL片段列表
   @JsonIgnore
