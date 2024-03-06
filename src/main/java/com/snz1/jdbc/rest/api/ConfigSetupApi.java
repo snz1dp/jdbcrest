@@ -3,6 +3,7 @@ package com.snz1.jdbc.rest.api;
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.Validate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController("jdbcrest::ConfigSetupApi")
 @Tag(name = "系统配置")
 @RequestMapping
+@ConditionalOnProperty(name = "app.jdbcrest.api.enabled", havingValue = "true")
 public class ConfigSetupApi {
 
   @Resource

@@ -46,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController("jdbcrest::AppPublishApi")
 @Tag(name = "应用信息")
 @RequestMapping
+@ConditionalOnProperty(name = "app.jdbcrest.api.enabled", havingValue = "true")
 public class AppPublishApi {
 
   private FunctionTreeNode[] EMPTY_TREENODES = new FunctionTreeNode[0];

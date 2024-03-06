@@ -90,7 +90,7 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
       prefix_dir = prefix_dir.substring(1);
     }
 
-    org.springframework.core.io.Resource[] resources = resourceLoader.getResources(String.format("%s/**/*.sql", sql_dir));
+    org.springframework.core.io.Resource[] resources = resourceLoader.getResources(String.format("%s/**/*.*", sql_dir));
     Map<String, SQLServiceDefinition> defintions = new LinkedHashMap<>();
     for (org.springframework.core.io.Resource resource : resources) {
       String start_uri = resource.getURI().toString();
@@ -103,6 +103,12 @@ public class SQLServiceRegistryImpl implements SQLServiceRegistry {
           start_uri = start_uri.substring(start_x + 2);
         }
       }
+
+      // 不是SQL文件则跳过
+      if (!StringUtils.endsWithIgnoreCase(start_uri, ".sql")) {
+        continue;
+      }
+
       String nosuffix_file = start_uri.substring(prefix_dir.length() + 1, start_uri.length() - 4);
       String service_path = String.format("%s/%s", relative_path, nosuffix_file);
       String service_name = String.format("%s%s", parent_name, nosuffix_file);

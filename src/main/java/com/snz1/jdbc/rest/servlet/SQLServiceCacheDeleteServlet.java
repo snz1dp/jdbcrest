@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.web.servlet.HttpServletBean;
 
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @WebServlet(urlPatterns = SQLServiceRequestExecuteServlet.PATH)
+@ConditionalOnProperty(name = "app.jdbcrest.api.enabled", havingValue = "true")
 public class SQLServiceCacheDeleteServlet extends HttpServletBean {
 
   public static final String PATH = "/cache/services/*";

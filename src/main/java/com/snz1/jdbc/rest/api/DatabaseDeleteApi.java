@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController("jdbcrest::DatabaseDeleteApi")
 @Tag(name = "数据删除")
 @RequestMapping
+@ConditionalOnProperty(name = "app.jdbcrest.api.enabled", havingValue = "true")
 public class DatabaseDeleteApi {
 
   @Resource

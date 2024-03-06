@@ -43,7 +43,10 @@ import com.snz1.jdbc.rest.service.LoggedUserContext;
 
 @Tag(name = "用户帐户")
 @RestController("jdbcrest::UserProfileApi")
-@ConditionalOnProperty(prefix = "spring.security", name = "ssoheader", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = {
+  "spring.security.ssoheader",
+  "app.jdbcrest.api.enabled"
+}, havingValue = "true", matchIfMissing = false)
 public class UserProfileApi {
 
   private static final String HEAD_IMAGE_ARG = "head_img";

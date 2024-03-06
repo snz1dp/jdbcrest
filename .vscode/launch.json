@@ -52,7 +52,7 @@
         "SSO_SIMULATE": "true",
         "CONFIG_TYPE": "cluster",
         "DATASCHEME_ENABLED": "true",
-        "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/dmdbms/",
+        "DATASCHEME_URL": "file://${workspaceFolder}/src/test/resources/sql/schemas/postgresql/",
         "CACHE_TYPE": "none",
         // "CACHE_TYPE": "redis",
         // "REDIS_SERVER": "localhost:6379",

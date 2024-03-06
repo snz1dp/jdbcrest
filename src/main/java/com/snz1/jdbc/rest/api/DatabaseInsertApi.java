@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController("jdbcrest::DatabaseInsertApi")
 @Tag(name = "数据插入")
 @RequestMapping
+@ConditionalOnProperty(name = "app.jdbcrest.api.enabled", havingValue = "true")
 public class DatabaseInsertApi {
 
   @Resource
