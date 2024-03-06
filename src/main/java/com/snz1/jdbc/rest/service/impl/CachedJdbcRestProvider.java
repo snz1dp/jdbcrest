@@ -207,7 +207,7 @@ public class CachedJdbcRestProvider extends JdbcRestProviderImpl {
         .append(table_query.getResult().isColumn_compact())
         .append(table_query.getResult().isContain_meta());
 
-    if (table_query.getResult().getClass() != null) {
+    if (table_query.getResult().getEntity_class() != null) {
       dbuf.append(table_query.getResult().getEntity_class().getName());
     }
 
