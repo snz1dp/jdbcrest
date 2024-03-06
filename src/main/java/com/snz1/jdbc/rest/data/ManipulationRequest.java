@@ -70,13 +70,13 @@ public class ManipulationRequest extends JdbcRestfulRequest {
 
   // 复制表元信息
   public void copyTableMeta(TableMeta table_meta) {
+    this.setDefinition(table_meta.getDefinition());
     this.setCatalog_name(table_meta.getCatalog_name());
     this.setSchema_name(table_meta.getSchema_name());
-    this.setDefinition(table_meta.getDefinition());
+    this.setTable_name(table_meta.getTable_name());
     this.setPrimary_key(table_meta.getPrimary_key());
     this.setUnique_indexs(table_meta.getUnique_indexs());
     this.setColumns(table_meta.getColumns());
-    this.setTable_name(table_meta.getTable_name());
   }
   
   // 是否有主键
