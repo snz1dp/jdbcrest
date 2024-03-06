@@ -53,6 +53,7 @@ import com.snz1.jdbc.rest.service.converter.SetConverter;
 import com.snz1.jdbc.rest.service.converter.StringLocaleConverter;
 import com.snz1.jdbc.rest.utils.JdbcUtils;
 import com.snz1.jdbc.rest.utils.ObjectUtils;
+import com.snz1.utils.JsonUtils;
 import com.snz1.utils.WebUtils;
 
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -733,7 +734,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   ) {
     String mapped_id = sql_fragment.getMapped_id();
     if (log.isDebugEnabled()) {
-      log.debug("执行{}插入请求...", mapped_id);
+      log.debug("SQL服务(ID={})请求参数：{}", mapped_id, JsonUtils.toJson(input_data));
+      log.debug("SQL服务(ID={})查询语句：{}", mapped_id, sql_fragment.getFrangment_sql());
     }
     long start_time = System.currentTimeMillis();
     try {
@@ -753,7 +755,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   ) {
     String mapped_id = sql_fragment.getMapped_id();
     if (log.isDebugEnabled()) {
-      log.debug("执行{}更新请求...", mapped_id);
+      log.debug("SQL服务(ID={})请求参数：{}", mapped_id, JsonUtils.toJson(input_data));
+      log.debug("SQL服务(ID={})查询语句：{}", mapped_id, sql_fragment.getFrangment_sql());
     }
   long start_time = System.currentTimeMillis();
     try {
@@ -773,7 +776,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   ) {
     String mapped_id = sql_fragment.getMapped_id();
     if (log.isDebugEnabled()) {
-      log.debug("执行{}删除请求...", mapped_id);
+      log.debug("SQL服务(ID={})请求参数：{}", mapped_id, JsonUtils.toJson(input_data));
+      log.debug("SQL服务(ID={})查询语句：{}", mapped_id, sql_fragment.getFrangment_sql());
     }
     long start_time = System.currentTimeMillis();
     try {
@@ -794,7 +798,8 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
   ) {
     String mapped_id = sql_fragment.getMapped_id();
     if (log.isDebugEnabled()) {
-      log.debug("执行{}查询请求...", mapped_id);
+      log.debug("SQL服务(ID={})请求参数：{}", mapped_id, JsonUtils.toJson(input_data));
+      log.debug("SQL服务(ID={})查询语句：{}", mapped_id, sql_fragment.getFrangment_sql());
     }
     long start_time = System.currentTimeMillis();
     try {
@@ -850,9 +855,10 @@ public class JdbcRestProviderImpl implements JdbcRestProvider, CacheClear, Initi
       Configuration mybatis_config = this.sessionFactory.getConfiguration();
       if (mybatis_config.hasStatement(sql_fragment.getMapped_id(), false)) {
         return sql_fragment.getMapped_id();
+      } else {
+        mybatis_config.addMappedStatement(sql_fragment.getMapped_statement());
+        return sql_fragment.getMapped_id();
       }
-      mybatis_config.addMappedStatement(sql_fragment.getMapped_statement());
-      return sql_fragment.getMapped_id();
     } finally {
       if (log.isDebugEnabled()) {
         log.debug("构建{}请求耗时{}毫秒", sql_fragment.getMapped_id(), (System.currentTimeMillis() - start_time));
